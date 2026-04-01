@@ -1,0 +1,405 @@
+"""
+storage.py
+
+SQLite database layer.
+Handles schema initialization and CRUD operations for:
+    - events
+    - alerts
+    - incidents
+    - incident_events
+"""
+
+import sqlite3
+import logging
+from typing import List, Dict, Any, Optional
+
+from config import DATABASE_PATH
+from utils import now_iso, ensure_dir
+import os
+
+logger = logging.getLogger(__name__)
+
+
+# ──────────────────────────────────────────────
+# Connection
+# ──────────────────────────────────────────────
+
+def get_connection() -> sqlite3.Connection:
+    """Return a SQLite connection with row_factory set to dict-like rows."""
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute("PRAGMA journal_mode = WAL")
+    return conn
+
+
+# ──────────────────────────────────────────────
+# Schema
+# ──────────────────────────────────────────────
+
+_SCHEMA = """
+CREATE TABLE IF NOT EXISTS events (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    timestamp   TEXT    NOT NULL,
+    log_source  TEXT    NOT NULL,
+    event_type  TEXT    NOT NULL,
+    source_ip   TEXT,
+    username    TEXT,
+    hostname    TEXT,
+    status      TEXT    NOT NULL,
+    message     TEXT    NOT NULL,
+    raw_log     TEXT    NOT NULL,
+    created_at  TEXT    NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS alerts (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    event_id       INTEGER REFERENCES events(id) ON DELETE SET NULL,
+    rule_name      TEXT    NOT NULL,
+    severity       TEXT    NOT NULL,
+    risk_score     INTEGER NOT NULL DEFAULT 0,
+    anomaly_score  REAL,
+    anomaly_level  TEXT,
+    description    TEXT    NOT NULL,
+    created_at     TEXT    NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS incidents (
+    id             INTEGER PRIMARY KEY AUTOINCREMENT,
+    title          TEXT    NOT NULL,
+    description    TEXT    NOT NULL,
+    source_ip      TEXT,
+    username       TEXT,
+    risk_score     INTEGER NOT NULL DEFAULT 0,
+    anomaly_level  TEXT,
+    status         TEXT    NOT NULL DEFAULT 'open',
+    created_at     TEXT    NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS incident_events (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    incident_id INTEGER NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
+    event_id    INTEGER NOT NULL REFERENCES events(id)    ON DELETE CASCADE
+);
+
+CREATE INDEX IF NOT EXISTS idx_events_timestamp  ON events(timestamp);
+CREATE INDEX IF NOT EXISTS idx_events_source_ip  ON events(source_ip);
+CREATE INDEX IF NOT EXISTS idx_events_event_type ON events(event_type);
+CREATE INDEX IF NOT EXISTS idx_alerts_severity   ON alerts(severity);
+CREATE INDEX IF NOT EXISTS idx_incidents_status  ON incidents(status);
+"""
+
+
+def init_db() -> None:
+    """
+    Create all tables and indexes if they do not exist.
+    Safe to call multiple times (uses IF NOT EXISTS).
+    """
+    ensure_dir(os.path.dirname(DATABASE_PATH))
+    with get_connection() as conn:
+        conn.executescript(_SCHEMA)
+    logger.info("Database initialized.")
+
+
+# ──────────────────────────────────────────────
+# Events
+# ──────────────────────────────────────────────
+
+def insert_event(event: Dict[str, Any]) -> int:
+    """
+    Insert a normalized event dict into the events table.
+    Returns the new row id.
+    """
+    sql = """
+        INSERT INTO events
+            (timestamp, log_source, event_type, source_ip, username,
+             hostname, status, message, raw_log, created_at)
+        VALUES
+            (:timestamp, :log_source, :event_type, :source_ip, :username,
+             :hostname, :status, :message, :raw_log, :created_at)
+    """
+    row = {**event, "created_at": now_iso()}
+    with get_connection() as conn:
+        cursor = conn.execute(sql, row)
+        return cursor.lastrowid
+
+
+def insert_events_bulk(events: List[Dict[str, Any]]) -> int:
+    """
+    Insert multiple events in a single transaction.
+    Returns the number of rows inserted.
+    """
+    if not events:
+        return 0
+    sql = """
+        INSERT INTO events
+            (timestamp, log_source, event_type, source_ip, username,
+             hostname, status, message, raw_log, created_at)
+        VALUES
+            (:timestamp, :log_source, :event_type, :source_ip, :username,
+             :hostname, :status, :message, :raw_log, :created_at)
+    """
+    rows = [{**e, "created_at": now_iso()} for e in events]
+    with get_connection() as conn:
+        conn.executemany(sql, rows)
+    logger.info(f"Inserted {len(rows)} events.")
+    return len(rows)
+
+
+def get_events(
+    limit: int = 500,
+    offset: int = 0,
+    event_type: Optional[str] = None,
+    source_ip: Optional[str] = None,
+    log_source: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """Fetch events with optional filters. Returns list of dicts."""
+    conditions = []
+    params: Dict[str, Any] = {"limit": limit, "offset": offset}
+
+    if event_type:
+        conditions.append("event_type = :event_type")
+        params["event_type"] = event_type
+    if source_ip:
+        conditions.append("source_ip = :source_ip")
+        params["source_ip"] = source_ip
+    if log_source:
+        conditions.append("log_source = :log_source")
+        params["log_source"] = log_source
+
+    where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+    sql = f"SELECT * FROM events {where} ORDER BY timestamp DESC LIMIT :limit OFFSET :offset"
+
+    with get_connection() as conn:
+        rows = conn.execute(sql, params).fetchall()
+    return [dict(r) for r in rows]
+
+
+def count_events() -> int:
+    with get_connection() as conn:
+        return conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
+
+
+# ──────────────────────────────────────────────
+# Alerts
+# ──────────────────────────────────────────────
+
+def insert_alert(alert: Dict[str, Any]) -> int:
+    """
+    Insert an alert dict into the alerts table.
+    Returns the new row id.
+    """
+    sql = """
+        INSERT INTO alerts
+            (event_id, rule_name, severity, risk_score,
+             anomaly_score, anomaly_level, description, created_at)
+        VALUES
+            (:event_id, :rule_name, :severity, :risk_score,
+             :anomaly_score, :anomaly_level, :description, :created_at)
+    """
+    row = {
+        "event_id":      alert.get("event_id"),
+        "rule_name":     alert["rule_name"],
+        "severity":      alert["severity"],
+        "risk_score":    alert.get("risk_score", 0),
+        "anomaly_score": alert.get("anomaly_score"),
+        "anomaly_level": alert.get("anomaly_level"),
+        "description":   alert["description"],
+        "created_at":    now_iso(),
+    }
+    with get_connection() as conn:
+        cursor = conn.execute(sql, row)
+        return cursor.lastrowid
+
+
+def get_alerts(
+    limit: int = 200,
+    offset: int = 0,
+    severity: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """Fetch alerts with optional severity filter."""
+    params: Dict[str, Any] = {"limit": limit, "offset": offset}
+    where = ""
+    if severity:
+        where = "WHERE severity = :severity"
+        params["severity"] = severity
+
+    sql = f"SELECT * FROM alerts {where} ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
+    with get_connection() as conn:
+        rows = conn.execute(sql, params).fetchall()
+    return [dict(r) for r in rows]
+
+
+def count_alerts(severity: Optional[str] = None) -> int:
+    if severity:
+        with get_connection() as conn:
+            return conn.execute(
+                "SELECT COUNT(*) FROM alerts WHERE severity = ?", (severity,)
+            ).fetchone()[0]
+    with get_connection() as conn:
+        return conn.execute("SELECT COUNT(*) FROM alerts").fetchone()[0]
+
+
+# ──────────────────────────────────────────────
+# Incidents
+# ──────────────────────────────────────────────
+
+def insert_incident(incident: Dict[str, Any]) -> int:
+    """
+    Insert an incident dict into the incidents table.
+    Returns the new row id.
+    """
+    sql = """
+        INSERT INTO incidents
+            (title, description, source_ip, username,
+             risk_score, anomaly_level, status, created_at)
+        VALUES
+            (:title, :description, :source_ip, :username,
+             :risk_score, :anomaly_level, :status, :created_at)
+    """
+    row = {
+        "title":         incident["title"],
+        "description":   incident["description"],
+        "source_ip":     incident.get("source_ip"),
+        "username":      incident.get("username"),
+        "risk_score":    incident.get("risk_score", 0),
+        "anomaly_level": incident.get("anomaly_level"),
+        "status":        incident.get("status", "open"),
+        "created_at":    now_iso(),
+    }
+    with get_connection() as conn:
+        cursor = conn.execute(sql, row)
+        return cursor.lastrowid
+
+
+def link_incident_events(incident_id: int, event_ids: List[int]) -> None:
+    """Link a list of event IDs to an incident in incident_events."""
+    if not event_ids:
+        return
+    sql = "INSERT INTO incident_events (incident_id, event_id) VALUES (?, ?)"
+    rows = [(incident_id, eid) for eid in event_ids]
+    with get_connection() as conn:
+        conn.executemany(sql, rows)
+
+
+def get_incidents(
+    limit: int = 100,
+    offset: int = 0,
+    status: Optional[str] = None,
+) -> List[Dict[str, Any]]:
+    """Fetch incidents with optional status filter."""
+    params: Dict[str, Any] = {"limit": limit, "offset": offset}
+    where = ""
+    if status:
+        where = "WHERE status = :status"
+        params["status"] = status
+
+    sql = f"SELECT * FROM incidents {where} ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
+    with get_connection() as conn:
+        rows = conn.execute(sql, params).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_incident_events(incident_id: int) -> List[Dict[str, Any]]:
+    """Fetch all events linked to a given incident."""
+    sql = """
+        SELECT e.*
+        FROM events e
+        JOIN incident_events ie ON ie.event_id = e.id
+        WHERE ie.incident_id = ?
+        ORDER BY e.timestamp ASC
+    """
+    with get_connection() as conn:
+        rows = conn.execute(sql, (incident_id,)).fetchall()
+    return [dict(r) for r in rows]
+
+
+def count_incidents(status: Optional[str] = None) -> int:
+    if status:
+        with get_connection() as conn:
+            return conn.execute(
+                "SELECT COUNT(*) FROM incidents WHERE status = ?", (status,)
+            ).fetchone()[0]
+    with get_connection() as conn:
+        return conn.execute("SELECT COUNT(*) FROM incidents").fetchone()[0]
+
+
+# ──────────────────────────────────────────────
+# Dashboard helpers
+# ──────────────────────────────────────────────
+
+def get_top_source_ips(limit: int = 10) -> List[Dict[str, Any]]:
+    """Return top source IPs by event count."""
+    sql = """
+        SELECT source_ip, COUNT(*) as count
+        FROM events
+        WHERE source_ip IS NOT NULL
+        GROUP BY source_ip
+        ORDER BY count DESC
+        LIMIT ?
+    """
+    with get_connection() as conn:
+        rows = conn.execute(sql, (limit,)).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_event_type_distribution() -> List[Dict[str, Any]]:
+    """Return event counts grouped by event_type."""
+    sql = """
+        SELECT event_type, COUNT(*) as count
+        FROM events
+        GROUP BY event_type
+        ORDER BY count DESC
+    """
+    with get_connection() as conn:
+        rows = conn.execute(sql).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_severity_breakdown() -> List[Dict[str, Any]]:
+    """Return alert counts grouped by severity."""
+    sql = """
+        SELECT severity, COUNT(*) as count
+        FROM alerts
+        GROUP BY severity
+        ORDER BY count DESC
+    """
+    with get_connection() as conn:
+        rows = conn.execute(sql).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_event_timeline(bucket: str = "hour") -> List[Dict[str, Any]]:
+    """
+    Return event counts bucketed by time.
+    bucket: 'hour' or 'day'
+    """
+    fmt = "%Y-%m-%dT%H:00:00" if bucket == "hour" else "%Y-%m-%d"
+    sql = f"""
+        SELECT strftime('{fmt}', timestamp) as period, COUNT(*) as count
+        FROM events
+        GROUP BY period
+        ORDER BY period ASC
+    """
+    with get_connection() as conn:
+        rows = conn.execute(sql).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_unique_ip_count() -> int:
+    with get_connection() as conn:
+        return conn.execute(
+            "SELECT COUNT(DISTINCT source_ip) FROM events WHERE source_ip IS NOT NULL"
+        ).fetchone()[0]
+
+
+def clear_all_data() -> None:
+    """Delete all rows from all tables. Used for testing/reset only."""
+    with get_connection() as conn:
+        conn.executescript("""
+            DELETE FROM incident_events;
+            DELETE FROM incidents;
+            DELETE FROM alerts;
+            DELETE FROM events;
+        """)
+    logger.warning("All data cleared from database.")

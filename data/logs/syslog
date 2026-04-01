@@ -1,0 +1,12 @@
+Mar 25 03:00:00 ubuntu-vm systemd[1]: Started OpenSSH Server Daemon.
+Mar 25 03:01:00 ubuntu-vm systemd[1]: Started Session 12 of user alice.
+Mar 25 03:02:00 ubuntu-vm kernel: [12345.678] EXT4-fs (sda1): mounted filesystem with ordered data mode.
+Mar 25 03:05:00 ubuntu-vm CRON[2001]: (root) CMD (/usr/lib/cron/run-crons)
+Mar 25 03:06:00 ubuntu-vm CRON[2002]: (alice) CMD (/home/alice/backup.sh)
+Mar 25 03:10:00 ubuntu-vm systemd[1]: nginx.service: Failed with result 'exit-code'.
+Mar 25 03:11:00 ubuntu-vm systemd[1]: Failed to start A high performance web server and a reverse proxy server.
+Mar 25 03:12:00 ubuntu-vm kernel: [12500.001] Out of memory: Killed process 3301 (python3) total-vm:512000kB
+Mar 25 03:15:00 ubuntu-vm systemd[1]: Stopped OpenSSH Server Daemon.
+Mar 25 03:16:00 ubuntu-vm systemd[1]: Started OpenSSH Server Daemon.
+Mar 25 03:20:00 ubuntu-vm kernel: [13000.500] TCP: request_sock_TCP: Possible SYN flooding on port 22. Sending cookies.
+Mar 25 03:25:00 ubuntu-vm rsyslogd[500]: error: some syslog daemon error occurred

