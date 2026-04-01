@@ -36,6 +36,7 @@ from storage import (
 )
 from collector import collect_all
 from aggregator import aggregate_events
+from anomaly_scoring import score_sessions
 from detection import run_detection
 from correlation import correlate_alerts
 from risk_scoring import score_alert, score_incident
@@ -63,30 +64,58 @@ def run(reset: bool = False) -> None:
         return
 
     # ── 3. Store events ─────────────────────────────────────
-    logger.info(f"Stage 2/5 — Storing {len(events)} events into database...")
+    logger.info(f"Stage 2/6 — Storing {len(events)} events into database...")
     insert_events_bulk(events)
     logger.info(f"  Total events in DB: {count_events()}")
 
     # ── 4. Aggregate ────────────────────────────────────────
-    logger.info("Stage 3/5 — Aggregating events into sessions...")
+    logger.info("Stage 3/6 — Aggregating events into sessions...")
     sessions = aggregate_events(events)
     logger.info(f"  Sessions created: {len(sessions)}")
 
-    # ── 5. Detect ───────────────────────────────────────────
-    logger.info("Stage 4/5 — Running detection rules...")
+    # ── 5. Anomaly scoring (ML) ─────────────────────────────
+    logger.info("Stage 4/6 — Running Isolation Forest anomaly scoring...")
+    score_sessions(sessions)
+    high_anomaly   = sum(1 for s in sessions if s.get("anomaly_level") == "high")
+    medium_anomaly = sum(1 for s in sessions if s.get("anomaly_level") == "medium")
+    logger.info(f"  Anomaly levels — high: {high_anomaly}, medium: {medium_anomaly}, "
+                f"low: {len(sessions) - high_anomaly - medium_anomaly}")
+
+    # ── 6. Detect ───────────────────────────────────────────
+    logger.info("Stage 5/6 — Running detection rules...")
     raw_alerts = run_detection(sessions)
     logger.info(f"  Raw alerts fired: {len(raw_alerts)}")
 
-    # Score each alert (no anomaly bonus yet — ML is Week 4)
+    # Build a lookup: session_key → anomaly info for propagation into alerts
+    session_anomaly = {
+        s["session_key"]: {
+            "anomaly_score": s.get("anomaly_score", 0.0),
+            "anomaly_level": s.get("anomaly_level", "low"),
+        }
+        for s in sessions
+    }
+
+    # Propagate anomaly level into each alert, then score
     for alert in raw_alerts:
+        key = alert.get("session_key", "")
+        info = session_anomaly.get(key, {})
+        alert["anomaly_score"] = info.get("anomaly_score", 0.0)
+        alert["anomaly_level"] = info.get("anomaly_level", "low")
         score_alert(alert)
 
-    # ── 6. Correlate ────────────────────────────────────────
-    logger.info("Stage 5/5 — Correlating alerts into incidents...")
+    # ── 7. Correlate ────────────────────────────────────────
+    logger.info("Stage 6/6 — Correlating alerts into incidents...")
     incidents = correlate_alerts(raw_alerts)
 
-    # Score each incident
+    # Propagate highest anomaly level among contributing alerts to each incident
     for incident in incidents:
+        levels = [a.get("anomaly_level", "low") for a in incident.get("alerts", [])]
+        if "high" in levels:
+            incident["anomaly_level"] = "high"
+        elif "medium" in levels:
+            incident["anomaly_level"] = "medium"
+        else:
+            incident["anomaly_level"] = "low"
         score_incident(incident)
 
     # ── 7. Store alerts + incidents ─────────────────────────

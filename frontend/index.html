@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SentinelAI — SOC Dashboard</title>
+  <style>
+    /* ── Reset & Base ───────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #1c2128;
+      --border:    #30363d;
+      --text:      #e6edf3;
+      --muted:     #8b949e;
+      --accent:    #58a6ff;
+      --critical:  #f85149;
+      --high:      #ff7b72;
+      --medium:    #e3b341;
+      --low:       #3fb950;
+      --info:      #58a6ff;
+      --radius:    8px;
+    }
+    html, body { height: 100%; font-family: 'Segoe UI', system-ui, sans-serif;
+                 background: var(--bg); color: var(--text); font-size: 14px; }
+
+    /* ── Layout ────────────────────────────────────────────── */
+    .shell     { display: flex; height: 100vh; overflow: hidden; }
+    .sidebar   { width: 220px; min-width: 220px; background: var(--surface);
+                 border-right: 1px solid var(--border); display: flex;
+                 flex-direction: column; padding: 0 0 16px; }
+    .main      { flex: 1; overflow-y: auto; padding: 24px; }
+
+    /* ── Sidebar ────────────────────────────────────────────── */
+    .logo      { padding: 20px 18px 16px; border-bottom: 1px solid var(--border); }
+    .logo h1   { font-size: 17px; font-weight: 700; color: var(--accent);
+                 letter-spacing: .5px; }
+    .logo span { font-size: 11px; color: var(--muted); }
+    nav        { margin-top: 8px; flex: 1; }
+    nav a      { display: flex; align-items: center; gap: 10px; padding: 9px 18px;
+                 color: var(--muted); text-decoration: none; font-size: 13px;
+                 border-left: 3px solid transparent; transition: all .15s; }
+    nav a:hover, nav a.active { color: var(--text); background: var(--surface2);
+                                border-left-color: var(--accent); }
+    nav a svg  { width: 16px; height: 16px; flex-shrink: 0; }
+    .sidebar-footer { padding: 12px 18px; border-top: 1px solid var(--border); }
+    .status-dot { display: inline-block; width: 8px; height: 8px;
+                  border-radius: 50%; background: var(--low);
+                  margin-right: 6px; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    /* ── Page sections ─────────────────────────────────────── */
+    .page      { display: none; }
+    .page.active { display: block; }
+    h2         { font-size: 18px; font-weight: 600; margin-bottom: 20px; color: var(--text); }
+    h3         { font-size: 14px; font-weight: 600; margin-bottom: 12px; color: var(--text); }
+
+    /* ── Stat cards ─────────────────────────────────────────── */
+    .stats     { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px,1fr));
+                 gap: 14px; margin-bottom: 24px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border);
+                 border-radius: var(--radius); padding: 16px 18px; }
+    .stat-card .label { font-size: 11px; color: var(--muted); text-transform: uppercase;
+                        letter-spacing: .6px; margin-bottom: 6px; }
+    .stat-card .value { font-size: 28px; font-weight: 700; line-height: 1; }
+    .stat-card.critical .value { color: var(--critical); }
+    .stat-card.high     .value { color: var(--high); }
+    .stat-card.medium   .value { color: var(--medium); }
+    .stat-card.low      .value { color: var(--low); }
+    .stat-card.info     .value { color: var(--info); }
+
+    /* ── Grid panels ─────────────────────────────────────────── */
+    .grid-2  { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+    .panel   { background: var(--surface); border: 1px solid var(--border);
+               border-radius: var(--radius); padding: 16px 18px; }
+
+    /* ── Tables ─────────────────────────────────────────────── */
+    .table-wrap { overflow-x: auto; }
+    table    { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th       { text-align: left; padding: 8px 10px; color: var(--muted);
+               font-size: 11px; text-transform: uppercase; letter-spacing: .5px;
+               border-bottom: 1px solid var(--border); white-space: nowrap; }
+    td       { padding: 9px 10px; border-bottom: 1px solid var(--border);
+               vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--surface2); }
+    .empty   { color: var(--muted); text-align: center; padding: 32px; }
+
+    /* ── Badges ─────────────────────────────────────────────── */
+    .badge   { display: inline-block; padding: 2px 8px; border-radius: 20px;
+               font-size: 11px; font-weight: 600; text-transform: uppercase;
+               letter-spacing: .4px; }
+    .badge-critical { background: rgba(248,81,73,.15);  color: var(--critical); }
+    .badge-high     { background: rgba(255,123,114,.15); color: var(--high); }
+    .badge-medium   { background: rgba(227,179,65,.15);  color: var(--medium); }
+    .badge-low      { background: rgba(63,185,80,.15);   color: var(--low); }
+    .badge-open         { background: rgba(248,81,73,.15);  color: var(--critical); }
+    .badge-investigating{ background: rgba(227,179,65,.15);  color: var(--medium); }
+    .badge-closed       { background: rgba(63,185,80,.15);   color: var(--low); }
+
+    /* ── Score bar ─────────────────────────────────────────── */
+    .score-bar { display: flex; align-items: center; gap: 8px; }
+    .bar-track { flex: 1; height: 5px; background: var(--border); border-radius: 3px;
+                 min-width: 60px; }
+    .bar-fill  { height: 100%; border-radius: 3px; transition: width .3s; }
+
+    /* ── Filters / controls ─────────────────────────────────── */
+    .toolbar   { display: flex; gap: 10px; margin-bottom: 16px; align-items: center;
+                 flex-wrap: wrap; }
+    select, input { background: var(--surface); border: 1px solid var(--border);
+                    color: var(--text); border-radius: 6px; padding: 6px 10px;
+                    font-size: 13px; outline: none; }
+    select:focus, input:focus { border-color: var(--accent); }
+    button   { background: var(--accent); color: #0d1117; border: none; border-radius: 6px;
+               padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+    button:hover { opacity: .88; }
+    .btn-sm  { padding: 3px 10px; font-size: 11px; }
+    .btn-ghost { background: var(--surface2); color: var(--text);
+                 border: 1px solid var(--border); }
+    .btn-ghost:hover { border-color: var(--accent); }
+
+    /* ── Sparkline / mini chart ─────────────────────────────── */
+    .chart-wrap { height: 120px; position: relative; overflow: hidden; }
+    canvas { width: 100% !important; }
+
+    /* ── Detail modal ────────────────────────────────────────── */
+    .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.6);
+               z-index: 100; align-items: center; justify-content: center; }
+    .overlay.open { display: flex; }
+    .modal   { background: var(--surface); border: 1px solid var(--border);
+               border-radius: var(--radius); width: 640px; max-width: 96vw;
+               max-height: 90vh; overflow-y: auto; padding: 24px; position: relative; }
+    .modal h3 { margin-bottom: 16px; font-size: 16px; }
+    .modal-close { position: absolute; top: 14px; right: 16px; background: none;
+                   border: none; color: var(--muted); font-size: 20px; cursor: pointer;
+                   line-height: 1; }
+    .modal-close:hover { color: var(--text); }
+    .kv-grid { display: grid; grid-template-columns: 140px 1fr; gap: 6px 12px;
+               font-size: 13px; margin-bottom: 16px; }
+    .kv-key  { color: var(--muted); }
+    .desc-box{ background: var(--surface2); border: 1px solid var(--border);
+               border-radius: 6px; padding: 12px; font-size: 13px; line-height: 1.6;
+               color: var(--text); }
+
+    /* ── Bar chart (horizontal) ─────────────────────────────── */
+    .hbar    { display: flex; flex-direction: column; gap: 7px; }
+    .hbar-row{ display: flex; align-items: center; gap: 8px; font-size: 12px; }
+    .hbar-label { width: 140px; color: var(--muted); overflow: hidden;
+                  text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
+    .hbar-track { flex: 1; height: 14px; background: var(--border); border-radius: 3px; }
+    .hbar-fill  { height: 100%; border-radius: 3px; background: var(--accent);
+                  transition: width .4s; }
+    .hbar-count { width: 36px; text-align: right; color: var(--muted); flex-shrink: 0; }
+
+    /* ── Scrollbar ───────────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+    @media (max-width: 700px) {
+      .grid-2 { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ── Sidebar ────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="logo">
+      <h1>🛡 SentinelAI</h1>
+      <span>SIEM Prototype v1.0</span>
+    </div>
+    <nav>
+      <a href="#" class="active" data-page="overview" onclick="nav(this)">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.5A1.5 1.5 0 012.5 1h3A1.5 1.5 0 017 2.5v3A1.5 1.5 0 015.5 7h-3A1.5 1.5 0 011 5.5v-3zm8 0A1.5 1.5 0 0110.5 1h3A1.5 1.5 0 0115 2.5v3A1.5 1.5 0 0113.5 7h-3A1.5 1.5 0 019 5.5v-3zm-8 8A1.5 1.5 0 012.5 9h3A1.5 1.5 0 017 10.5v3A1.5 1.5 0 015.5 15h-3A1.5 1.5 0 011 13.5v-3zm8 0A1.5 1.5 0 0110.5 9h3A1.5 1.5 0 0115 10.5v3A1.5 1.5 0 0113.5 15h-3A1.5 1.5 0 019 13.5v-3z"/></svg>
+        Overview
+      </a>
+      <a href="#" data-page="incidents" onclick="nav(this)">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 1a7 7 0 100 14A7 7 0 008 1zM0 8a8 8 0 1116 0A8 8 0 010 8z"/><path d="M7.002 11a1 1 0 112 0 1 1 0 01-2 0zM7.1 4.995a.905.905 0 111.8 0l-.35 3.507a.552.552 0 01-1.1 0L7.1 4.995z"/></svg>
+        Incidents
+      </a>
+      <a href="#" data-page="alerts" onclick="nav(this)">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 16a2 2 0 001.985-1.75c.017-.137-.097-.25-.235-.25h-3.5c-.138 0-.252.113-.235.25A2 2 0 008 16zm.25-14.75a.75.75 0 00-1.5 0v.682A5.502 5.502 0 002.5 7.5c0 2.688-.5 3.5-1.5 4.5h14c-1-.998-1.5-1.812-1.5-4.5a5.502 5.502 0 00-4.25-5.568V1.25z"/></svg>
+        Alerts
+      </a>
+      <a href="#" data-page="events" onclick="nav(this)">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M2 2.5A2.5 2.5 0 014.5 0h8.75a.75.75 0 01.75.75v12.5a.75.75 0 01-.75.75h-2.5a.75.75 0 110-1.5h1.75v-2h-8a1 1 0 00-.714 1.7.75.75 0 01-1.072 1.05A2.495 2.495 0 012 11.5v-9zm10.5-1V9h-8c-.356 0-.694.074-1 .208V2.5a1 1 0 011-1h8z"/></svg>
+        Events
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <span class="status-dot"></span>
+      <span style="font-size:12px;color:var(--muted)">API Connected</span>
+    </div>
+  </aside>
+
+  <!-- ── Main ───────────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- Overview page -->
+    <div id="page-overview" class="page active">
+      <h2>SOC Overview</h2>
+      <div class="stats" id="stat-cards">
+        <div class="stat-card info">   <div class="label">Total Events</div>   <div class="value" id="s-events">—</div></div>
+        <div class="stat-card medium"> <div class="label">Total Alerts</div>   <div class="value" id="s-alerts">—</div></div>
+        <div class="stat-card critical"><div class="label">Open Incidents</div><div class="value" id="s-incidents">—</div></div>
+        <div class="stat-card critical"><div class="label">Critical Alerts</div><div class="value" id="s-critical">—</div></div>
+        <div class="stat-card high">   <div class="label">High Alerts</div>    <div class="value" id="s-high">—</div></div>
+        <div class="stat-card medium"> <div class="label">Medium Alerts</div>  <div class="value" id="s-medium">—</div></div>
+        <div class="stat-card low">    <div class="label">Low Alerts</div>     <div class="value" id="s-low">—</div></div>
+        <div class="stat-card info">   <div class="label">Unique IPs</div>     <div class="value" id="s-ips">—</div></div>
+      </div>
+
+      <div class="grid-2">
+        <div class="panel">
+          <h3>Top Source IPs</h3>
+          <div id="top-ips-chart" class="hbar"></div>
+        </div>
+        <div class="panel">
+          <h3>Alert Severity Breakdown</h3>
+          <div id="severity-chart" class="hbar"></div>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-bottom:20px">
+        <h3>Event Type Distribution</h3>
+        <div id="etype-chart" class="hbar"></div>
+      </div>
+
+      <div class="panel">
+        <h3>Recent Incidents</h3>
+        <div class="table-wrap">
+          <table id="recent-incidents-table">
+            <thead><tr>
+              <th>#</th><th>Title</th><th>Source IP</th><th>User</th>
+              <th>Risk</th><th>Severity</th><th>Status</th><th>Created</th>
+            </tr></thead>
+            <tbody id="recent-incidents-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Incidents page -->
+    <div id="page-incidents" class="page">
+      <h2>Incidents</h2>
+      <div class="toolbar">
+        <select id="inc-status-filter" onchange="loadIncidents()">
+          <option value="">All statuses</option>
+          <option value="open">Open</option>
+          <option value="investigating">Investigating</option>
+          <option value="closed">Closed</option>
+        </select>
+        <button onclick="loadIncidents()">Refresh</button>
+        <span id="inc-count" style="color:var(--muted);font-size:12px;margin-left:4px"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Title</th><th>Source IP</th><th>User</th>
+            <th>Risk Score</th><th>Anomaly</th><th>Status</th><th>Created</th><th></th>
+          </tr></thead>
+          <tbody id="incidents-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Alerts page -->
+    <div id="page-alerts" class="page">
+      <h2>Alerts</h2>
+      <div class="toolbar">
+        <select id="alert-sev-filter" onchange="loadAlerts()">
+          <option value="">All severities</option>
+          <option value="critical">Critical</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+        <button onclick="loadAlerts()">Refresh</button>
+        <span id="alert-count" style="color:var(--muted);font-size:12px;margin-left:4px"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Rule</th><th>Severity</th><th>Risk Score</th>
+            <th>Anomaly</th><th>Source IP</th><th>Description</th><th>Created</th>
+          </tr></thead>
+          <tbody id="alerts-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Events page -->
+    <div id="page-events" class="page">
+      <h2>Events</h2>
+      <div class="toolbar">
+        <select id="evt-source-filter" onchange="loadEvents()">
+          <option value="">All sources</option>
+          <option value="auth">auth</option>
+          <option value="syslog">syslog</option>
+          <option value="custom">custom</option>
+        </select>
+        <select id="evt-type-filter" onchange="loadEvents()">
+          <option value="">All types</option>
+          <option value="login_failure">login_failure</option>
+          <option value="login_success">login_success</option>
+          <option value="login_invalid_user">login_invalid_user</option>
+          <option value="sudo_success">sudo_success</option>
+          <option value="sudo_failure">sudo_failure</option>
+          <option value="service_started">service_started</option>
+          <option value="service_failed">service_failed</option>
+          <option value="file_access">file_access</option>
+          <option value="file_modified">file_modified</option>
+          <option value="sensitive_command">sensitive_command</option>
+          <option value="network_anomaly">network_anomaly</option>
+          <option value="system_error">system_error</option>
+        </select>
+        <input id="evt-ip-filter" placeholder="Filter by IP..." style="width:160px"
+               oninput="loadEvents()" />
+        <button onclick="loadEvents()">Refresh</button>
+        <span id="evt-count" style="color:var(--muted);font-size:12px;margin-left:4px"></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr>
+            <th>#</th><th>Timestamp</th><th>Source</th><th>Type</th>
+            <th>Source IP</th><th>User</th><th>Status</th><th>Message</th>
+          </tr></thead>
+          <tbody id="events-body"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── Incident detail modal ──────────────────────────────── -->
+<div class="overlay" id="inc-modal" onclick="closeModal(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <h3 id="modal-title">Incident Detail</h3>
+    <div class="kv-grid" id="modal-kv"></div>
+    <div class="desc-box" id="modal-desc"></div>
+    <div style="margin-top:16px">
+      <h3 style="margin-bottom:10px">Update Status</h3>
+      <div style="display:flex;gap:8px">
+        <select id="modal-status-sel">
+          <option value="open">Open</option>
+          <option value="investigating">Investigating</option>
+          <option value="closed">Closed</option>
+        </select>
+        <button onclick="updateIncidentStatus()">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:8000';
+let _modalIncidentId = null;
+
+/* ── Navigation ──────────────────────────────────────────── */
+function nav(el) {
+  document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+  el.classList.add('active');
+  const page = el.dataset.page;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  if (page === 'overview')  loadOverview();
+  if (page === 'incidents') loadIncidents();
+  if (page === 'alerts')    loadAlerts();
+  if (page === 'events')    loadEvents();
+  return false;
+}
+
+/* ── Fetch helper ─────────────────────────────────────────── */
+async function api(path) {
+  const r = await fetch(API + path);
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+
+async function apiPatch(path, body) {
+  const r = await fetch(API + path, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!r.ok) throw new Error(r.statusText);
+  return r.json();
+}
+
+/* ── Severity badge ──────────────────────────────────────── */
+function badge(val, cls) {
+  cls = cls || val.toLowerCase().replace(/\s+/g,'');
+  return `<span class="badge badge-${cls}">${val}</span>`;
+}
+
+function scoreBar(score) {
+  const pct = Math.min(score, 100);
+  const col = pct >= 80 ? 'var(--critical)'
+            : pct >= 60 ? 'var(--high)'
+            : pct >= 30 ? 'var(--medium)' : 'var(--low)';
+  return `<div class="score-bar">
+    <span style="min-width:28px;font-weight:600;color:${col}">${score}</span>
+    <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${col}"></div></div>
+  </div>`;
+}
+
+function hbar(data, labelKey, countKey, color) {
+  if (!data || !data.length) return '<p class="empty">No data</p>';
+  const max = Math.max(...data.map(d => d[countKey]));
+  return data.map(d => `
+    <div class="hbar-row">
+      <div class="hbar-label" title="${d[labelKey]}">${d[labelKey] || '—'}</div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${max?Math.round(d[countKey]/max*100):0}%;background:${color||'var(--accent)'}"></div></div>
+      <div class="hbar-count">${d[countKey]}</div>
+    </div>`).join('');
+}
+
+function fmtTs(ts) {
+  if (!ts) return '—';
+  return ts.replace('T', ' ').substring(0, 16);
+}
+
+/* ── Overview ─────────────────────────────────────────────── */
+async function loadOverview() {
+  try {
+    const [summary, topIps, severity, etypes, incidents] = await Promise.all([
+      api('/api/dashboard/summary'),
+      api('/api/dashboard/top-ips'),
+      api('/api/dashboard/severity'),
+      api('/api/dashboard/event-types'),
+      api('/api/incidents?limit=8'),
+    ]);
+
+    document.getElementById('s-events').textContent    = summary.total_events;
+    document.getElementById('s-alerts').textContent    = summary.total_alerts;
+    document.getElementById('s-incidents').textContent = summary.open_incidents;
+    document.getElementById('s-critical').textContent  = summary.critical_alerts;
+    document.getElementById('s-high').textContent      = summary.high_alerts;
+    document.getElementById('s-medium').textContent    = summary.medium_alerts;
+    document.getElementById('s-low').textContent       = summary.low_alerts;
+    document.getElementById('s-ips').textContent       = summary.unique_source_ips;
+
+    document.getElementById('top-ips-chart').innerHTML =
+      hbar(topIps, 'source_ip', 'count', 'var(--info)');
+
+    const sevColors = { critical:'var(--critical)', high:'var(--high)',
+                        medium:'var(--medium)', low:'var(--low)' };
+    document.getElementById('severity-chart').innerHTML =
+      severity.length ? severity.map(d => `
+        <div class="hbar-row">
+          <div class="hbar-label">${d.severity}</div>
+          <div class="hbar-track"><div class="hbar-fill" style="width:${Math.round(d.count/Math.max(...severity.map(x=>x.count))*100)}%;background:${sevColors[d.severity]||'var(--accent)'}"></div></div>
+          <div class="hbar-count">${d.count}</div>
+        </div>`).join('') : '<p class="empty">No alerts yet</p>';
+
+    document.getElementById('etype-chart').innerHTML =
+      hbar(etypes.slice(0,12), 'event_type', 'count');
+
+    document.getElementById('recent-incidents-body').innerHTML =
+      incidents.length ? incidents.map(i => `
+        <tr>
+          <td>${i.id}</td>
+          <td><a href="#" style="color:var(--accent);text-decoration:none"
+               onclick="openIncidentModal(${i.id})">${i.title}</a></td>
+          <td>${i.source_ip||'—'}</td>
+          <td>${i.username||'—'}</td>
+          <td>${scoreBar(i.risk_score)}</td>
+          <td>${badge(i.risk_score>=80?'critical':i.risk_score>=60?'high':i.risk_score>=30?'medium':'low')}</td>
+          <td>${badge(i.status)}</td>
+          <td>${fmtTs(i.created_at)}</td>
+        </tr>`).join('') : `<tr><td colspan="8" class="empty">No incidents yet — run the pipeline first.</td></tr>`;
+
+  } catch(e) {
+    console.error('Overview error:', e);
+  }
+}
+
+/* ── Incidents ────────────────────────────────────────────── */
+async function loadIncidents() {
+  const status = document.getElementById('inc-status-filter').value;
+  const url = '/api/incidents?limit=200' + (status ? '&status=' + status : '');
+  try {
+    const data = await api(url);
+    document.getElementById('inc-count').textContent = data.length + ' incidents';
+    document.getElementById('incidents-body').innerHTML =
+      data.length ? data.map(i => `
+        <tr>
+          <td>${i.id}</td>
+          <td><a href="#" style="color:var(--accent);text-decoration:none"
+               onclick="openIncidentModal(${i.id})">${i.title}</a></td>
+          <td>${i.source_ip||'—'}</td>
+          <td>${i.username||'—'}</td>
+          <td>${scoreBar(i.risk_score)}</td>
+          <td>${i.anomaly_level ? badge(i.anomaly_level) : '—'}</td>
+          <td>${badge(i.status)}</td>
+          <td>${fmtTs(i.created_at)}</td>
+          <td><button class="btn-sm btn-ghost" onclick="openIncidentModal(${i.id})">Details</button></td>
+        </tr>`).join('') : `<tr><td colspan="9" class="empty">No incidents found.</td></tr>`;
+  } catch(e) { console.error(e); }
+}
+
+/* ── Alerts ───────────────────────────────────────────────── */
+async function loadAlerts() {
+  const sev = document.getElementById('alert-sev-filter').value;
+  const url = '/api/alerts?limit=200' + (sev ? '&severity=' + sev : '');
+  try {
+    const data = await api(url);
+    document.getElementById('alert-count').textContent = data.length + ' alerts';
+    document.getElementById('alerts-body').innerHTML =
+      data.length ? data.map(a => `
+        <tr>
+          <td>${a.id}</td>
+          <td style="font-family:monospace;font-size:12px">${a.rule_name}</td>
+          <td>${badge(a.severity)}</td>
+          <td>${scoreBar(a.risk_score)}</td>
+          <td>${a.anomaly_level ? badge(a.anomaly_level) : '—'}</td>
+          <td>${a.source_ip||'—'}</td>
+          <td style="max-width:320px;color:var(--muted);font-size:12px">${a.description}</td>
+          <td>${fmtTs(a.created_at)}</td>
+        </tr>`).join('') : `<tr><td colspan="8" class="empty">No alerts found.</td></tr>`;
+  } catch(e) { console.error(e); }
+}
+
+/* ── Events ───────────────────────────────────────────────── */
+async function loadEvents() {
+  const source = document.getElementById('evt-source-filter').value;
+  const type   = document.getElementById('evt-type-filter').value;
+  const ip     = document.getElementById('evt-ip-filter').value.trim();
+  let url = '/api/events?limit=300';
+  if (source) url += '&log_source=' + source;
+  if (type)   url += '&event_type='  + type;
+  if (ip)     url += '&source_ip='   + encodeURIComponent(ip);
+  try {
+    const data = await api(url);
+    document.getElementById('evt-count').textContent = data.length + ' events';
+    document.getElementById('events-body').innerHTML =
+      data.length ? data.map(e => `
+        <tr>
+          <td>${e.id}</td>
+          <td style="white-space:nowrap">${fmtTs(e.timestamp)}</td>
+          <td><span style="color:var(--muted);font-size:12px">${e.log_source}</span></td>
+          <td><span style="font-family:monospace;font-size:12px">${e.event_type}</span></td>
+          <td>${e.source_ip||'—'}</td>
+          <td>${e.username||'—'}</td>
+          <td>${badge(e.status === 'success' ? 'low' : e.status === 'failure' ? 'high' : 'investigating', e.status)}</td>
+          <td style="color:var(--muted);font-size:12px;max-width:280px">${e.message}</td>
+        </tr>`).join('') : `<tr><td colspan="8" class="empty">No events found.</td></tr>`;
+  } catch(e) { console.error(e); }
+}
+
+/* ── Incident modal ───────────────────────────────────────── */
+async function openIncidentModal(id) {
+  _modalIncidentId = id;
+  try {
+    const i = await api('/api/incidents/' + id);
+    document.getElementById('modal-title').textContent = i.title;
+    document.getElementById('modal-desc').textContent  = i.description;
+    document.getElementById('modal-status-sel').value  = i.status;
+    const sev = i.risk_score >= 80 ? 'critical'
+              : i.risk_score >= 60 ? 'high'
+              : i.risk_score >= 30 ? 'medium' : 'low';
+    document.getElementById('modal-kv').innerHTML = `
+      <span class="kv-key">ID</span>          <span>${i.id}</span>
+      <span class="kv-key">Source IP</span>   <span>${i.source_ip||'—'}</span>
+      <span class="kv-key">Username</span>    <span>${i.username||'—'}</span>
+      <span class="kv-key">Risk Score</span>  <span>${scoreBar(i.risk_score)}</span>
+      <span class="kv-key">Severity</span>    <span>${badge(sev)}</span>
+      <span class="kv-key">Anomaly Level</span><span>${i.anomaly_level ? badge(i.anomaly_level) : '—'}</span>
+      <span class="kv-key">Status</span>      <span>${badge(i.status)}</span>
+      <span class="kv-key">Created</span>     <span>${fmtTs(i.created_at)}</span>
+    `;
+    document.getElementById('inc-modal').classList.add('open');
+  } catch(e) { console.error(e); }
+  return false;
+}
+
+function closeModal(e) {
+  if (!e || e.target === document.getElementById('inc-modal')) {
+    document.getElementById('inc-modal').classList.remove('open');
+  }
+}
+
+async function updateIncidentStatus() {
+  if (!_modalIncidentId) return;
+  const status = document.getElementById('modal-status-sel').value;
+  try {
+    await apiPatch('/api/incidents/' + _modalIncidentId + '/status', { status });
+    closeModal();
+    loadIncidents();
+    loadOverview();
+  } catch(e) { alert('Failed to update: ' + e.message); }
+}
+
+/* ── Init ─────────────────────────────────────────────────── */
+loadOverview();
+</script>
+</body>
+</html>
