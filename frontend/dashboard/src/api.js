@@ -1,7 +1,26 @@
 const BASE = '/api'
 
+// ── Token helpers ─────────────────────────────────────────────
+export const token = {
+  get:    ()      => localStorage.getItem('sentinel_token'),
+  set:    (t)     => localStorage.setItem('sentinel_token', t),
+  remove: ()      => localStorage.removeItem('sentinel_token'),
+  user:   ()      => {
+    const raw = localStorage.getItem('sentinel_user')
+    return raw ? JSON.parse(raw) : null
+  },
+  setUser: (u)    => localStorage.setItem('sentinel_user', JSON.stringify(u)),
+  clear:   ()     => { localStorage.removeItem('sentinel_token'); localStorage.removeItem('sentinel_user') },
+}
+
+function authHeaders() {
+  const t = token.get()
+  return t ? { Authorization: `Bearer ${t}` } : {}
+}
+
 async function get(path) {
-  const r = await fetch(BASE + path)
+  const r = await fetch(BASE + path, { headers: authHeaders() })
+  if (r.status === 401) { token.clear(); window.location.reload(); return }
   if (!r.ok) throw new Error(`${r.status} ${r.statusText}`)
   return r.json()
 }
@@ -9,9 +28,10 @@ async function get(path) {
 async function patch(path, body) {
   const r = await fetch(BASE + path, {
     method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(body),
   })
+  if (r.status === 401) { token.clear(); window.location.reload(); return }
   if (!r.ok) throw new Error(`${r.status} ${r.statusText}`)
   return r.json()
 }
@@ -46,4 +66,32 @@ export const api = {
   incident:      (id) => get(`/incidents/${id}`),
   incidentEvents:(id) => get(`/incidents/${id}/events`),
   updateStatus:  (id, status) => patch(`/incidents/${id}/status`, { status }),
+
+  // Auth
+  login: async (username, password) => {
+    const form = new URLSearchParams({ username, password })
+    const r = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form,
+    })
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}))
+      throw new Error(err.detail || 'Login failed')
+    }
+    return r.json()
+  },
+  register: async (username, email, password) => {
+    const r = await fetch('/api/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, email, password }),
+    })
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}))
+      throw new Error(err.detail || 'Registration failed')
+    }
+    return r.json()
+  },
+  me: () => get('/auth/me'),
 }
