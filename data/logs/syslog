@@ -1,12 +1,1279 @@
-Mar 25 03:00:00 ubuntu-vm systemd[1]: Started OpenSSH Server Daemon.
-Mar 25 03:01:00 ubuntu-vm systemd[1]: Started Session 12 of user alice.
-Mar 25 03:02:00 ubuntu-vm kernel: [12345.678] EXT4-fs (sda1): mounted filesystem with ordered data mode.
-Mar 25 03:05:00 ubuntu-vm CRON[2001]: (root) CMD (/usr/lib/cron/run-crons)
-Mar 25 03:06:00 ubuntu-vm CRON[2002]: (alice) CMD (/home/alice/backup.sh)
-Mar 25 03:10:00 ubuntu-vm systemd[1]: nginx.service: Failed with result 'exit-code'.
-Mar 25 03:11:00 ubuntu-vm systemd[1]: Failed to start A high performance web server and a reverse proxy server.
-Mar 25 03:12:00 ubuntu-vm kernel: [12500.001] Out of memory: Killed process 3301 (python3) total-vm:512000kB
-Mar 25 03:15:00 ubuntu-vm systemd[1]: Stopped OpenSSH Server Daemon.
-Mar 25 03:16:00 ubuntu-vm systemd[1]: Started OpenSSH Server Daemon.
-Mar 25 03:20:00 ubuntu-vm kernel: [13000.500] TCP: request_sock_TCP: Possible SYN flooding on port 22. Sending cookies.
-Mar 25 03:25:00 ubuntu-vm rsyslogd[500]: error: some syslog daemon error occurred
+Apr  4 15:49:36 majeed-virtual-machine systemd[1]: rsyslog.service: Sent signal SIGHUP to main process 741 (rsyslogd) on client request.
+Apr  4 15:49:36 majeed-virtual-machine logrotate[772]: error: destination /var/log/suricata/fast.log.1 already exists, renaming to /var/log/suricata/fast.log.1-2026040415.backup
+Apr  4 15:49:36 majeed-virtual-machine logrotate[772]: error: destination /var/log/suricata/stats.log.1 already exists, renaming to /var/log/suricata/stats.log.1-2026040415.backup
+Apr  4 15:49:37 majeed-virtual-machine NetworkManager[703]: <info>  [1775317777.2914] manager: NetworkManager state is now CONNECTED_GLOBAL
+Apr  4 15:49:37 majeed-virtual-machine logrotate[772]: error: destination /var/log/suricata/suricata.log.1 already exists, renaming to /var/log/suricata/suricata.log.1-2026040415.backup
+Apr  4 15:49:37 majeed-virtual-machine logrotate[772]: error: destination /var/log/suricata/eve.json.1 already exists, renaming to /var/log/suricata/eve.json.1-2026040415.backup
+Apr  4 15:49:37 majeed-virtual-machine systemd[1]: Created slice User Slice of UID 1000.
+Apr  4 15:49:37 majeed-virtual-machine NetworkManager[703]: <info>  [1775317777.6920] dhcp4 (ens37): state changed new lease, address=192.168.56.130
+Apr  4 15:49:37 majeed-virtual-machine avahi-daemon[695]: Joining mDNS multicast group on interface ens37.IPv4 with address 192.168.56.130.
+Apr  4 15:49:37 majeed-virtual-machine NetworkManager[703]: <info>  [1775317777.6965] device (ens37): state change: ip-config -> ip-check (reason 'none', sys-iface-state: 'managed')
+Apr  4 15:49:37 majeed-virtual-machine avahi-daemon[695]: New relevant interface ens37.IPv4 for mDNS.
+Apr  4 15:49:37 majeed-virtual-machine avahi-daemon[695]: Registering new address record for 192.168.56.130 on ens37.IPv4.
+Apr  4 15:49:37 majeed-virtual-machine NetworkManager[703]: <info>  [1775317777.7183] device (ens37): state change: ip-check -> secondaries (reason 'none', sys-iface-state: 'managed')
+Apr  4 15:49:37 majeed-virtual-machine NetworkManager[703]: <info>  [1775317777.7187] device (ens37): state change: secondaries -> activated (reason 'none', sys-iface-state: 'managed')
+Apr  4 15:49:37 majeed-virtual-machine NetworkManager[703]: <info>  [1775317777.7214] device (ens37): Activation: successful, device activated.
+Apr  4 15:49:37 majeed-virtual-machine NetworkManager[703]: <info>  [1775317777.7218] manager: startup complete
+Apr  4 15:49:37 majeed-virtual-machine systemd[1]: Starting User Runtime Directory /run/user/1000...
+Apr  4 15:49:37 majeed-virtual-machine systemd[1]: Finished Network Manager Wait Online.
+Apr  4 15:49:37 majeed-virtual-machine systemd[1]: Reached target Network is Online.
+Apr  4 15:49:37 majeed-virtual-machine systemd[1]: Started Download data for packages that failed at package install time.
+Apr  4 15:49:37 majeed-virtual-machine systemd[1]: Started Check to see whether there is a new version of Ubuntu available.
+Apr  4 15:49:37 majeed-virtual-machine systemd[1]: Reached target Timer Units.
+Apr  4 15:49:37 majeed-virtual-machine systemd-resolved[594]: ens37: Bus client set search domain list to: localdomain
+Apr  4 15:49:37 majeed-virtual-machine systemd-resolved[594]: ens37: Bus client set default route setting: no
+Apr  4 15:49:37 majeed-virtual-machine systemd[1]: Started Make remote CUPS printers available locally.
+Apr  4 15:49:37 majeed-virtual-machine systemd-resolved[594]: ens37: Bus client set DNS server list to: 192.168.56.1
+Apr  4 15:49:37 majeed-virtual-machine systemd[1]: Starting Tool to automatically collect and submit kernel crash signatures...
+Apr  4 15:49:37 majeed-virtual-machine systemd[1]: Starting Suricata IDS/IDP daemon...
+Apr  4 15:49:37 majeed-virtual-machine systemd[1]: Condition check resulted in Ubuntu Pro Background Auto Attach being skipped.
+Apr  4 15:49:37 majeed-virtual-machine systemd[1]: Started crash report submission.
+Apr  4 15:49:38 majeed-virtual-machine systemd[1]: Finished User Runtime Directory /run/user/1000.
+Apr  4 15:49:38 majeed-virtual-machine systemd[1]: Starting User Manager for UID 1000...
+Apr  4 15:49:38 majeed-virtual-machine systemd[1]: kerneloops.service: Found left-over process 1092 (kerneloops) in control group while starting unit. Ignoring.
+Apr  4 15:49:38 majeed-virtual-machine systemd[1]: This usually indicates unclean termination of a previous run, or service implementation deficiencies.
+Apr  4 15:49:38 majeed-virtual-machine whoopsie[1077]: [15:49:38] Using lock path: /var/lock/whoopsie/lock
+Apr  4 15:49:38 majeed-virtual-machine systemd[1]: whoopsie.service: Deactivated successfully.
+Apr  4 15:49:38 majeed-virtual-machine systemd[1]: Started Tool to automatically collect and submit kernel crash signatures.
+Apr  4 15:49:38 majeed-virtual-machine ModemManager[804]: <info>  [base-manager] couldn't check support for device '/sys/devices/pci0000:00/0000:00:11.0/0000:02:01.0': not supported by any plugin
+Apr  4 15:49:38 majeed-virtual-machine ModemManager[804]: <info>  [base-manager] couldn't check support for device '/sys/devices/pci0000:00/0000:00:11.0/0000:02:05.0': not supported by any plugin
+Apr  4 15:49:38 majeed-virtual-machine suricata[1076]: 4/4/2026 -- 15:49:38 - <Notice> - This is Suricata version 6.0.4 RELEASE running in SYSTEM mode
+Apr  4 15:49:39 majeed-virtual-machine snapd[752]: overlord.go:288: Acquiring state lock file
+Apr  4 15:49:39 majeed-virtual-machine snapd[752]: overlord.go:293: Acquired state lock file
+Apr  4 15:49:39 majeed-virtual-machine snapd[752]: daemon.go:276: started snapd/2.72+ubuntu22.04 (series 16; classic) ubuntu/22.04 (amd64) linux/6.8.0-90-generic.
+Apr  4 15:49:39 majeed-virtual-machine logrotate[1165]: cat: /var/run/suricata.pid: No such file or directory
+Apr  4 15:49:39 majeed-virtual-machine logrotate[1168]: Usage:
+Apr  4 15:49:39 majeed-virtual-machine logrotate[1168]:  kill [options] <pid> [...]
+Apr  4 15:49:39 majeed-virtual-machine logrotate[1168]: Options:
+Apr  4 15:49:39 majeed-virtual-machine logrotate[1168]:  <pid> [...]            send signal to every <pid> listed
+Apr  4 15:49:39 majeed-virtual-machine logrotate[1168]:  -<signal>, -s, --signal <signal>
+Apr  4 15:49:39 majeed-virtual-machine logrotate[1168]:                         specify the <signal> to be sent
+Apr  4 15:49:39 majeed-virtual-machine logrotate[1168]:  -q, --queue <value>    integer value to be sent with the signal
+Apr  4 15:49:39 majeed-virtual-machine logrotate[1168]:  -l, --list=[<signal>]  list all signal names, or convert one to a name
+Apr  4 15:49:39 majeed-virtual-machine logrotate[1168]:  -L, --table            list all signal names in a nice table
+Apr  4 15:49:39 majeed-virtual-machine logrotate[1168]:  -h, --help     display this help and exit
+Apr  4 15:49:39 majeed-virtual-machine logrotate[1168]:  -V, --version  output version information and exit
+Apr  4 15:49:39 majeed-virtual-machine logrotate[1168]: For more details see kill(1).
+Apr  4 15:49:39 majeed-virtual-machine logrotate[772]: error: error running shared postrotate script for '/var/log/suricata/*.log
+Apr  4 15:49:39 majeed-virtual-machine logrotate[772]: /var/log/suricata/*.json
+Apr  4 15:49:39 majeed-virtual-machine logrotate[772]: '
+Apr  4 15:49:39 majeed-virtual-machine systemd[1]: logrotate.service: Main process exited, code=exited, status=1/FAILURE
+Apr  4 15:49:39 majeed-virtual-machine systemd[1]: logrotate.service: Failed with result 'exit-code'.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1]: Failed to start Rotate log files.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1]: logrotate.service: Consumed 1.564s CPU time.
+Apr  4 15:49:39 majeed-virtual-machine kernel: [  101.139480] loop14: detected capacity change from 0 to 8
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Queued start job for default target Main User Target.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1]: tmp-syscheck\x2dmountpoint\x2d182697911.mount: Deactivated successfully.
+Apr  4 15:49:39 majeed-virtual-machine snapd[752]: daemon.go:370: adjusting startup timeout by 1m10s (pessimistic estimate of 30s plus 5s per snap)
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Created slice User Application Slice.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Created slice User Core Session Slice.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Started Pending report trigger for Ubuntu Report.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Reached target Paths.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Reached target Timers.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Starting D-Bus User Message Bus Socket...
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Listening on GnuPG network certificate management daemon.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Listening on GnuPG cryptographic agent and passphrase cache (access for web browsers).
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Listening on GnuPG cryptographic agent and passphrase cache (restricted).
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Listening on GnuPG cryptographic agent (ssh-agent emulation).
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Listening on GnuPG cryptographic agent and passphrase cache.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Listening on PipeWire Multimedia System Socket.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Listening on debconf communication socket.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Listening on Sound System.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Listening on REST API socket for snapd user session agent.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Listening on Speech Dispatcher Socket.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Listening on D-Bus User Message Bus Socket.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Reached target Sockets.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Reached target Basic System.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1]: Started User Manager for UID 1000.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1]: Started Session 1 of User majeed.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Started PipeWire Multimedia Service.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Started PipeWire Media Session Manager.
+Apr  4 15:49:39 majeed-virtual-machine systemd[1]: Started Suricata IDS/IDP daemon.
+Apr  4 15:49:39 majeed-virtual-machine snapd[752]: backends.go:70: AppArmor status: apparmor is enabled and all features are available
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Starting Sound Service...
+Apr  4 15:49:39 majeed-virtual-machine systemd[1081]: Started Service for snap application snapd-desktop-integration.snapd-desktop-integration.
+Apr  4 15:49:39 majeed-virtual-machine dbus-daemon[701]: [system] Activating via systemd: service name='org.freedesktop.RealtimeKit1' unit='rtkit-daemon.service' requested by ':1.30' (uid=1000 pid=1194 comm="/usr/bin/pipewire " label="unconfined")
+Apr  4 15:49:40 majeed-virtual-machine systemd[1]: Starting RealtimeKit Scheduling Policy Service...
+Apr  4 15:49:40 majeed-virtual-machine snapd[752]: backend.go:145: reloading profiles for snap-confine
+Apr  4 15:49:40 majeed-virtual-machine dbus-daemon[701]: [system] Successfully activated service 'org.freedesktop.RealtimeKit1'
+Apr  4 15:49:40 majeed-virtual-machine rtkit-daemon[1216]: Successfully called chroot.
+Apr  4 15:49:40 majeed-virtual-machine rtkit-daemon[1216]: Successfully dropped privileges.
+Apr  4 15:49:40 majeed-virtual-machine rtkit-daemon[1216]: Successfully limited resources.
+Apr  4 15:49:40 majeed-virtual-machine rtkit-daemon[1216]: Canary thread running.
+Apr  4 15:49:40 majeed-virtual-machine rtkit-daemon[1216]: Watchdog thread running.
+Apr  4 15:49:40 majeed-virtual-machine rtkit-daemon[1216]: Running.
+Apr  4 15:49:40 majeed-virtual-machine systemd[1]: Started RealtimeKit Scheduling Policy Service.
+Apr  4 15:49:40 majeed-virtual-machine rtkit-daemon[1216]: Successfully made thread 1194 of process 1194 owned by '1000' high priority at nice level -11.
+Apr  4 15:49:40 majeed-virtual-machine rtkit-daemon[1216]: Supervising 1 threads of 1 processes of 1 users.
+Apr  4 15:49:40 majeed-virtual-machine rtkit-daemon[1216]: message repeated 2 times: [ Supervising 1 threads of 1 processes of 1 users.]
+Apr  4 15:49:40 majeed-virtual-machine rtkit-daemon[1216]: Successfully made thread 1197 of process 1197 owned by '1000' high priority at nice level -11.
+Apr  4 15:49:40 majeed-virtual-machine rtkit-daemon[1216]: Supervising 2 threads of 2 processes of 1 users.
+Apr  4 15:49:40 majeed-virtual-machine systemd[1081]: Started D-Bus User Message Bus.
+Apr  4 15:49:40 majeed-virtual-machine rtkit-daemon[1216]: Supervising 2 threads of 2 processes of 1 users.
+Apr  4 15:49:40 majeed-virtual-machine rtkit-daemon[1216]: Successfully made thread 1235 of process 1195 owned by '1000' RT at priority 20.
+Apr  4 15:49:40 majeed-virtual-machine rtkit-daemon[1216]: Supervising 3 threads of 3 processes of 1 users.
+Apr  4 15:49:41 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (--) Log file renamed from "/home/majeed/.local/share/xorg/Xorg.pid-1237.log" to "/home/majeed/.local/share/xorg/Xorg.0.log"
+Apr  4 15:49:41 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: X.Org X Server 1.21.1.4
+Apr  4 15:49:41 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: X Protocol Version 11, Revision 0
+Apr  4 15:49:41 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: Current Operating System: Linux majeed-virtual-machine 6.8.0-90-generic #91~22.04.1-Ubuntu SMP PREEMPT_DYNAMIC Thu Nov 20 15:20:45 UTC 2 x86_64
+Apr  4 15:49:41 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: Kernel command line: BOOT_IMAGE=/boot/vmlinuz-6.8.0-90-generic root=UUID=81f19d20-7914-4d98-8c02-3e3e22929b79 ro find_preseed=/preseed.cfg auto noprompt priority=critical locale=en_US quiet splash
+Apr  4 15:49:41 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: xorg-server 2:21.1.4-2ubuntu1.7~22.04.16 (For technical support please see http://www.ubuntu.com/support)
+Apr  4 15:49:41 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: Current version of pixman: 0.40.0
+Apr  4 15:49:41 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011Before reporting problems, check http://wiki.x.org
+Apr  4 15:49:41 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011to make sure that you have the latest version.
+Apr  4 15:49:41 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: Markers: (--) probed, (**) from config file, (==) default setting,
+Apr  4 15:49:41 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011(++) from command line, (!!) notice, (II) informational,
+Apr  4 15:49:41 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011(WW) warning, (EE) error, (NI) not implemented, (??) unknown.
+Apr  4 15:49:41 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) Log file: "/home/majeed/.local/share/xorg/Xorg.0.log", Time: Sat Apr  4 15:49:41 2026
+Apr  4 15:49:41 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) Using system config directory "/usr/share/X11/xorg.conf.d"
+Apr  4 15:49:41 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) No Layout section.  Using the first Screen section.
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) No screen section available. Using defaults.
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) |-->Screen "Default Screen Section" (0)
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) |   |-->Monitor "<default monitor>"
+Apr  4 15:49:42 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] AppArmor D-Bus mediation is enabled
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) No monitor specified for screen "Default Screen Section".
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011Using a default monitor configuration.
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) Automatically adding devices
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) Automatically enabling devices
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) Automatically adding GPU devices
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) Automatically binding GPU devices
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) Max clients allowed: 256, resource mask: 0x1fffff
+Apr  4 15:49:42 majeed-virtual-machine rtkit-daemon[1216]: Supervising 3 threads of 3 processes of 1 users.
+Apr  4 15:49:42 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating via systemd: service name='org.freedesktop.portal.Documents' unit='xdg-document-portal.service' requested by ':1.4' (uid=1000 pid=1204 comm="/usr/bin/snap run snapd-desktop-integration " label="unconfined")
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (WW) The directory "/usr/share/fonts/X11/cyrillic" does not exist.
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011Entry deleted from font path.
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (WW) The directory "/usr/share/fonts/X11/100dpi/" does not exist.
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011Entry deleted from font path.
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (WW) The directory "/usr/share/fonts/X11/75dpi/" does not exist.
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011Entry deleted from font path.
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (WW) The directory "/usr/share/fonts/X11/100dpi" does not exist.
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011Entry deleted from font path.
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (WW) The directory "/usr/share/fonts/X11/75dpi" does not exist.
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011Entry deleted from font path.
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) FontPath set to:
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011/usr/share/fonts/X11/misc,
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011/usr/share/fonts/X11/Type1,
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011built-ins
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) ModulePath set to "/usr/lib/xorg/modules"
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) The server relies on udev to provide the list of input devices.
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011If no devices become available, reconfigure udev or disable AutoAddDevices.
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Loader magic: 0x55563e733020
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Module ABI versions:
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011X.Org ANSI C Emulation: 0.4
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011X.Org Video Driver: 25.2
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011X.Org XInput driver : 24.4
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011X.Org Server Extension : 10.0
+Apr  4 15:49:42 majeed-virtual-machine rtkit-daemon[1216]: Successfully made thread 1244 of process 1194 owned by '1000' RT at priority 20.
+Apr  4 15:49:42 majeed-virtual-machine rtkit-daemon[1216]: Supervising 4 threads of 3 processes of 1 users.
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (++) using VT number 2
+Apr  4 15:49:42 majeed-virtual-machine systemd[1081]: Starting flatpak document portal service...
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) systemd-logind: took control of session /org/freedesktop/login1/session/_31
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) xfree86: Adding drm device (/dev/dri/card0)
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Platform probe for /sys/devices/pci0000:00/0000:00:0f.0/drm/card0
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) systemd-logind: got fd for /dev/dri/card0 226:0 fd 14 paused 0
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (--) PCI:*(0@0:15:0) 15ad:0405:15ad:0405 rev 0, Mem @ 0xe8000000/134217728, 0xfe000000/8388608, I/O @ 0x00001070/16, BIOS @ 0x????????/131072
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) LoadModule: "glx"
+Apr  4 15:49:42 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Loading /usr/lib/xorg/modules/extensions/libglx.so
+Apr  4 15:49:43 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating via systemd: service name='org.freedesktop.impl.portal.PermissionStore' unit='xdg-permission-store.service' requested by ':1.5' (uid=1000 pid=1245 comm="/usr/libexec/xdg-document-portal " label="unconfined")
+Apr  4 15:49:43 majeed-virtual-machine systemd[1081]: Starting sandboxed app permission store...
+Apr  4 15:49:43 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.freedesktop.impl.portal.PermissionStore'
+Apr  4 15:49:43 majeed-virtual-machine systemd[1081]: Started sandboxed app permission store.
+Apr  4 15:49:43 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.freedesktop.portal.Documents'
+Apr  4 15:49:43 majeed-virtual-machine systemd[1081]: Started flatpak document portal service.
+Apr  4 15:49:43 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Module glx: vendor="X.Org Foundation"
+Apr  4 15:49:43 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011compiled for 1.21.1.4, module version = 1.0.0
+Apr  4 15:49:43 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011ABI class: X.Org Server Extension, version 10.0
+Apr  4 15:49:43 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) Matched vmware as autoconfigured driver 0
+Apr  4 15:49:43 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) Matched modesetting as autoconfigured driver 1
+Apr  4 15:49:43 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) Matched fbdev as autoconfigured driver 2
+Apr  4 15:49:43 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) Matched vesa as autoconfigured driver 3
+Apr  4 15:49:43 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) Assigned the driver to the xf86ConfigLayout
+Apr  4 15:49:43 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) LoadModule: "vmware"
+Apr  4 15:49:43 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Loading /usr/lib/xorg/modules/drivers/vmware_drv.so
+Apr  4 15:49:44 majeed-virtual-machine pulseaudio[1197]: Disabling timer-based scheduling because running inside a VM.
+Apr  4 15:49:44 majeed-virtual-machine rtkit-daemon[1216]: Supervising 4 threads of 3 processes of 1 users.
+Apr  4 15:49:44 majeed-virtual-machine rtkit-daemon[1216]: Successfully made thread 1260 of process 1197 owned by '1000' RT at priority 5.
+Apr  4 15:49:44 majeed-virtual-machine rtkit-daemon[1216]: Supervising 5 threads of 3 processes of 1 users.
+Apr  4 15:49:44 majeed-virtual-machine pulseaudio[1197]: Disabling timer-based scheduling because running inside a VM.
+Apr  4 15:49:44 majeed-virtual-machine rtkit-daemon[1216]: Supervising 5 threads of 3 processes of 1 users.
+Apr  4 15:49:44 majeed-virtual-machine systemd[1]: tmp-snap.rootfs_nOA0X7.mount: Deactivated successfully.
+Apr  4 15:49:45 majeed-virtual-machine rtkit-daemon[1216]: Successfully made thread 1263 of process 1197 owned by '1000' RT at priority 5.
+Apr  4 15:49:45 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 1 users.
+Apr  4 15:49:45 majeed-virtual-machine systemd[1]: dmesg.service: Deactivated successfully.
+Apr  4 15:49:45 majeed-virtual-machine systemd[1]: dmesg.service: Consumed 1.612s CPU time.
+Apr  4 15:49:45 majeed-virtual-machine pulseaudio[1197]: ALSA woke us up to read new data from the device, but there was actually nothing to read.
+Apr  4 15:49:45 majeed-virtual-machine pulseaudio[1197]: Most likely this is a bug in the ALSA driver 'snd_ens1371'. Please report this issue to the ALSA developers.
+Apr  4 15:49:45 majeed-virtual-machine pulseaudio[1197]: We were woken up with POLLIN set -- however a subsequent snd_pcm_avail() returned 0 or another value < min_avail.
+Apr  4 15:49:46 majeed-virtual-machine kernel: [  108.087862] workqueue: blk_mq_run_work_fn hogged CPU for >10000us 32 times, consider switching to WQ_UNBOUND
+Apr  4 15:49:46 majeed-virtual-machine pulseaudio[1197]: ALSA woke us up to write new data to the device, but there was actually nothing to write.
+Apr  4 15:49:46 majeed-virtual-machine pulseaudio[1197]: Most likely this is a bug in the ALSA driver 'snd_ens1371'. Please report this issue to the ALSA developers.
+Apr  4 15:49:46 majeed-virtual-machine pulseaudio[1197]: We were woken up with POLLOUT set -- however a subsequent snd_pcm_avail() returned 0 or another value < min_avail.
+Apr  4 15:49:46 majeed-virtual-machine kernel: [  108.408641] audit: type=1400 audit(1775317786.773:60): apparmor="STATUS" operation="profile_replace" profile="unconfined" name="/usr/lib/snapd/snap-confine" pid=1228 comm="apparmor_parser"
+Apr  4 15:49:46 majeed-virtual-machine kernel: [  108.460100] audit: type=1400 audit(1775317786.832:61): apparmor="STATUS" operation="profile_replace" profile="unconfined" name="/usr/lib/snapd/snap-confine//mount-namespace-capture-helper" pid=1228 comm="apparmor_parser"
+Apr  4 15:49:47 majeed-virtual-machine systemd[1081]: Started Sound Service.
+Apr  4 15:49:47 majeed-virtual-machine systemd[1081]: Reached target Main User Target.
+Apr  4 15:49:47 majeed-virtual-machine systemd[1081]: Startup finished in 8.718s.
+Apr  4 15:49:47 majeed-virtual-machine systemd[1]: Started Snap Daemon.
+Apr  4 15:49:47 majeed-virtual-machine dbus-daemon[701]: [system] Activating via systemd: service name='org.freedesktop.timedate1' unit='dbus-org.freedesktop.timedate1.service' requested by ':1.41' (uid=0 pid=752 comm="/usr/lib/snapd/snapd " label="unconfined")
+Apr  4 15:49:47 majeed-virtual-machine systemd[1]: Starting Time & Date Service...
+Apr  4 15:49:47 majeed-virtual-machine dbus-daemon[701]: [system] Successfully activated service 'org.freedesktop.timedate1'
+Apr  4 15:49:47 majeed-virtual-machine systemd[1]: Started Time & Date Service.
+Apr  4 15:49:47 majeed-virtual-machine systemd[1]: Finished Wait until snapd is fully seeded.
+Apr  4 15:49:47 majeed-virtual-machine systemd[1]: Condition check resulted in Auto import assertions from block devices being skipped.
+Apr  4 15:49:48 majeed-virtual-machine systemd[1]: NetworkManager-dispatcher.service: Deactivated successfully.
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Module vmware: vendor="X.Org Foundation"
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011compiled for 1.21.1.3, module version = 13.3.0
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011Module class: X.Org Video Driver
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011ABI class: X.Org Video Driver, version 25.2
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) LoadModule: "modesetting"
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Loading /usr/lib/xorg/modules/drivers/modesetting_drv.so
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Module modesetting: vendor="X.Org Foundation"
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011compiled for 1.21.1.4, module version = 1.21.1
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011Module class: X.Org Video Driver
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011ABI class: X.Org Video Driver, version 25.2
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) LoadModule: "fbdev"
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Loading /usr/lib/xorg/modules/drivers/fbdev_drv.so
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Module fbdev: vendor="X.Org Foundation"
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011compiled for 1.21.1.3, module version = 0.5.0
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011Module class: X.Org Video Driver
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011ABI class: X.Org Video Driver, version 25.2
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) LoadModule: "vesa"
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Loading /usr/lib/xorg/modules/drivers/vesa_drv.so
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Module vesa: vendor="X.Org Foundation"
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011compiled for 1.21.1.3, module version = 2.5.0
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011Module class: X.Org Video Driver
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011ABI class: X.Org Video Driver, version 25.2
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware: driver for VMware SVGA: vmware0405, vmware0710
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) modesetting: Driver for Modesetting Kernel Drivers: kms
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) FBDEV: driver for framebuffer: fbdev
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) VESA: driver for VESA chipsets: vesa
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: xf86EnableIO: failed to enable I/O ports 0000-03ff (Operation not permitted)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (WW) Falling back to old probe method for modesetting
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (WW) Falling back to old probe method for fbdev
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Loading sub module "fbdevhw"
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) LoadModule: "fbdevhw"
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Loading /usr/lib/xorg/modules/libfbdevhw.so
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Module fbdevhw: vendor="X.Org Foundation"
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011compiled for 1.21.1.4, module version = 0.0.2
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011ABI class: X.Org Video Driver, version 25.2
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (EE) open /dev/fb0: Permission denied
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (WW) VGA arbiter: cannot open kernel arbiter, no multi-card support
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Creating default Display subsection in Screen section
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011"Default Screen Section" for depth/fbbpp 24/32
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (--) vmware(0): DRM driver version is 2.20.0
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) vmware(0): Depth 24, (--) framebuffer bpp 32
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) vmware(0): RGB weight 888
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) vmware(0): Default visual is TrueColor
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (--) vmware(0): Min width 1, Max Width 16384.
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (--) vmware(0): Min height 1, Max Height 16384.
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Output Virtual1 has no monitor section
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Output Virtual2 has no monitor section
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Output Virtual3 has no monitor section
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Output Virtual4 has no monitor section
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Output Virtual5 has no monitor section
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Output Virtual6 has no monitor section
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Output Virtual7 has no monitor section
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Output Virtual8 has no monitor section
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Printing probed modes for output Virtual1
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1607x920"x60.0  112.79  1607 1657 1707 1757  920 970 1020 1070 -hsync +vsync (64.2 kHz eP)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "4096x2160"x60.0  556.74  4096 4104 4136 4176  2160 2208 2216 2222 +hsync -vsync (133.3 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "4096x2160"x59.9  556.19  4096 4104 4136 4176  2160 2208 2216 2222 +hsync -vsync (133.2 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "2560x1600"x60.0  348.50  2560 2752 3032 3504  1600 1603 1609 1658 -hsync +vsync (99.5 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "2560x1600"x60.0  268.50  2560 2608 2640 2720  1600 1603 1609 1646 +hsync -vsync (98.7 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1920x1440"x60.0  234.00  1920 2048 2256 2600  1440 1441 1444 1500 -hsync +vsync (90.0 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1856x1392"x60.0  218.25  1856 1952 2176 2528  1392 1393 1396 1439 -hsync +vsync (86.3 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1792x1344"x60.0  204.75  1792 1920 2120 2448  1344 1345 1348 1394 -hsync +vsync (83.6 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "2048x1152"x60.0  162.00  2048 2074 2154 2250  1152 1153 1156 1200 +hsync +vsync (72.0 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1920x1200"x59.9  193.25  1920 2056 2256 2592  1200 1203 1209 1245 -hsync +vsync (74.6 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1920x1200"x60.0  154.00  1920 1968 2000 2080  1200 1203 1209 1235 +hsync -vsync (74.0 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1920x1080"x60.0  148.50  1920 2008 2052 2200  1080 1084 1089 1125 -hsync -vsync (67.5 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1600x1200"x60.0  162.00  1600 1664 1856 2160  1200 1201 1204 1250 +hsync +vsync (75.0 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1680x1050"x60.0  146.25  1680 1784 1960 2240  1050 1053 1059 1089 -hsync +vsync (65.3 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1680x1050"x59.9  119.00  1680 1728 1760 1840  1050 1053 1059 1080 +hsync -vsync (64.7 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1400x1050"x60.0  121.75  1400 1488 1632 1864  1050 1053 1057 1089 -hsync +vsync (65.3 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1400x1050"x59.9  101.00  1400 1448 1480 1560  1050 1053 1057 1080 +hsync -vsync (64.7 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1600x900"x60.0  108.00  1600 1624 1704 1800  900 901 904 1000 +hsync +vsync (60.0 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1280x1024"x60.0  108.00  1280 1328 1440 1688  1024 1025 1028 1066 +hsync +vsync (64.0 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1440x900"x59.9  106.50  1440 1520 1672 1904  900 903 909 934 -hsync +vsync (55.9 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1440x900"x59.9   88.75  1440 1488 1520 1600  900 903 909 926 +hsync -vsync (55.5 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1280x960"x60.0  108.00  1280 1376 1488 1800  960 961 964 1000 +hsync +vsync (60.0 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1366x768"x59.8   85.50  1366 1436 1579 1792  768 771 774 798 +hsync +vsync (47.7 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1366x768"x60.0   72.00  1366 1380 1436 1500  768 769 772 800 +hsync +vsync (48.0 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1360x768"x60.0   85.50  1360 1424 1536 1792  768 771 777 795 +hsync +vsync (47.7 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1280x800"x59.8   83.50  1280 1352 1480 1680  800 803 809 831 -hsync +vsync (49.7 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1280x800"x59.9   71.00  1280 1328 1360 1440  800 803 809 823 +hsync -vsync (49.3 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1280x768"x59.9   79.50  1280 1344 1472 1664  768 771 778 798 -hsync +vsync (47.8 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1280x768"x60.0   68.25  1280 1328 1360 1440  768 771 778 790 +hsync -vsync (47.4 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1280x720"x60.0   74.25  1280 1390 1430 1650  720 725 730 750 +hsync +vsync (45.0 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "1024x768"x60.0   65.00  1024 1048 1184 1344  768 771 777 806 -hsync -vsync (48.4 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "800x600"x60.3   40.00  800 840 968 1056  600 601 605 628 +hsync +vsync (37.9 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "800x600"x56.2   36.00  800 824 896 1024  600 601 603 625 +hsync +vsync (35.2 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "848x480"x60.0   33.75  848 864 976 1088  480 486 494 517 +hsync +vsync (31.0 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Modeline "640x480"x59.9   25.18  640 656 752 800  480 490 492 525 -hsync -vsync (31.5 kHz e)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): EDID for output Virtual2
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): EDID for output Virtual3
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): EDID for output Virtual4
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): EDID for output Virtual5
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): EDID for output Virtual6
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): EDID for output Virtual7
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): EDID for output Virtual8
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Output Virtual1 connected
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Output Virtual2 disconnected
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Output Virtual3 disconnected
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Output Virtual4 disconnected
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Output Virtual5 disconnected
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Output Virtual6 disconnected
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Output Virtual7 disconnected
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Output Virtual8 disconnected
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Using exact sizes for initial modes
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Output Virtual1 using initial mode 1607x920 +0+0
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) vmware(0): DPI set to (96, 96)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) vmware(0): Using gamma correction (1.0, 1.0, 1.0)
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Loading sub module "fb"
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) LoadModule: "fb"
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Module "fb" already built-in
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Loading sub module "dri2"
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) LoadModule: "dri2"
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Module "dri2" already built-in
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Loading sub module "dri3"
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) LoadModule: "dri3"
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Module "dri3" already built-in
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) UnloadModule: "modesetting"
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Unloading modesetting
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) UnloadModule: "fbdev"
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Unloading fbdev
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) UnloadSubModule: "fbdevhw"
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Unloading fbdevhw
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) UnloadModule: "vesa"
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Unloading vesa
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Initialized VMWARE_CTRL extension version 0.2
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Gallium3D XA version: 2.5.0.
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Path of drm device is "/dev/dri/card0".
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): [DRI2] Setup complete
+Apr  4 15:49:49 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): [DRI2]   DRI driver: vmwgfx
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (--) vmware(0): Render acceleration is enabled.
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) vmware(0): Rendercheck mode is disabled.
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (--) vmware(0): Direct rendering (DRI2 3D) is enabled.
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (--) vmware(0): Direct rendering (DRI3 3D) is enabled.
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) vmware(0): Direct presents are disabled.
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) vmware(0): Hardware only presents are automatic per scanout.
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) vmware(0): Backing store enabled
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) vmware(0): Silken mouse enabled
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (==) vmware(0): DPMS enabled
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension Generic Event Extension
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension SHAPE
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension MIT-SHM
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension XInputExtension
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension XTEST
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension BIG-REQUESTS
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension SYNC
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension XKEYBOARD
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension XC-MISC
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension SECURITY
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension XFIXES
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension RENDER
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension RANDR
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension COMPOSITE
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension DAMAGE
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension MIT-SCREEN-SAVER
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension DOUBLE-BUFFER
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension RECORD
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension DPMS
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension Present
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension DRI3
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension X-Resource
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension XVideo
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension XVideo-MotionCompensation
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension SELinux
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) SELinux: Disabled on system
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension GLX
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) AIGLX: Loaded and initialized vmwgfx
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) GLX: Initialized DRI2 GL provider for screen 0
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension XFree86-VidModeExtension
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension XFree86-DGA
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension XFree86-DRI
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Initializing extension DRI2
+Apr  4 15:49:51 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) vmware(0): Setting screen physical size to 425 x 243
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) config/udev: Adding input device Power Button (/dev/input/event0)
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) Power Button: Applying InputClass "libinput keyboard catchall"
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) LoadModule: "libinput"
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Loading /usr/lib/xorg/modules/input/libinput_drv.so
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Module libinput: vendor="X.Org Foundation"
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011compiled for 1.20.14, module version = 1.2.1
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011Module class: X.Org XInput Driver
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: #011ABI class: X.Org XInput driver, version 24.1
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Using input driver 'libinput' for 'Power Button'
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) systemd-logind: got fd for /dev/input/event0 13:64 fd 26 paused 0
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) Power Button: always reports core events
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) Option "Device" "/dev/input/event0"
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event0  - Power Button: is tagged by udev as: Keyboard
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event0  - Power Button: device is a keyboard
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event0  - Power Button: device removed
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) Option "config_info" "udev:/sys/devices/LNXSYSTM:00/LNXPWRBN:00/input/input0/event0"
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) XINPUT: Adding extended input device "Power Button" (type: KEYBOARD, id 6)
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) Option "xkb_model" "pc105"
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) Option "xkb_layout" "us"
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event0  - Power Button: is tagged by udev as: Keyboard
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event0  - Power Button: device is a keyboard
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) config/udev: Adding input device VMware VMware Virtual USB Mouse (/dev/input/event4)
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) VMware VMware Virtual USB Mouse: Applying InputClass "libinput pointer catchall"
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Using input driver 'libinput' for 'VMware VMware Virtual USB Mouse'
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) systemd-logind: got fd for /dev/input/event4 13:68 fd 29 paused 0
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) VMware VMware Virtual USB Mouse: always reports core events
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) Option "Device" "/dev/input/event4"
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event4  - VMware VMware Virtual USB Mouse: is tagged by udev as: Mouse
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event4  - VMware VMware Virtual USB Mouse: device is a pointer
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event4  - VMware VMware Virtual USB Mouse: device removed
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) Option "config_info" "udev:/sys/devices/pci0000:00/0000:00:11.0/0000:02:00.0/usb1/1-1/1-1:1.0/0003:0E0F:0003.0001/input/input5/event4"
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) XINPUT: Adding extended input device "VMware VMware Virtual USB Mouse" (type: MOUSE, id 7)
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) Option "AccelerationScheme" "none"
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) VMware VMware Virtual USB Mouse: (accel) selected scheme none/0
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) VMware VMware Virtual USB Mouse: (accel) acceleration factor: 2.000
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) VMware VMware Virtual USB Mouse: (accel) acceleration threshold: 4
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event4  - VMware VMware Virtual USB Mouse: is tagged by udev as: Mouse
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event4  - VMware VMware Virtual USB Mouse: device is a pointer
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) config/udev: Adding input device VMware VMware Virtual USB Mouse (/dev/input/mouse2)
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) No input driver specified, ignoring this device.
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) This device may have been added with another device file.
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) config/udev: Adding input device AT Translated Set 2 keyboard (/dev/input/event1)
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) AT Translated Set 2 keyboard: Applying InputClass "libinput keyboard catchall"
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Using input driver 'libinput' for 'AT Translated Set 2 keyboard'
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) systemd-logind: got fd for /dev/input/event1 13:65 fd 30 paused 0
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) AT Translated Set 2 keyboard: always reports core events
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) Option "Device" "/dev/input/event1"
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event1  - AT Translated Set 2 keyboard: is tagged by udev as: Keyboard
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event1  - AT Translated Set 2 keyboard: device is a keyboard
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event1  - AT Translated Set 2 keyboard: device removed
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) Option "config_info" "udev:/sys/devices/platform/i8042/serio0/input/input1/event1"
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) XINPUT: Adding extended input device "AT Translated Set 2 keyboard" (type: KEYBOARD, id 8)
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) Option "xkb_model" "pc105"
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) Option "xkb_layout" "us"
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event1  - AT Translated Set 2 keyboard: is tagged by udev as: Keyboard
+Apr  4 15:49:52 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event1  - AT Translated Set 2 keyboard: device is a keyboard
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) config/udev: Adding input device VirtualPS/2 VMware VMMouse (/dev/input/event3)
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) VirtualPS/2 VMware VMMouse: Applying InputClass "libinput pointer catchall"
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Using input driver 'libinput' for 'VirtualPS/2 VMware VMMouse'
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) systemd-logind: got fd for /dev/input/event3 13:67 fd 31 paused 0
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) VirtualPS/2 VMware VMMouse: always reports core events
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) Option "Device" "/dev/input/event3"
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event3  - VirtualPS/2 VMware VMMouse: is tagged by udev as: Mouse
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event3  - VirtualPS/2 VMware VMMouse: device is a pointer
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event3  - VirtualPS/2 VMware VMMouse: device removed
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) Option "config_info" "udev:/sys/devices/platform/i8042/serio1/input/input3/event3"
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) XINPUT: Adding extended input device "VirtualPS/2 VMware VMMouse" (type: MOUSE, id 9)
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) Option "AccelerationScheme" "none"
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) VirtualPS/2 VMware VMMouse: (accel) selected scheme none/0
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) VirtualPS/2 VMware VMMouse: (accel) acceleration factor: 2.000
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) VirtualPS/2 VMware VMMouse: (accel) acceleration threshold: 4
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event3  - VirtualPS/2 VMware VMMouse: is tagged by udev as: Mouse
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event3  - VirtualPS/2 VMware VMMouse: device is a pointer
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) config/udev: Adding input device VirtualPS/2 VMware VMMouse (/dev/input/mouse1)
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) No input driver specified, ignoring this device.
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) This device may have been added with another device file.
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) config/udev: Adding input device VirtualPS/2 VMware VMMouse (/dev/input/event2)
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) VirtualPS/2 VMware VMMouse: Applying InputClass "libinput pointer catchall"
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) Using input driver 'libinput' for 'VirtualPS/2 VMware VMMouse'
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) systemd-logind: got fd for /dev/input/event2 13:66 fd 32 paused 0
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) VirtualPS/2 VMware VMMouse: always reports core events
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) Option "Device" "/dev/input/event2"
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event2  - VirtualPS/2 VMware VMMouse: is tagged by udev as: Mouse
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event2  - VirtualPS/2 VMware VMMouse: device is a pointer
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event2  - VirtualPS/2 VMware VMMouse: device removed
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) Option "config_info" "udev:/sys/devices/platform/i8042/serio1/input/input4/event2"
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) XINPUT: Adding extended input device "VirtualPS/2 VMware VMMouse" (type: MOUSE, id 10)
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) Option "AccelerationScheme" "none"
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) VirtualPS/2 VMware VMMouse: (accel) selected scheme none/0
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) VirtualPS/2 VMware VMMouse: (accel) acceleration factor: 2.000
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (**) VirtualPS/2 VMware VMMouse: (accel) acceleration threshold: 4
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event2  - VirtualPS/2 VMware VMMouse: is tagged by udev as: Mouse
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) event2  - VirtualPS/2 VMware VMMouse: device is a pointer
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) config/udev: Adding input device VirtualPS/2 VMware VMMouse (/dev/input/mouse0)
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) No input driver specified, ignoring this device.
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (II) This device may have been added with another device file.
+Apr  4 15:49:53 majeed-virtual-machine /usr/libexec/gdm-x-session[1324]: /etc/gdm3/Xsession: Beginning session setup...
+Apr  4 15:49:53 majeed-virtual-machine systemd[1]: systemd-fsckd.service: Deactivated successfully.
+Apr  4 15:49:15 majeed-virtual-machine systemd-timesyncd[595]: Initial synchronization to time server 185.125.190.57:123 (ntp.ubuntu.com).
+Apr  4 15:49:17 majeed-virtual-machine /usr/libexec/gdm-x-session[1335]: localuser:majeed being added to access control list
+Apr  4 15:49:17 majeed-virtual-machine /usr/libexec/gdm-x-session[1338]: dbus-update-activation-environment: setting DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
+Apr  4 15:49:17 majeed-virtual-machine /usr/libexec/gdm-x-session[1338]: dbus-update-activation-environment: setting DISPLAY=:0
+Apr  4 15:49:17 majeed-virtual-machine /usr/libexec/gdm-x-session[1338]: dbus-update-activation-environment: setting XAUTHORITY=/run/user/1000/gdm/Xauthority
+Apr  4 15:49:17 majeed-virtual-machine systemd-resolved[594]: Clock change detected. Flushing caches.
+Apr  4 15:49:17 majeed-virtual-machine /usr/libexec/gdm-x-session[1346]: localuser:majeed being added to access control list
+Apr  4 15:49:17 majeed-virtual-machine /usr/libexec/gdm-x-session[1343]: /etc/X11/Xsession.d/30x11-common_xresources: line 16: has_option: command not found
+Apr  4 15:49:18 majeed-virtual-machine /usr/libexec/gdm-x-session[1371]: dbus-update-activation-environment: setting GTK_MODULES=gail:atk-bridge
+Apr  4 15:49:19 majeed-virtual-machine /usr/libexec/gdm-x-session[1379]: dbus-update-activation-environment: setting QT_ACCESSIBILITY=1
+Apr  4 15:49:19 majeed-virtual-machine /usr/libexec/gdm-x-session[1381]: /etc/X11/Xsession.d/90x11-common_ssh-agent: line 9: has_option: command not found
+Apr  4 15:49:20 majeed-virtual-machine snapd-desktop-i[1368]: Failed to do gtk init. Waiting for a new session with desktop capabilities.
+Apr  4 15:49:20 majeed-virtual-machine snapd-desktop-i[1368]: Checking session /org/freedesktop/login1/session/_31...
+Apr  4 15:49:20 majeed-virtual-machine snapd-desktop-i[1368]: Is a desktop session! Forcing a reload.
+Apr  4 15:49:20 majeed-virtual-machine snapd-desktop-i[1368]: Loop exited. Forcing reload.
+Apr  4 15:49:21 majeed-virtual-machine systemd[1081]: snap.snapd-desktop-integration.snapd-desktop-integration.service: Consumed 5.702s CPU time.
+Apr  4 15:49:21 majeed-virtual-machine systemd[1]: Received SIGRTMIN+21 from PID 409 (plymouthd).
+Apr  4 15:49:21 majeed-virtual-machine systemd[1]: Finished Hold until boot process finishes up.
+Apr  4 15:49:21 majeed-virtual-machine systemd[1]: Reached target Multi-User System.
+Apr  4 15:49:21 majeed-virtual-machine systemd[1]: Reached target Graphical Interface.
+Apr  4 15:49:21 majeed-virtual-machine systemd[1]: Starting Set console scheme...
+Apr  4 15:49:21 majeed-virtual-machine systemd[1]: Starting Record Runlevel Change in UTMP...
+Apr  4 15:49:21 majeed-virtual-machine systemd[1]: Finished Set console scheme.
+Apr  4 15:49:21 majeed-virtual-machine systemd[1]: Created slice Slice /system/getty.
+Apr  4 15:49:21 majeed-virtual-machine systemd[1]: systemd-update-utmp-runlevel.service: Deactivated successfully.
+Apr  4 15:49:21 majeed-virtual-machine systemd[1]: Finished Record Runlevel Change in UTMP.
+Apr  4 15:49:21 majeed-virtual-machine systemd[1]: Startup finished in 1min 3.385s (kernel) + 58.761s (userspace) = 2min 2.147s.
+Apr  4 15:49:22 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating via systemd: service name='org.a11y.Bus' unit='at-spi-dbus-bus.service' requested by ':1.11' (uid=1000 pid=1403 comm="/usr/libexec/gnome-session-check-accelerated " label="unconfined")
+Apr  4 15:49:22 majeed-virtual-machine systemd[1081]: Starting Accessibility services bus...
+Apr  4 15:49:22 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.a11y.Bus'
+Apr  4 15:49:22 majeed-virtual-machine systemd[1081]: Started Accessibility services bus.
+Apr  4 15:49:23 majeed-virtual-machine systemd[1081]: snap.snapd-desktop-integration.snapd-desktop-integration.service: Scheduled restart job, restart counter is at 1.
+Apr  4 15:49:23 majeed-virtual-machine systemd[1081]: Stopped Service for snap application snapd-desktop-integration.snapd-desktop-integration.
+Apr  4 15:49:23 majeed-virtual-machine systemd[1081]: snap.snapd-desktop-integration.snapd-desktop-integration.service: Consumed 5.702s CPU time.
+Apr  4 15:49:23 majeed-virtual-machine systemd[1081]: Started Service for snap application snapd-desktop-integration.snapd-desktop-integration.
+Apr  4 15:49:24 majeed-virtual-machine snapd[752]: storehelpers.go:916: cannot refresh: snap has no updates available: "bare", "core22", "firefox", "gnome-42-2204", "gtk-common-themes", "snap-store", "snapd", "snapd-desktop-integration"
+Apr  4 15:49:24 majeed-virtual-machine systemd[1]: systemd-hostnamed.service: Deactivated successfully.
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Created slice Slice /app/gnome-session-manager.
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Created slice User Background Tasks Slice.
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Started Path trigger for Apport crash notifications.
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Started Path trigger for new release of Ubuntu notifications.
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Reached target GNOME X11 Session.
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Reached target GNOME Shell.
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Condition check resulted in GNOME Initial Setup Copy Worker being skipped.
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Starting Start gnome-keyring as SSH agent...
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Starting Start gnome-keyring for the Secrets Service, and PKCS #11...
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Starting Monitor Session leader for GNOME Session...
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Starting Session Migration...
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Starting Rewrite dynamic launcher portal entries...
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Started Monitor Session leader for GNOME Session.
+Apr  4 15:49:25 majeed-virtual-machine gnome-keyring-daemon[1476]: SSH_AUTH_SOCK=/run/user/1000/keyring/ssh
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Finished Session Migration.
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Finished Start gnome-keyring for the Secrets Service, and PKCS #11.
+Apr  4 15:49:25 majeed-virtual-machine sh[1477]: dbus-update-activation-environment: setting SSH_AUTH_SOCK=/run/user/1000/keyring/ssh
+Apr  4 15:49:25 majeed-virtual-machine sh[1477]: dbus-update-activation-environment: setting SSH_AGENT_LAUNCHER=gnome-keyring
+Apr  4 15:49:25 majeed-virtual-machine sh[1466]: /bin/sh: 1: initctl: not found
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Finished Start gnome-keyring as SSH agent.
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Started OpenSSH Agent.
+Apr  4 15:49:25 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating via systemd: service name='org.gtk.vfs.Daemon' unit='gvfs-daemon.service' requested by ':1.19' (uid=1000 pid=1474 comm="/usr/libexec/xdg-desktop-portal-rewrite-launchers " label="unconfined")
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Starting Virtual filesystem service...
+Apr  4 15:49:25 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gtk.vfs.Daemon'
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Started Virtual filesystem service.
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Finished Rewrite dynamic launcher portal entries.
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Reached target Session services which should run early before the graphical session is brought up.
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Reached target Tasks to be run before GNOME Session starts.
+Apr  4 15:49:25 majeed-virtual-machine systemd[1081]: Starting GNOME Session Manager (session: ubuntu)...
+Apr  4 15:49:26 majeed-virtual-machine systemd[1081]: Started Application launched by gnome-session-binary.
+Apr  4 15:49:26 majeed-virtual-machine systemd[1081]: message repeated 2 times: [ Started Application launched by gnome-session-binary.]
+Apr  4 15:49:26 majeed-virtual-machine gnome-keyring-secrets.desktop[1506]: SSH_AUTH_SOCK=/run/user/1000/keyring/ssh
+Apr  4 15:49:26 majeed-virtual-machine gnome-keyring-ssh.desktop[1507]: SSH_AUTH_SOCK=/run/user/1000/keyring/ssh
+Apr  4 15:49:26 majeed-virtual-machine gnome-keyring-pkcs11.desktop[1508]: SSH_AUTH_SOCK=/run/user/1000/keyring/ssh
+Apr  4 15:49:26 majeed-virtual-machine systemd[1081]: Started GNOME Session Manager (session: ubuntu).
+Apr  4 15:49:26 majeed-virtual-machine systemd[1081]: Reached target GNOME Session Manager is ready.
+Apr  4 15:49:26 majeed-virtual-machine systemd[1081]: Starting GNOME Shell on Wayland...
+Apr  4 15:49:26 majeed-virtual-machine systemd[1081]: Starting GNOME Shell on X11...
+Apr  4 15:49:26 majeed-virtual-machine systemd[1081]: org.gnome.Shell@wayland.service: Skipped due to 'exec-condition'.
+Apr  4 15:49:26 majeed-virtual-machine systemd[1081]: Condition check resulted in GNOME Shell on Wayland being skipped.
+Apr  4 15:49:26 majeed-virtual-machine gnome-session[1488]: gnome-session-binary[1488]: GnomeDesktop-WARNING: Could not create transient scope for PID 1509: GDBus.Error:org.freedesktop.DBus.Error.UnixProcessIdUnknown: Process with ID 1509 does not exist.
+Apr  4 15:49:26 majeed-virtual-machine gnome-session-binary[1488]: GnomeDesktop-WARNING: Could not create transient scope for PID 1509: GDBus.Error:org.freedesktop.DBus.Error.UnixProcessIdUnknown: Process with ID 1509 does not exist.
+Apr  4 15:49:26 majeed-virtual-machine systemd[1081]: Started Application launched by gnome-session-binary.
+Apr  4 15:49:27 majeed-virtual-machine gnome-shell[1514]: Running GNOME Shell (using mutter 42.9) as a X11 window and compositing manager
+Apr  4 15:49:37 majeed-virtual-machine snapd-desktop-i[1464]: New theme: gtk=Default icon=Adwaita cursor=(null), sound=freedesktop
+Apr  4 15:49:38 majeed-virtual-machine gnome-shell[1514]: ATK Bridge is disabled but a11y has already been enabled.
+Apr  4 15:49:38 majeed-virtual-machine snapd-desktop-i[1464]: All available theme snaps installed
+Apr  4 15:49:41 majeed-virtual-machine kernel: [  142.975703] workqueue: e1000_watchdog [e1000] hogged CPU for >10000us 4 times, consider switching to WQ_UNBOUND
+Apr  4 15:49:45 majeed-virtual-machine gnome-shell[1514]: Unset XDG_SESSION_ID, getCurrentSessionProxy() called outside a user session. Asking logind directly.
+Apr  4 15:49:45 majeed-virtual-machine gnome-shell[1514]: Will monitor session 1
+Apr  4 15:49:46 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating service name='org.gnome.Shell.CalendarServer' requested by ':1.31' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:49:47 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating via systemd: service name='org.gnome.evolution.dataserver.Sources5' unit='evolution-source-registry.service' requested by ':1.33' (uid=1000 pid=1542 comm="/usr/libexec/gnome-shell-calendar-server " label="unconfined")
+Apr  4 15:49:47 majeed-virtual-machine systemd[1081]: Starting Evolution source registry...
+Apr  4 15:49:48 majeed-virtual-machine dbus-daemon[701]: [system] Activating via systemd: service name='org.freedesktop.UPower' unit='upower.service' requested by ':1.46' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:49:48 majeed-virtual-machine systemd[1]: Starting Daemon for power management...
+Apr  4 15:49:49 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating service name='org.gnome.OnlineAccounts' requested by ':1.34' (uid=1000 pid=1550 comm="/usr/libexec/evolution-source-registry " label="unconfined")
+Apr  4 15:49:49 majeed-virtual-machine dbus-daemon[701]: [system] Activating via systemd: service name='org.freedesktop.GeoClue2' unit='geoclue.service' requested by ':1.46' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:49:49 majeed-virtual-machine systemd[1]: Starting Location Lookup Service...
+Apr  4 15:49:49 majeed-virtual-machine dbus-daemon[701]: [system] Successfully activated service 'org.freedesktop.UPower'
+Apr  4 15:49:49 majeed-virtual-machine systemd[1]: Started Daemon for power management.
+Apr  4 15:49:50 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gnome.evolution.dataserver.Sources5'
+Apr  4 15:49:50 majeed-virtual-machine systemd[1081]: Started Evolution source registry.
+Apr  4 15:49:50 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating via systemd: service name='ca.desrt.dconf' unit='dconf.service' requested by ':1.31' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:49:50 majeed-virtual-machine systemd[1081]: Starting User preferences database...
+Apr  4 15:49:50 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'ca.desrt.dconf'
+Apr  4 15:49:50 majeed-virtual-machine systemd[1081]: Started User preferences database.
+Apr  4 15:49:50 majeed-virtual-machine gnome-shell[1514]: Telepathy is not available, chat integration will be disabled.
+Apr  4 15:49:50 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gnome.Shell.CalendarServer'
+Apr  4 15:49:51 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating via systemd: service name='org.gnome.evolution.dataserver.Calendar8' unit='evolution-calendar-factory.service' requested by ':1.33' (uid=1000 pid=1542 comm="/usr/libexec/gnome-shell-calendar-server " label="unconfined")
+Apr  4 15:49:51 majeed-virtual-machine systemd[1081]: Starting Evolution calendar service...
+Apr  4 15:49:51 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating via systemd: service name='org.gtk.vfs.UDisks2VolumeMonitor' unit='gvfs-udisks2-volume-monitor.service' requested by ':1.31' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:49:51 majeed-virtual-machine systemd[1081]: Starting Virtual filesystem service - disk device monitor...
+Apr  4 15:49:51 majeed-virtual-machine systemd[1]: systemd-timedated.service: Deactivated successfully.
+Apr  4 15:49:51 majeed-virtual-machine dbus-daemon[701]: [system] Successfully activated service 'org.freedesktop.GeoClue2'
+Apr  4 15:49:51 majeed-virtual-machine systemd[1]: Started Location Lookup Service.
+Apr  4 15:49:52 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gtk.vfs.UDisks2VolumeMonitor'
+Apr  4 15:49:52 majeed-virtual-machine systemd[1081]: Started Virtual filesystem service - disk device monitor.
+Apr  4 15:49:52 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating via systemd: service name='org.gtk.vfs.AfcVolumeMonitor' unit='gvfs-afc-volume-monitor.service' requested by ':1.31' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:49:52 majeed-virtual-machine systemd[1081]: Starting Virtual filesystem service - Apple File Conduit monitor...
+Apr  4 15:49:52 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gtk.vfs.AfcVolumeMonitor'
+Apr  4 15:49:52 majeed-virtual-machine systemd[1081]: Started Virtual filesystem service - Apple File Conduit monitor.
+Apr  4 15:49:53 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating via systemd: service name='org.gtk.vfs.MTPVolumeMonitor' unit='gvfs-mtp-volume-monitor.service' requested by ':1.31' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:49:53 majeed-virtual-machine systemd[1081]: Starting Virtual filesystem service - Media Transfer Protocol monitor...
+Apr  4 15:49:53 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gtk.vfs.MTPVolumeMonitor'
+Apr  4 15:49:53 majeed-virtual-machine systemd[1081]: Started Virtual filesystem service - Media Transfer Protocol monitor.
+Apr  4 15:49:53 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating via systemd: service name='org.gtk.vfs.GPhoto2VolumeMonitor' unit='gvfs-gphoto2-volume-monitor.service' requested by ':1.31' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:49:53 majeed-virtual-machine systemd[1081]: Starting Virtual filesystem service - digital camera monitor...
+Apr  4 15:49:53 majeed-virtual-machine goa-daemon[1561]: goa-daemon version 3.44.0 starting
+Apr  4 15:49:53 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gtk.vfs.GPhoto2VolumeMonitor'
+Apr  4 15:49:53 majeed-virtual-machine systemd[1081]: Started Virtual filesystem service - digital camera monitor.
+Apr  4 15:49:53 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating service name='org.gnome.Identity' requested by ':1.40' (uid=1000 pid=1561 comm="/usr/libexec/goa-daemon " label="unconfined")
+Apr  4 15:49:53 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gnome.evolution.dataserver.Calendar8'
+Apr  4 15:49:53 majeed-virtual-machine systemd[1081]: Started Evolution calendar service.
+Apr  4 15:49:53 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gnome.OnlineAccounts'
+Apr  4 15:49:53 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating via systemd: service name='org.gtk.vfs.GoaVolumeMonitor' unit='gvfs-goa-volume-monitor.service' requested by ':1.31' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:49:53 majeed-virtual-machine systemd[1081]: Starting Virtual filesystem service - GNOME Online Accounts monitor...
+Apr  4 15:49:53 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating via systemd: service name='org.gnome.evolution.dataserver.AddressBook10' unit='evolution-addressbook-factory.service' requested by ':1.36' (uid=1000 pid=1571 comm="/usr/libexec/evolution-calendar-factory " label="unconfined")
+Apr  4 15:49:53 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gtk.vfs.GoaVolumeMonitor'
+Apr  4 15:49:53 majeed-virtual-machine systemd[1081]: Starting Evolution address book service...
+Apr  4 15:49:53 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gnome.Identity'
+Apr  4 15:49:53 majeed-virtual-machine systemd[1081]: Started Virtual filesystem service - GNOME Online Accounts monitor.
+Apr  4 15:49:54 majeed-virtual-machine dbus-daemon[701]: [system] Activating via systemd: service name='org.freedesktop.PackageKit' unit='packagekit.service' requested by ':1.46' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:49:54 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gnome.evolution.dataserver.AddressBook10'
+Apr  4 15:49:54 majeed-virtual-machine systemd[1081]: Started Evolution address book service.
+Apr  4 15:49:54 majeed-virtual-machine systemd[1]: Starting PackageKit Daemon...
+Apr  4 15:49:55 majeed-virtual-machine PackageKit: daemon start
+Apr  4 15:49:56 majeed-virtual-machine dbus-daemon[701]: [system] Successfully activated service 'org.freedesktop.PackageKit'
+Apr  4 15:49:56 majeed-virtual-machine systemd[1]: Started PackageKit Daemon.
+Apr  4 15:49:57 majeed-virtual-machine kernel: [  159.000590] workqueue: pm_runtime_work hogged CPU for >10000us 4 times, consider switching to WQ_UNBOUND
+Apr  4 15:49:58 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating service name='org.freedesktop.FileManager1' requested by ':1.31' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:49:59 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating service name='org.gnome.Shell.Notifications' requested by ':1.31' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:49:59 majeed-virtual-machine at-spi-bus-launcher[1415]: dbus-daemon[1415]: Activating service name='org.a11y.atspi.Registry' requested by ':1.1' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:49:59 majeed-virtual-machine at-spi-bus-launcher[1415]: dbus-daemon[1415]: Successfully activated service 'org.a11y.atspi.Registry'
+Apr  4 15:49:59 majeed-virtual-machine at-spi-bus-launcher[1655]: SpiRegistry daemon is running with well-known name - org.a11y.atspi.Registry
+Apr  4 15:50:01 majeed-virtual-machine systemd[1081]: Started GNOME Shell on X11.
+Apr  4 15:50:01 majeed-virtual-machine systemd[1081]: Reached target GNOME Session is initialized.
+Apr  4 15:50:01 majeed-virtual-machine systemd[1081]: Reached target GNOME session X11 services.
+Apr  4 15:50:01 majeed-virtual-machine systemd[1081]: Reached target GNOME Session (session: ubuntu).
+Apr  4 15:50:01 majeed-virtual-machine systemd[1081]: Starting Signal initialization done to GNOME Session Manager...
+Apr  4 15:50:01 majeed-virtual-machine systemd[1081]: Starting IBus Daemon for GNOME...
+Apr  4 15:50:01 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gnome.Shell.Notifications'
+Apr  4 15:50:01 majeed-virtual-machine systemd[1081]: Starting GNOME accessibility service...
+Apr  4 15:50:01 majeed-virtual-machine systemd[1081]: Starting GNOME color management service...
+Apr  4 15:50:01 majeed-virtual-machine systemd[1081]: Starting GNOME date & time service...
+Apr  4 15:50:01 majeed-virtual-machine systemd[1081]: Starting GNOME maintenance of expirable data service...
+Apr  4 15:50:01 majeed-virtual-machine systemd[1081]: Starting GNOME keyboard configuration service...
+Apr  4 15:50:01 majeed-virtual-machine systemd[1081]: Starting GNOME keyboard shortcuts service...
+Apr  4 15:50:01 majeed-virtual-machine systemd[1081]: Starting GNOME power management service...
+Apr  4 15:50:01 majeed-virtual-machine udisksd[764]: Mounted /dev/sr0 at /media/majeed/CDROM on behalf of uid 1000
+Apr  4 15:50:01 majeed-virtual-machine systemd[1081]: Starting GNOME printer notifications service...
+Apr  4 15:50:01 majeed-virtual-machine spice-vdagent[1674]: vdagent virtio channel /dev/virtio-ports/com.redhat.spice.0 does not exist, exiting
+Apr  4 15:50:01 majeed-virtual-machine systemd[1081]: Starting GNOME RFKill support service...
+Apr  4 15:50:02 majeed-virtual-machine systemd[1081]: Starting GNOME FreeDesktop screensaver service...
+Apr  4 15:50:02 majeed-virtual-machine systemd[1081]: Starting GNOME file sharing service...
+Apr  4 15:50:02 majeed-virtual-machine systemd[1081]: Starting GNOME smartcard service...
+Apr  4 15:50:02 majeed-virtual-machine systemd[1081]: Starting GNOME sound sample caching service...
+Apr  4 15:50:02 majeed-virtual-machine systemd[1081]: Starting GNOME Wacom tablet support service...
+Apr  4 15:50:02 majeed-virtual-machine systemd[1081]: Starting GNOME XSettings service...
+Apr  4 15:50:02 majeed-virtual-machine systemd[1081]: Finished Signal initialization done to GNOME Session Manager.
+Apr  4 15:50:02 majeed-virtual-machine systemd[1081]: Started GNOME accessibility service.
+Apr  4 15:50:02 majeed-virtual-machine systemd[1081]: Reached target GNOME accessibility target.
+Apr  4 15:50:03 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating service name='org.freedesktop.portal.IBus' requested by ':1.51' (uid=1000 pid=1682 comm="/usr/bin/ibus-daemon --panel disable --xim " label="unconfined")
+Apr  4 15:50:03 majeed-virtual-machine systemd[1081]: Started IBus Daemon for GNOME.
+Apr  4 15:50:03 majeed-virtual-machine NetworkManager[703]: <info>  [1775317803.4088] agent-manager: agent[f63f5202d1aa0f2d,:1.46/org.gnome.Shell.NetworkAgent/1000]: agent registered
+Apr  4 15:50:03 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating via systemd: service name='org.freedesktop.portal.Desktop' unit='xdg-desktop-portal.service' requested by ':1.47' (uid=1000 pid=1635 comm="/usr/bin/nautilus --gapplication-service " label="unconfined")
+Apr  4 15:50:03 majeed-virtual-machine systemd[1081]: Starting Portal service...
+Apr  4 15:50:03 majeed-virtual-machine gnome-session-binary[1488]: Entering running state
+Apr  4 15:50:03 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.freedesktop.portal.IBus'
+Apr  4 15:50:03 majeed-virtual-machine gnome-session[1488]: gnome-session-binary[1488]: GnomeDesktop-WARNING: Could not create transient scope for PID 1674: GDBus.Error:org.freedesktop.DBus.Error.UnixProcessIdUnknown: Process with ID 1674 does not exist.
+Apr  4 15:50:03 majeed-virtual-machine gnome-session-binary[1488]: GnomeDesktop-WARNING: Could not create transient scope for PID 1674: GDBus.Error:org.freedesktop.DBus.Error.UnixProcessIdUnknown: Process with ID 1674 does not exist.
+Apr  4 15:50:03 majeed-virtual-machine systemd[1081]: Started Application launched by gnome-session-binary.
+Apr  4 15:50:03 majeed-virtual-machine systemd[1081]: Started GNOME maintenance of expirable data service.
+Apr  4 15:50:03 majeed-virtual-machine dbus-daemon[701]: [system] Activating via systemd: service name='org.freedesktop.ColorManager' unit='colord.service' requested by ':1.56' (uid=1000 pid=1675 comm="/usr/libexec/gsd-color " label="unconfined")
+Apr  4 15:50:03 majeed-virtual-machine dbus-daemon[701]: [system] Activating via systemd: service name='org.freedesktop.hostname1' unit='dbus-org.freedesktop.hostname1.service' requested by ':1.60' (uid=1000 pid=1698 comm="/usr/libexec/gsd-rfkill " label="unconfined")
+Apr  4 15:50:04 majeed-virtual-machine systemd[1]: Starting Manage, Install and Generate Color Profiles...
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Started GNOME smartcard service.
+Apr  4 15:50:04 majeed-virtual-machine dbus-daemon[701]: [system] Activating via systemd: service name='org.freedesktop.locale1' unit='dbus-org.freedesktop.locale1.service' requested by ':1.63' (uid=1000 pid=1684 comm="/usr/libexec/gsd-keyboard " label="unconfined")
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Started GNOME FreeDesktop screensaver service.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Started GNOME color management service.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Started GNOME Wacom tablet support service.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Started GNOME keyboard configuration service.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Started GNOME date & time service.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Started GNOME file sharing service.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Started Application launched by gnome-session-binary.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: message repeated 3 times: [ Started Application launched by gnome-session-binary.]
+Apr  4 15:50:04 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating via systemd: service name='org.freedesktop.impl.portal.desktop.gnome' unit='xdg-desktop-portal-gnome.service' requested by ':1.69' (uid=1000 pid=1767 comm="/usr/libexec/xdg-desktop-portal " label="unconfined")
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Reached target GNOME color management target.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Reached target GNOME date & time target.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Reached target GNOME maintenance of expirable data target.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Reached target GNOME keyboard configuration target.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Reached target GNOME FreeDesktop screensaver target.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Reached target GNOME file sharing target.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Reached target GNOME smartcard target.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Reached target GNOME Wacom tablet support target.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Started GNOME sound sample caching service.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Started GNOME keyboard shortcuts service.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Reached target GNOME keyboard shortcuts target.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Reached target GNOME sound sample caching target.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Starting Portal service (GNOME implementation)...
+Apr  4 15:50:04 majeed-virtual-machine systemd[1]: Starting Hostname Service...
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Started GNOME power management service.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Reached target GNOME power management target.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Started GNOME printer notifications service.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1081]: Reached target GNOME printer notifications target.
+Apr  4 15:50:04 majeed-virtual-machine systemd[1]: Starting Locale Service...
+Apr  4 15:50:05 majeed-virtual-machine colord[1791]: failed to get edid data: EDID length is too small
+Apr  4 15:50:05 majeed-virtual-machine gnome-shell[1514]: Error looking up permission: GDBus.Error:org.freedesktop.portal.Error.NotFound: No entry for geolocation
+Apr  4 15:50:05 majeed-virtual-machine dbus-daemon[701]: [system] Successfully activated service 'org.freedesktop.ColorManager'
+Apr  4 15:50:05 majeed-virtual-machine systemd[1]: Started Manage, Install and Generate Color Profiles.
+Apr  4 15:50:05 majeed-virtual-machine dbus-daemon[701]: [system] Successfully activated service 'org.freedesktop.locale1'
+Apr  4 15:50:05 majeed-virtual-machine systemd[1]: Started Locale Service.
+Apr  4 15:50:05 majeed-virtual-machine dbus-daemon[701]: [system] Successfully activated service 'org.freedesktop.hostname1'
+Apr  4 15:50:05 majeed-virtual-machine systemd[1]: Started Hostname Service.
+Apr  4 15:50:05 majeed-virtual-machine kernel: [  166.655423] rfkill: input handler disabled
+Apr  4 15:50:05 majeed-virtual-machine systemd[1081]: Started GNOME RFKill support service.
+Apr  4 15:50:05 majeed-virtual-machine systemd[1081]: Reached target GNOME RFKill support target.
+Apr  4 15:50:05 majeed-virtual-machine gnome-session[1488]: gnome-session-binary[1488]: GnomeDesktop-WARNING: Could not create transient scope for PID 1706: GDBus.Error:org.freedesktop.DBus.Error.UnixProcessIdUnknown: Process with ID 1706 does not exist.
+Apr  4 15:50:05 majeed-virtual-machine gnome-session-binary[1488]: GnomeDesktop-WARNING: Could not create transient scope for PID 1706: GDBus.Error:org.freedesktop.DBus.Error.UnixProcessIdUnknown: Process with ID 1706 does not exist.
+Apr  4 15:50:06 majeed-virtual-machine gnome-session[1488]: gnome-session-binary[1488]: GnomeDesktop-WARNING: Could not create transient scope for PID 1708: GDBus.Error:org.freedesktop.DBus.Error.UnixProcessIdUnknown: Process with ID 1708 does not exist.
+Apr  4 15:50:06 majeed-virtual-machine gnome-session[1488]: gnome-session-binary[1488]: GnomeDesktop-WARNING: Could not create transient scope for PID 1730: GDBus.Error:org.freedesktop.DBus.Error.UnixProcessIdUnknown: Process with ID 1730 does not exist.
+Apr  4 15:50:06 majeed-virtual-machine gnome-session-binary[1488]: GnomeDesktop-WARNING: Could not create transient scope for PID 1708: GDBus.Error:org.freedesktop.DBus.Error.UnixProcessIdUnknown: Process with ID 1708 does not exist.
+Apr  4 15:50:06 majeed-virtual-machine gnome-session-binary[1488]: GnomeDesktop-WARNING: Could not create transient scope for PID 1730: GDBus.Error:org.freedesktop.DBus.Error.UnixProcessIdUnknown: Process with ID 1730 does not exist.
+Apr  4 15:50:09 majeed-virtual-machine systemd[1081]: Started GNOME XSettings service.
+Apr  4 15:50:09 majeed-virtual-machine systemd[1081]: GNOME session X11 services is inactive.
+Apr  4 15:50:09 majeed-virtual-machine systemd[1081]: Reached target GNOME XSettings target.
+Apr  4 15:50:09 majeed-virtual-machine systemd[1081]: Reached target GNOME Session.
+Apr  4 15:50:09 majeed-virtual-machine systemd[1081]: Reached target GNOME X11 Session (session: ubuntu).
+Apr  4 15:50:09 majeed-virtual-machine systemd[1081]: Reached target Current graphical user session.
+Apr  4 15:50:09 majeed-virtual-machine systemd[1081]: Condition check resulted in GNOME Initial Setup being skipped.
+Apr  4 15:50:09 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating service name='org.gnome.ScreenSaver' requested by ':1.62' (uid=1000 pid=1692 comm="/usr/libexec/gsd-power " label="unconfined")
+Apr  4 15:50:09 majeed-virtual-machine systemd[1081]: Starting Tracker file system data miner...
+Apr  4 15:50:10 majeed-virtual-machine gsd-color[1675]: failed to get edid: unable to get EDID for output
+Apr  4 15:50:12 majeed-virtual-machine gsd-media-keys[1687]: Failed to grab accelerator for keybinding settings:playback-repeat
+Apr  4 15:50:12 majeed-virtual-machine gsd-media-keys[1687]: Failed to grab accelerator for keybinding settings:rotate-video-lock
+Apr  4 15:50:12 majeed-virtual-machine gsd-media-keys[1687]: Failed to grab accelerator for keybinding settings:hibernate
+Apr  4 15:50:12 majeed-virtual-machine gsd-media-keys[1687]: Failed to grab accelerator for keybinding settings:playback-random
+Apr  4 15:50:12 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gnome.ScreenSaver'
+Apr  4 15:50:12 majeed-virtual-machine snapd-desktop-i[1464]: New theme: gtk=Yaru icon=Yaru cursor=Yaru, sound=Yaru
+Apr  4 15:50:12 majeed-virtual-machine snapd-desktop-i[1464]: All available theme snaps installed
+Apr  4 15:50:13 majeed-virtual-machine gsd-color[1675]: unable to get EDID for xrandr-Virtual1: unable to get EDID for output
+Apr  4 15:50:13 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.freedesktop.impl.portal.desktop.gnome'
+Apr  4 15:50:13 majeed-virtual-machine systemd[1081]: Started Portal service (GNOME implementation).
+Apr  4 15:50:13 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 1 users.
+Apr  4 15:50:13 majeed-virtual-machine rtkit-daemon[1216]: message repeated 2 times: [ Supervising 6 threads of 3 processes of 1 users.]
+Apr  4 15:50:14 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating via systemd: service name='org.gtk.vfs.Metadata' unit='gvfs-metadata.service' requested by ':1.31' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:50:14 majeed-virtual-machine systemd[1081]: Starting Virtual filesystem metadata service...
+Apr  4 15:50:14 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating via systemd: service name='org.freedesktop.impl.portal.desktop.gtk' unit='xdg-desktop-portal-gtk.service' requested by ':1.69' (uid=1000 pid=1767 comm="/usr/libexec/xdg-desktop-portal " label="unconfined")
+Apr  4 15:50:14 majeed-virtual-machine systemd[1081]: Starting Portal service (GTK/GNOME implementation)...
+Apr  4 15:50:14 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gtk.vfs.Metadata'
+Apr  4 15:50:14 majeed-virtual-machine systemd[1081]: Started Virtual filesystem metadata service.
+Apr  4 15:50:14 majeed-virtual-machine gnome-shell[1514]: Window manager warning: Overwriting existing binding of keysym 31 with keysym 31 (keycode a).
+Apr  4 15:50:14 majeed-virtual-machine gnome-shell[1514]: Window manager warning: Overwriting existing binding of keysym 32 with keysym 32 (keycode b).
+Apr  4 15:50:14 majeed-virtual-machine gnome-shell[1514]: Window manager warning: Overwriting existing binding of keysym 33 with keysym 33 (keycode c).
+Apr  4 15:50:14 majeed-virtual-machine gnome-shell[1514]: Window manager warning: Overwriting existing binding of keysym 34 with keysym 34 (keycode d).
+Apr  4 15:50:14 majeed-virtual-machine gnome-shell[1514]: Window manager warning: Overwriting existing binding of keysym 35 with keysym 35 (keycode e).
+Apr  4 15:50:14 majeed-virtual-machine gnome-shell[1514]: Window manager warning: Overwriting existing binding of keysym 36 with keysym 36 (keycode f).
+Apr  4 15:50:14 majeed-virtual-machine gnome-shell[1514]: Window manager warning: Overwriting existing binding of keysym 37 with keysym 37 (keycode 10).
+Apr  4 15:50:14 majeed-virtual-machine gnome-shell[1514]: Window manager warning: Overwriting existing binding of keysym 38 with keysym 38 (keycode 11).
+Apr  4 15:50:14 majeed-virtual-machine gnome-shell[1514]: Window manager warning: Overwriting existing binding of keysym 39 with keysym 39 (keycode 12).
+Apr  4 15:50:16 majeed-virtual-machine vmtoolsd[1715]: gtk_disable_setlocale() must be called before gtk_init()
+Apr  4 15:50:17 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.freedesktop.impl.portal.desktop.gtk'
+Apr  4 15:50:17 majeed-virtual-machine systemd[1081]: Started Portal service (GTK/GNOME implementation).
+Apr  4 15:50:17 majeed-virtual-machine systemd[1081]: Started Tracker file system data miner.
+Apr  4 15:50:19 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.freedesktop.portal.Desktop'
+Apr  4 15:50:19 majeed-virtual-machine systemd[1081]: Started Portal service.
+Apr  4 15:50:20 majeed-virtual-machine kernel: [  181.522237] workqueue: netstamp_clear hogged CPU for >10000us 4 times, consider switching to WQ_UNBOUND
+Apr  4 15:50:21 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.freedesktop.FileManager1'
+Apr  4 15:50:25 majeed-virtual-machine gnome-shell[1514]: GNOME Shell started at Sat Apr 04 2026 15:49:54 GMT+0000 (GMT)
+Apr  4 15:50:25 majeed-virtual-machine gnome-shell[1514]: Registering session with GDM
+Apr  4 15:50:30 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating service name='org.gnome.ArchiveManager1' requested by ':1.81' (uid=1000 pid=1950 comm="gjs /usr/share/gnome-shell/extensions/ding@rasters" label="unconfined")
+Apr  4 15:50:31 majeed-virtual-machine kernel: [  192.280125] workqueue: e1000_watchdog [e1000] hogged CPU for >10000us 8 times, consider switching to WQ_UNBOUND
+Apr  4 15:50:31 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gnome.ArchiveManager1'
+Apr  4 15:50:31 majeed-virtual-machine gnome-shell[1514]: DING: Detected async api for thumbnails
+Apr  4 15:50:34 majeed-virtual-machine gnome-shell[1514]: DING: GNOME nautilus 42.6
+Apr  4 15:50:34 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating via systemd: service name='org.freedesktop.Tracker3.Miner.Extract' unit='tracker-extract-3.service' requested by ':1.76' (uid=1000 pid=1853 comm="/usr/libexec/tracker-miner-fs-3 " label="unconfined")
+Apr  4 15:50:34 majeed-virtual-machine systemd[1081]: Starting Tracker metadata extractor...
+Apr  4 15:50:35 majeed-virtual-machine systemd[1]: systemd-localed.service: Deactivated successfully.
+Apr  4 15:50:35 majeed-virtual-machine systemd[1]: systemd-hostnamed.service: Deactivated successfully.
+Apr  4 15:50:36 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.freedesktop.Tracker3.Miner.Extract'
+Apr  4 15:50:36 majeed-virtual-machine systemd[1081]: Started Tracker metadata extractor.
+Apr  4 15:50:41 majeed-virtual-machine kernel: [  202.427852] workqueue: blk_mq_run_work_fn hogged CPU for >10000us 64 times, consider switching to WQ_UNBOUND
+Apr  4 15:50:41 majeed-virtual-machine kernel: [  202.456542] workqueue: hub_event hogged CPU for >10000us 4 times, consider switching to WQ_UNBOUND
+Apr  4 15:50:47 majeed-virtual-machine systemd[1081]: tracker-extract-3.service: Consumed 1.146s CPU time.
+Apr  4 15:50:52 majeed-virtual-machine geoclue[1563]: Service not used for 60 seconds. Shutting down..
+Apr  4 15:50:52 majeed-virtual-machine systemd[1]: geoclue.service: Deactivated successfully.
+Apr  4 15:51:01 majeed-virtual-machine kernel: [  222.529065] workqueue: hub_event hogged CPU for >10000us 8 times, consider switching to WQ_UNBOUND
+Apr  4 15:51:01 majeed-virtual-machine kernel: [  222.635651] workqueue: pm_runtime_work hogged CPU for >10000us 8 times, consider switching to WQ_UNBOUND
+Apr  4 15:51:03 majeed-virtual-machine systemd[1081]: Started Application launched by gnome-session-binary.
+Apr  4 15:51:12 majeed-virtual-machine kernel: [  233.716655] workqueue: e1000_watchdog [e1000] hogged CPU for >10000us 16 times, consider switching to WQ_UNBOUND
+Apr  4 15:51:03 majeed-virtual-machine systemd[1081]: Started Application launched by gnome-session-binary.
+Apr  4 15:51:24 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (EE) event2  - VirtualPS/2 VMware VMMouse: client bug: event processing lagging behind by 21ms, your system is too slow
+Apr  4 15:51:31 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (EE) event2  - VirtualPS/2 VMware VMMouse: client bug: event processing lagging behind by 24ms, your system is too slow
+Apr  4 15:51:34 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (EE) event2  - VirtualPS/2 VMware VMMouse: client bug: event processing lagging behind by 22ms, your system is too slow
+Apr  4 15:51:36 majeed-virtual-machine ubuntu-appindicators@ubuntu.com[1514]: unable to update icon for software-update-available
+Apr  4 15:51:36 majeed-virtual-machine ubuntu-appindicators@ubuntu.com[1514]: unable to update icon for livepatch
+Apr  4 15:51:36 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating service name='org.gnome.ControlCenter.SearchProvider' requested by ':1.31' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:51:36 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating service name='org.gnome.Nautilus' requested by ':1.31' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:51:36 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating service name='org.gnome.Calculator.SearchProvider' requested by ':1.31' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:51:36 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating service name='org.gnome.Calendar' requested by ':1.31' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:51:36 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating service name='org.gnome.Characters.BackgroundService' requested by ':1.31' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:51:36 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating service name='org.gnome.seahorse.Application' requested by ':1.31' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:51:36 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Activating via systemd: service name='org.gnome.Terminal' unit='gnome-terminal-server.service' requested by ':1.31' (uid=1000 pid=1514 comm="/usr/bin/gnome-shell " label="unconfined")
+Apr  4 15:51:36 majeed-virtual-machine systemd[1081]: Created slice Slice /app/org.gnome.Terminal.
+Apr  4 15:51:36 majeed-virtual-machine systemd[1081]: Starting GNOME Terminal Server...
+Apr  4 15:51:36 majeed-virtual-machine update-notifier.desktop[2075]: #015Reading package lists... 0%#015#015Reading package lists... 100%#015#015Reading package lists... Done
+Apr  4 15:51:37 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gnome.ControlCenter.SearchProvider'
+Apr  4 15:51:37 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gnome.Terminal'
+Apr  4 15:51:37 majeed-virtual-machine systemd[1081]: Started GNOME Terminal Server.
+Apr  4 15:51:37 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gnome.Nautilus'
+Apr  4 15:51:38 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gnome.seahorse.Application'
+Apr  4 15:51:39 majeed-virtual-machine systemd[1081]: Started Application launched by gnome-shell.
+Apr  4 15:51:40 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (EE) event2  - VirtualPS/2 VMware VMMouse: client bug: event processing lagging behind by 22ms, your system is too slow
+Apr  4 15:51:43 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gnome.Characters.BackgroundService'
+Apr  4 15:51:43 majeed-virtual-machine update-notifier.desktop[2075]: #015Building dependency tree... 0%#015#015Building dependency tree... 0%#015#015Building dependency tree... 50%#015#015Building dependency tree... 50%#015#015Building dependency tree... 57%#015#015Building dependency tree... 70%#015#015Building dependency tree... 73%#015#015Building dependency tree... 78%#015#015Building dependency tree... 80%#015#015Building dependency tree... 86%#015#015Building dependency tree... 92%#015#015Building dependency tree... 97%#015#015Building dependency tree... Done
+Apr  4 15:51:43 majeed-virtual-machine update-notifier.desktop[2075]: #015Reading state information... 0% #015#015Reading state information... 0%#015#015Reading state information... Done
+Apr  4 15:51:43 majeed-virtual-machine dbus-daemon[701]: [system] Activating via systemd: service name='org.freedesktop.timedate1' unit='dbus-org.freedesktop.timedate1.service' requested by ':1.82' (uid=1000 pid=2091 comm="/usr/bin/gnome-calendar --gapplication-service " label="unconfined")
+Apr  4 15:51:44 majeed-virtual-machine systemd[1]: Starting Time & Date Service...
+Apr  4 15:51:44 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gnome.Calculator.SearchProvider'
+Apr  4 15:51:44 majeed-virtual-machine dbus-daemon[701]: [system] Successfully activated service 'org.freedesktop.timedate1'
+Apr  4 15:51:44 majeed-virtual-machine systemd[1]: Started Time & Date Service.
+Apr  4 15:51:44 majeed-virtual-machine gnome-calculato[2088]: search-provider.vala:140: Failed to spawn Calculator: Child process killed by signal 9
+Apr  4 15:51:44 majeed-virtual-machine gnome-calculato[2088]: search-provider.vala:140: Failed to spawn Calculator: Child process killed by signal 9
+Apr  4 15:51:44 majeed-virtual-machine dbus-daemon[1234]: [session uid=1000 pid=1234] Successfully activated service 'org.gnome.Calendar'
+Apr  4 15:51:48 majeed-virtual-machine systemd[1081]: Started VTE child process 2165 launched by gnome-terminal-server process 2094.
+Apr  4 15:51:48 majeed-virtual-machine systemd[1081]: app-gnome-org.gnome.Terminal-2119.scope: Consumed 1.725s CPU time.
+Apr  4 15:51:48 majeed-virtual-machine nautilus[2087]: Connecting to org.freedesktop.Tracker3.Miner.Files
+Apr  4 15:51:57 majeed-virtual-machine kernel: [  278.043293] workqueue: netstamp_clear hogged CPU for >10000us 8 times, consider switching to WQ_UNBOUND
+Apr  4 15:52:01 majeed-virtual-machine gnome-shell[1514]: Can't update stage views actor <unnamed>[<MetaWindowGroup>:0x592648e46300] is on because it needs an allocation.
+Apr  4 15:52:01 majeed-virtual-machine gnome-shell[1514]: Can't update stage views actor <unnamed>[<MetaWindowActorX11>:0x592649298f30] is on because it needs an allocation.
+Apr  4 15:52:01 majeed-virtual-machine gnome-shell[1514]: Can't update stage views actor <unnamed>[<MetaSurfaceActorX11>:0x592649290da0] is on because it needs an allocation.
+Apr  4 15:52:02 majeed-virtual-machine systemd[1081]: Started Application launched by gnome-session-binary.
+Apr  4 15:52:14 majeed-virtual-machine systemd[1]: systemd-timedated.service: Deactivated successfully.
+Apr  4 15:52:43 majeed-virtual-machine kernel: [  324.823364] workqueue: psi_avgs_work hogged CPU for >10000us 32 times, consider switching to WQ_UNBOUND
+Apr  4 15:53:04 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (EE) event2  - VirtualPS/2 VMware VMMouse: client bug: event processing lagging behind by 47ms, your system is too slow
+Apr  4 15:53:04 majeed-virtual-machine /usr/libexec/gdm-x-session[1237]: (EE) event2  - VirtualPS/2 VMware VMMouse: WARNING: log rate limit exceeded (5 msgs per 60min). Discarding future messages.
+Apr  4 15:53:11 majeed-virtual-machine systemd[1]: Starting Update APT News...
+Apr  4 15:53:11 majeed-virtual-machine systemd[1]: Starting Update the local ESM caches...
+Apr  4 15:53:15 majeed-virtual-machine systemd[1]: apt-news.service: Deactivated successfully.
+Apr  4 15:53:15 majeed-virtual-machine systemd[1]: Finished Update APT News.
+Apr  4 15:53:15 majeed-virtual-machine systemd[1]: apt-news.service: Consumed 1.286s CPU time.
+Apr  4 15:53:20 majeed-virtual-machine systemd[1]: esm-cache.service: Deactivated successfully.
+Apr  4 15:53:20 majeed-virtual-machine systemd[1]: Finished Update the local ESM caches.
+Apr  4 15:53:20 majeed-virtual-machine systemd[1]: esm-cache.service: Consumed 2.744s CPU time.
+Apr  4 15:53:47 majeed-virtual-machine anacron[692]: Job `cron.daily' started
+Apr  4 15:53:47 majeed-virtual-machine anacron[2708]: Updated timestamp for job `cron.daily' to 2026-04-04
+Apr  4 15:53:47 majeed-virtual-machine systemd[1]: Starting Download data for packages that failed at package install time...
+Apr  4 15:53:48 majeed-virtual-machine systemd[1]: update-notifier-download.service: Deactivated successfully.
+Apr  4 15:53:48 majeed-virtual-machine systemd[1]: Finished Download data for packages that failed at package install time.
+Apr  4 15:53:48 majeed-virtual-machine cracklib: no dictionary update necessary.
+Apr  4 15:53:48 majeed-virtual-machine anacron[692]: Job `cron.daily' terminated
+Apr  4 15:54:07 majeed-virtual-machine systemd[1081]: app-gnome-org.gnome.DejaDup.Monitor-2219.scope: Consumed 1.014s CPU time.
+Apr  4 15:54:17 majeed-virtual-machine kernel: [  418.025781] workqueue: pm_runtime_work hogged CPU for >10000us 16 times, consider switching to WQ_UNBOUND
+Apr  4 15:55:36 majeed-virtual-machine systemd[1]: Reloading.
+Apr  4 15:55:37 majeed-virtual-machine systemd[1]: Configuration file /run/systemd/system/netplan-ovs-cleanup.service is marked world-inaccessible. This has no effect as configuration data is accessible via APIs without restrictions. Proceeding anyway.
+Apr  4 15:55:37 majeed-virtual-machine systemd[1]: /lib/systemd/system/snapd.service:23: Unknown key name 'RestartMode' in section 'Service', ignoring.
+Apr  4 15:55:38 majeed-virtual-machine systemd[1]: Reloading.
+Apr  4 15:55:38 majeed-virtual-machine systemd[1]: Configuration file /run/systemd/system/netplan-ovs-cleanup.service is marked world-inaccessible. This has no effect as configuration data is accessible via APIs without restrictions. Proceeding anyway.
+Apr  4 15:55:38 majeed-virtual-machine systemd[1]: /lib/systemd/system/snapd.service:23: Unknown key name 'RestartMode' in section 'Service', ignoring.
+Apr  4 15:55:39 majeed-virtual-machine systemd[1]: Reloading.
+Apr  4 15:55:39 majeed-virtual-machine systemd[1]: Configuration file /run/systemd/system/netplan-ovs-cleanup.service is marked world-inaccessible. This has no effect as configuration data is accessible via APIs without restrictions. Proceeding anyway.
+Apr  4 15:55:39 majeed-virtual-machine systemd[1]: /lib/systemd/system/snapd.service:23: Unknown key name 'RestartMode' in section 'Service', ignoring.
+Apr  4 15:55:40 majeed-virtual-machine systemd[1]: Starting Daily apt upgrade and clean activities...
+Apr  4 15:55:40 majeed-virtual-machine systemd[1]: Starting OpenBSD Secure Shell server...
+Apr  4 15:55:40 majeed-virtual-machine systemd[1]: Started OpenBSD Secure Shell server.
+Apr  4 15:55:41 majeed-virtual-machine systemd[1]: apt-daily-upgrade.service: Deactivated successfully.
+Apr  4 15:55:41 majeed-virtual-machine systemd[1]: Finished Daily apt upgrade and clean activities.
+Apr  4 15:55:42 majeed-virtual-machine systemd[1]: Reloading.
+Apr  4 15:55:43 majeed-virtual-machine systemd[1]: Configuration file /run/systemd/system/netplan-ovs-cleanup.service is marked world-inaccessible. This has no effect as configuration data is accessible via APIs without restrictions. Proceeding anyway.
+Apr  4 15:55:43 majeed-virtual-machine systemd[1]: /lib/systemd/system/snapd.service:23: Unknown key name 'RestartMode' in section 'Service', ignoring.
+Apr  4 15:57:20 majeed-virtual-machine systemd[1]: Reloading.
+Apr  4 15:57:21 majeed-virtual-machine systemd[1]: Configuration file /run/systemd/system/netplan-ovs-cleanup.service is marked world-inaccessible. This has no effect as configuration data is accessible via APIs without restrictions. Proceeding anyway.
+Apr  4 15:57:21 majeed-virtual-machine systemd[1]: /lib/systemd/system/snapd.service:23: Unknown key name 'RestartMode' in section 'Service', ignoring.
+Apr  4 15:57:21 majeed-virtual-machine systemd[1]: Reloading.
+Apr  4 15:57:21 majeed-virtual-machine systemd[1]: Configuration file /run/systemd/system/netplan-ovs-cleanup.service is marked world-inaccessible. This has no effect as configuration data is accessible via APIs without restrictions. Proceeding anyway.
+Apr  4 15:57:21 majeed-virtual-machine systemd[1]: /lib/systemd/system/snapd.service:23: Unknown key name 'RestartMode' in section 'Service', ignoring.
+Apr  4 15:57:22 majeed-virtual-machine systemd[1]: Reloading.
+Apr  4 15:57:22 majeed-virtual-machine systemd[1]: Configuration file /run/systemd/system/netplan-ovs-cleanup.service is marked world-inaccessible. This has no effect as configuration data is accessible via APIs without restrictions. Proceeding anyway.
+Apr  4 15:57:22 majeed-virtual-machine systemd[1]: /lib/systemd/system/snapd.service:23: Unknown key name 'RestartMode' in section 'Service', ignoring.
+Apr  4 15:57:23 majeed-virtual-machine systemd[1]: Starting Daily man-db regeneration...
+Apr  4 15:57:23 majeed-virtual-machine systemd[1]: man-db.service: Deactivated successfully.
+Apr  4 15:57:23 majeed-virtual-machine systemd[1]: Finished Daily man-db regeneration.
+Apr  4 15:57:23 majeed-virtual-machine kernel: [  604.848367] e1000 0000:02:05.0 ens37: entered promiscuous mode
+Apr  4 15:57:26 majeed-virtual-machine kernel: [  607.478043] workqueue: e1000_watchdog [e1000] hogged CPU for >10000us 32 times, consider switching to WQ_UNBOUND
+Apr  4 15:58:57 majeed-virtual-machine rsyslogd: [origin software="rsyslogd" swVersion="8.2112.0" x-pid="741" x-info="https://www.rsyslog.com"] rsyslogd was HUPed
+Apr  4 15:59:19 majeed-virtual-machine kernel: [  720.360406] workqueue: hub_event hogged CPU for >10000us 16 times, consider switching to WQ_UNBOUND
+Apr  4 15:59:25 majeed-virtual-machine kernel: [  726.303512] workqueue: mpt_fault_reset_work [mptbase] hogged CPU for >10000us 4 times, consider switching to WQ_UNBOUND
+Apr  4 15:59:26 majeed-virtual-machine anacron[692]: Job `cron.weekly' started
+Apr  4 15:59:26 majeed-virtual-machine anacron[3623]: Updated timestamp for job `cron.weekly' to 2026-04-04
+Apr  4 15:59:26 majeed-virtual-machine anacron[692]: Job `cron.weekly' terminated
+Apr  4 15:59:27 majeed-virtual-machine kernel: [  728.577027] workqueue: pm_runtime_work hogged CPU for >10000us 32 times, consider switching to WQ_UNBOUND
+Apr  4 16:02:27 majeed-virtual-machine systemd[1]: Starting Cleanup of Temporary Directories...
+Apr  4 16:02:27 majeed-virtual-machine systemd[1]: systemd-tmpfiles-clean.service: Deactivated successfully.
+Apr  4 16:02:27 majeed-virtual-machine systemd[1]: Finished Cleanup of Temporary Directories.
+Apr  4 16:03:14 majeed-virtual-machine systemd[1]: Created slice User Slice of UID 1002.
+Apr  4 16:03:14 majeed-virtual-machine systemd[1]: Starting User Runtime Directory /run/user/1002...
+Apr  4 16:03:14 majeed-virtual-machine systemd[1]: Finished User Runtime Directory /run/user/1002.
+Apr  4 16:03:14 majeed-virtual-machine systemd[1]: Starting User Manager for UID 1002...
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Queued start job for default target Main User Target.
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Created slice User Application Slice.
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Created slice User Core Session Slice.
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Started Pending report trigger for Ubuntu Report.
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Reached target Paths.
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Reached target Timers.
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Starting D-Bus User Message Bus Socket...
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Listening on GnuPG network certificate management daemon.
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Listening on GnuPG cryptographic agent and passphrase cache (access for web browsers).
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Listening on GnuPG cryptographic agent and passphrase cache (restricted).
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Listening on GnuPG cryptographic agent (ssh-agent emulation).
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Listening on GnuPG cryptographic agent and passphrase cache.
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Listening on PipeWire Multimedia System Socket.
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Listening on debconf communication socket.
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Listening on Sound System.
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Listening on REST API socket for snapd user session agent.
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Listening on Speech Dispatcher Socket.
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Listening on D-Bus User Message Bus Socket.
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Reached target Sockets.
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Reached target Basic System.
+Apr  4 16:03:15 majeed-virtual-machine systemd[1]: Started User Manager for UID 1002.
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Started PipeWire Multimedia Service.
+Apr  4 16:03:15 majeed-virtual-machine systemd[1]: Started Session 3 of User testuser.
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Started PipeWire Media Session Manager.
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Starting Sound Service...
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Started Service for snap application snapd-desktop-integration.snapd-desktop-integration.
+Apr  4 16:03:15 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 2 users.
+Apr  4 16:03:15 majeed-virtual-machine pipewire[3695]: mod.rt: RTKit error: org.freedesktop.DBus.Error.AccessDenied
+Apr  4 16:03:15 majeed-virtual-machine pipewire[3695]: mod.rt: could not set nice-level to -11: Permission denied
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Started D-Bus User Message Bus.
+Apr  4 16:03:15 majeed-virtual-machine dbus-daemon[3728]: [session uid=1002 pid=3728] AppArmor D-Bus mediation is enabled
+Apr  4 16:03:15 majeed-virtual-machine dbus-daemon[3728]: [session uid=1002 pid=3728] Activating via systemd: service name='org.freedesktop.portal.Documents' unit='xdg-document-portal.service' requested by ':1.1' (uid=1002 pid=3698 comm="/usr/bin/snap run snapd-desktop-integration " label="unconfined")
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Starting flatpak document portal service...
+Apr  4 16:03:15 majeed-virtual-machine systemd[1081]: Starting Notification regarding a new release of Ubuntu...
+Apr  4 16:03:15 majeed-virtual-machine dbus-daemon[3728]: [session uid=1002 pid=3728] Activating via systemd: service name='org.freedesktop.impl.portal.PermissionStore' unit='xdg-permission-store.service' requested by ':1.2' (uid=1002 pid=3731 comm="/usr/libexec/xdg-document-portal " label="unconfined")
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Starting sandboxed app permission store...
+Apr  4 16:03:15 majeed-virtual-machine dbus-daemon[3728]: [session uid=1002 pid=3728] Successfully activated service 'org.freedesktop.impl.portal.PermissionStore'
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Started sandboxed app permission store.
+Apr  4 16:03:15 majeed-virtual-machine dbus-daemon[3728]: [session uid=1002 pid=3728] Successfully activated service 'org.freedesktop.portal.Documents'
+Apr  4 16:03:15 majeed-virtual-machine systemd[3687]: Started flatpak document portal service.
+Apr  4 16:03:15 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 2 users.
+Apr  4 16:03:15 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 2 users.
+Apr  4 16:03:15 majeed-virtual-machine pipewire-media-session[3696]: mod.rt: RTKit error: org.freedesktop.DBus.Error.AccessDenied
+Apr  4 16:03:15 majeed-virtual-machine pipewire-media-session[3696]: mod.rt: could not make thread 3719 realtime using RTKit: Permission denied
+Apr  4 16:03:16 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 2 users.
+Apr  4 16:03:16 majeed-virtual-machine pipewire[3695]: mod.rt: RTKit error: org.freedesktop.DBus.Error.AccessDenied
+Apr  4 16:03:16 majeed-virtual-machine pipewire[3695]: mod.rt: could not make thread 3783 realtime using RTKit: Permission denied
+Apr  4 16:03:17 majeed-virtual-machine dbus-daemon[3728]: [session uid=1002 pid=3728] Activating via systemd: service name='org.gtk.vfs.Daemon' unit='gvfs-daemon.service' requested by ':1.6' (uid=1002 pid=3822 comm="/usr/lib/x86_64-linux-gnu/gstreamer1.0/gstreamer-1" label="unconfined")
+Apr  4 16:03:17 majeed-virtual-machine systemd[3687]: Starting Virtual filesystem service...
+Apr  4 16:03:17 majeed-virtual-machine dbus-daemon[3728]: [session uid=1002 pid=3728] Successfully activated service 'org.gtk.vfs.Daemon'
+Apr  4 16:03:17 majeed-virtual-machine systemd[3687]: Started Virtual filesystem service.
+Apr  4 16:03:18 majeed-virtual-machine pulseaudio[3697]: Failed to open cookie file '/home/testuser/.config/pulse/cookie': No such file or directory
+Apr  4 16:03:18 majeed-virtual-machine pulseaudio[3697]: Failed to load authentication key '/home/testuser/.config/pulse/cookie': No such file or directory
+Apr  4 16:03:18 majeed-virtual-machine pulseaudio[3697]: Failed to open cookie file '/home/testuser/.pulse-cookie': No such file or directory
+Apr  4 16:03:18 majeed-virtual-machine pulseaudio[3697]: Failed to load authentication key '/home/testuser/.pulse-cookie': No such file or directory
+Apr  4 16:03:18 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 2 users.
+Apr  4 16:03:18 majeed-virtual-machine rtkit-daemon[1216]: message repeated 4 times: [ Supervising 6 threads of 3 processes of 2 users.]
+Apr  4 16:03:18 majeed-virtual-machine systemd[3687]: Started Sound Service.
+Apr  4 16:03:18 majeed-virtual-machine systemd[3687]: Reached target Main User Target.
+Apr  4 16:03:18 majeed-virtual-machine systemd[3687]: Startup finished in 3.929s.
+Apr  4 16:03:18 majeed-virtual-machine bluetoothd[696]: src/profile.c:register_profile() :1.111 tried to register 00001108-0000-1000-8000-00805f9b34fb which is already registered
+Apr  4 16:03:18 majeed-virtual-machine bluetoothd[696]: src/profile.c:register_profile() :1.111 tried to register 0000111f-0000-1000-8000-00805f9b34fb which is already registered
+Apr  4 16:03:18 majeed-virtual-machine pulseaudio[3697]: org.bluez.ProfileManager1.RegisterProfile() failed: org.bluez.Error.NotPermitted: UUID already registered
+Apr  4 16:03:18 majeed-virtual-machine pulseaudio[3697]: org.bluez.ProfileManager1.RegisterProfile() failed: org.bluez.Error.NotPermitted: UUID already registered
+Apr  4 16:03:19 majeed-virtual-machine snapd-desktop-i[3924]: Failed to do gtk init. Waiting for a new session with desktop capabilities.
+Apr  4 16:03:19 majeed-virtual-machine snapd-desktop-i[3924]: Checking session /org/freedesktop/login1/session/_31...
+Apr  4 16:03:19 majeed-virtual-machine snapd-desktop-i[3924]: Checking session /org/freedesktop/login1/session/_33...
+Apr  4 16:03:20 majeed-virtual-machine systemd[1]: session-3.scope: Deactivated successfully.
+Apr  4 16:03:20 majeed-virtual-machine systemd[1]: session-3.scope: Consumed 2.148s CPU time.
+Apr  4 16:03:30 majeed-virtual-machine systemd[1]: Stopping User Manager for UID 1002...
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopped target Main User Target.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopping D-Bus User Message Bus...
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopping Virtual filesystem service...
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopping PipeWire Media Session Manager...
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopping Sound Service...
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopping Service for snap application snapd-desktop-integration.snapd-desktop-integration...
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopping flatpak document portal service...
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopping sandboxed app permission store...
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: xdg-permission-store.service: Main process exited, code=exited, status=1/FAILURE
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: xdg-permission-store.service: Failed with result 'exit-code'.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopped sandboxed app permission store.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopped D-Bus User Message Bus.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopped PipeWire Media Session Manager.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopped Sound Service.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopping PipeWire Multimedia Service...
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopped PipeWire Multimedia Service.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopped Virtual filesystem service.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: snap.snapd-desktop-integration.snapd-desktop-integration.service: Main process exited, code=exited, status=143/n/a
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: snap.snapd-desktop-integration.snapd-desktop-integration.service: Failed with result 'exit-code'.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopped Service for snap application snapd-desktop-integration.snapd-desktop-integration.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: snap.snapd-desktop-integration.snapd-desktop-integration.service: Consumed 1.792s CPU time.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopped flatpak document portal service.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Removed slice User Core Session Slice.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopped target Basic System.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopped target Paths.
+Apr  4 16:03:30 majeed-virtual-machine systemd[1]: run-user-1002-gvfs.mount: Deactivated successfully.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopped Pending report trigger for Ubuntu Report.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopped target Sockets.
+Apr  4 16:03:30 majeed-virtual-machine systemd[1]: run-user-1002-doc.mount: Deactivated successfully.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Stopped target Timers.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Closed D-Bus User Message Bus Socket.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Closed GnuPG network certificate management daemon.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Closed GnuPG cryptographic agent and passphrase cache (access for web browsers).
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Closed GnuPG cryptographic agent and passphrase cache (restricted).
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Closed GnuPG cryptographic agent (ssh-agent emulation).
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Closed GnuPG cryptographic agent and passphrase cache.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Closed PipeWire Multimedia System Socket.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Closed debconf communication socket.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Closed Sound System.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Closed REST API socket for snapd user session agent.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Closed Speech Dispatcher Socket.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Removed slice User Application Slice.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: app.slice: Consumed 2.011s CPU time.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Reached target Shutdown.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Finished Exit the Session.
+Apr  4 16:03:30 majeed-virtual-machine systemd[3687]: Reached target Exit the Session.
+Apr  4 16:03:30 majeed-virtual-machine systemd[1]: user@1002.service: Deactivated successfully.
+Apr  4 16:03:30 majeed-virtual-machine systemd[1]: Stopped User Manager for UID 1002.
+Apr  4 16:03:30 majeed-virtual-machine systemd[1]: user@1002.service: Consumed 3.235s CPU time.
+Apr  4 16:03:30 majeed-virtual-machine systemd[1]: Stopping User Runtime Directory /run/user/1002...
+Apr  4 16:03:30 majeed-virtual-machine systemd[1]: run-user-1002.mount: Deactivated successfully.
+Apr  4 16:03:30 majeed-virtual-machine systemd[1]: user-runtime-dir@1002.service: Deactivated successfully.
+Apr  4 16:03:30 majeed-virtual-machine systemd[1]: Stopped User Runtime Directory /run/user/1002.
+Apr  4 16:03:30 majeed-virtual-machine systemd[1]: Removed slice User Slice of UID 1002.
+Apr  4 16:03:30 majeed-virtual-machine systemd[1]: user-1002.slice: Consumed 5.415s CPU time.
+Apr  4 16:03:53 majeed-virtual-machine systemd[1081]: Finished Notification regarding a new release of Ubuntu.
+Apr  4 16:03:53 majeed-virtual-machine systemd[1081]: update-notifier-release.service: Consumed 2.309s CPU time.
+Apr  4 16:03:57 majeed-virtual-machine NetworkManager[703]: <info>  [1775318637.0476] dhcp4 (ens33): state changed new lease, address=192.168.111.130
+Apr  4 16:03:57 majeed-virtual-machine NetworkManager[703]: <info>  [1775318637.1352] dhcp4 (ens37): state changed new lease, address=192.168.56.130
+Apr  4 16:04:26 majeed-virtual-machine anacron[692]: Job `cron.monthly' started
+Apr  4 16:04:26 majeed-virtual-machine anacron[692]: Job `cron.monthly' terminated
+Apr  4 16:04:26 majeed-virtual-machine anacron[692]: Normal exit (3 jobs run)
+Apr  4 16:04:26 majeed-virtual-machine systemd[1]: anacron.service: Killing process 3972 (anacron) with signal SIGKILL.
+Apr  4 16:04:26 majeed-virtual-machine systemd[1]: anacron.service: Killing process 3972 (anacron) with signal SIGKILL.
+Apr  4 16:04:26 majeed-virtual-machine systemd[1]: anacron.service: Deactivated successfully.
+Apr  4 16:04:26 majeed-virtual-machine systemd[1]: anacron.service: Unit process 3972 (anacron) remains running after unit stopped.
+Apr  4 16:17:01 majeed-virtual-machine CRON[3989]: (root) CMD (   cd / && run-parts --report /etc/cron.hourly)
+Apr  4 16:18:57 majeed-virtual-machine NetworkManager[703]: <info>  [1775319537.0386] dhcp4 (ens33): state changed new lease, address=192.168.111.130
+Apr  4 16:18:57 majeed-virtual-machine NetworkManager[703]: <info>  [1775319537.1256] dhcp4 (ens37): state changed new lease, address=192.168.56.130
+Apr  4 16:20:42 majeed-virtual-machine systemd[1]: Created slice User Slice of UID 1002.
+Apr  4 16:20:42 majeed-virtual-machine systemd[1]: Starting User Runtime Directory /run/user/1002...
+Apr  4 16:20:42 majeed-virtual-machine systemd[1]: Finished User Runtime Directory /run/user/1002.
+Apr  4 16:20:42 majeed-virtual-machine systemd[1]: Starting User Manager for UID 1002...
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Queued start job for default target Main User Target.
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Created slice User Application Slice.
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Created slice User Core Session Slice.
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Started Pending report trigger for Ubuntu Report.
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Reached target Paths.
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Reached target Timers.
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Starting D-Bus User Message Bus Socket...
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Listening on GnuPG network certificate management daemon.
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Listening on GnuPG cryptographic agent and passphrase cache (access for web browsers).
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Listening on GnuPG cryptographic agent and passphrase cache (restricted).
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Listening on GnuPG cryptographic agent (ssh-agent emulation).
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Listening on GnuPG cryptographic agent and passphrase cache.
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Listening on PipeWire Multimedia System Socket.
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Listening on debconf communication socket.
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Listening on Sound System.
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Listening on REST API socket for snapd user session agent.
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Listening on Speech Dispatcher Socket.
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Listening on D-Bus User Message Bus Socket.
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Reached target Sockets.
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Reached target Basic System.
+Apr  4 16:20:42 majeed-virtual-machine systemd[1]: Started User Manager for UID 1002.
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Started PipeWire Multimedia Service.
+Apr  4 16:20:42 majeed-virtual-machine systemd[1]: Started Session 6 of User testuser.
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Started PipeWire Media Session Manager.
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Starting Sound Service...
+Apr  4 16:20:42 majeed-virtual-machine systemd[3998]: Started Service for snap application snapd-desktop-integration.snapd-desktop-integration.
+Apr  4 16:20:43 majeed-virtual-machine systemd[3998]: Started D-Bus User Message Bus.
+Apr  4 16:20:43 majeed-virtual-machine dbus-daemon[4044]: [session uid=1002 pid=4044] AppArmor D-Bus mediation is enabled
+Apr  4 16:20:43 majeed-virtual-machine dbus-daemon[4044]: [session uid=1002 pid=4044] Activating via systemd: service name='org.freedesktop.portal.Documents' unit='xdg-document-portal.service' requested by ':1.1' (uid=1002 pid=4012 comm="/usr/bin/snap run snapd-desktop-integration " label="unconfined")
+Apr  4 16:20:43 majeed-virtual-machine systemd[3998]: Starting flatpak document portal service...
+Apr  4 16:20:43 majeed-virtual-machine dbus-daemon[4044]: [session uid=1002 pid=4044] Activating via systemd: service name='org.freedesktop.impl.portal.PermissionStore' unit='xdg-permission-store.service' requested by ':1.2' (uid=1002 pid=4049 comm="/usr/libexec/xdg-document-portal " label="unconfined")
+Apr  4 16:20:43 majeed-virtual-machine systemd[3998]: Starting sandboxed app permission store...
+Apr  4 16:20:43 majeed-virtual-machine dbus-daemon[4044]: [session uid=1002 pid=4044] Successfully activated service 'org.freedesktop.impl.portal.PermissionStore'
+Apr  4 16:20:43 majeed-virtual-machine systemd[3998]: Started sandboxed app permission store.
+Apr  4 16:20:43 majeed-virtual-machine dbus-daemon[4044]: [session uid=1002 pid=4044] Successfully activated service 'org.freedesktop.portal.Documents'
+Apr  4 16:20:43 majeed-virtual-machine systemd[3998]: Started flatpak document portal service.
+Apr  4 16:20:43 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 2 users.
+Apr  4 16:20:43 majeed-virtual-machine pipewire[4007]: mod.rt: RTKit error: org.freedesktop.DBus.Error.AccessDenied
+Apr  4 16:20:43 majeed-virtual-machine pipewire[4007]: mod.rt: could not set nice-level to -11: Permission denied
+Apr  4 16:20:43 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 2 users.
+Apr  4 16:20:43 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 2 users.
+Apr  4 16:20:43 majeed-virtual-machine systemd[1]: session-6.scope: Deactivated successfully.
+Apr  4 16:20:43 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 2 users.
+Apr  4 16:20:43 majeed-virtual-machine pipewire-media-session[4008]: mod.rt: RTKit error: org.freedesktop.DBus.Error.AccessDenied
+Apr  4 16:20:43 majeed-virtual-machine pipewire-media-session[4008]: mod.rt: could not make thread 4065 realtime using RTKit: Permission denied
+Apr  4 16:20:44 majeed-virtual-machine snapd-desktop-i[4113]: Failed to do gtk init. Waiting for a new session with desktop capabilities.
+Apr  4 16:20:44 majeed-virtual-machine snapd-desktop-i[4113]: Checking session /org/freedesktop/login1/session/_31...
+Apr  4 16:20:44 majeed-virtual-machine pipewire[4007]: mod.rt: RTKit error: org.freedesktop.DBus.Error.AccessDenied
+Apr  4 16:20:44 majeed-virtual-machine pipewire[4007]: mod.rt: could not make thread 4079 realtime using RTKit: Permission denied
+Apr  4 16:20:44 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 2 users.
+Apr  4 16:20:44 majeed-virtual-machine rtkit-daemon[1216]: message repeated 4 times: [ Supervising 6 threads of 3 processes of 2 users.]
+Apr  4 16:20:44 majeed-virtual-machine systemd[3998]: Started Sound Service.
+Apr  4 16:20:44 majeed-virtual-machine systemd[3998]: Reached target Main User Target.
+Apr  4 16:20:44 majeed-virtual-machine bluetoothd[696]: src/profile.c:register_profile() :1.136 tried to register 00001108-0000-1000-8000-00805f9b34fb which is already registered
+Apr  4 16:20:44 majeed-virtual-machine systemd[3998]: Startup finished in 2.394s.
+Apr  4 16:20:44 majeed-virtual-machine bluetoothd[696]: src/profile.c:register_profile() :1.136 tried to register 0000111f-0000-1000-8000-00805f9b34fb which is already registered
+Apr  4 16:20:44 majeed-virtual-machine pulseaudio[4009]: org.bluez.ProfileManager1.RegisterProfile() failed: org.bluez.Error.NotPermitted: UUID already registered
+Apr  4 16:20:44 majeed-virtual-machine pulseaudio[4009]: org.bluez.ProfileManager1.RegisterProfile() failed: org.bluez.Error.NotPermitted: UUID already registered
+Apr  4 16:20:53 majeed-virtual-machine systemd[1]: Stopping User Manager for UID 1002...
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Stopped target Main User Target.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Stopping D-Bus User Message Bus...
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Stopping PipeWire Media Session Manager...
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Stopping Sound Service...
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Stopping Service for snap application snapd-desktop-integration.snapd-desktop-integration...
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Stopping flatpak document portal service...
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Stopping sandboxed app permission store...
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Stopped D-Bus User Message Bus.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Stopped PipeWire Media Session Manager.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Stopped Sound Service.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: xdg-document-portal.service: Main process exited, code=exited, status=20/n/a
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: xdg-document-portal.service: Failed with result 'exit-code'.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Stopped flatpak document portal service.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: xdg-permission-store.service: Main process exited, code=exited, status=1/FAILURE
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: xdg-permission-store.service: Failed with result 'exit-code'.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Stopped sandboxed app permission store.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Stopping PipeWire Multimedia Service...
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Stopped PipeWire Multimedia Service.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Removed slice User Core Session Slice.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: snap.snapd-desktop-integration.snapd-desktop-integration.service: Main process exited, code=exited, status=143/n/a
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: snap.snapd-desktop-integration.snapd-desktop-integration.service: Failed with result 'exit-code'.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Stopped Service for snap application snapd-desktop-integration.snapd-desktop-integration.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Stopped target Basic System.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Stopped target Paths.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Stopped Pending report trigger for Ubuntu Report.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Stopped target Sockets.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Stopped target Timers.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Closed D-Bus User Message Bus Socket.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Closed GnuPG network certificate management daemon.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Closed GnuPG cryptographic agent and passphrase cache (access for web browsers).
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Closed GnuPG cryptographic agent and passphrase cache (restricted).
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Closed GnuPG cryptographic agent (ssh-agent emulation).
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Closed GnuPG cryptographic agent and passphrase cache.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Closed PipeWire Multimedia System Socket.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Closed debconf communication socket.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Closed Sound System.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Closed REST API socket for snapd user session agent.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Closed Speech Dispatcher Socket.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Removed slice User Application Slice.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Reached target Shutdown.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Finished Exit the Session.
+Apr  4 16:20:53 majeed-virtual-machine systemd[3998]: Reached target Exit the Session.
+Apr  4 16:20:53 majeed-virtual-machine systemd[1]: user@1002.service: Deactivated successfully.
+Apr  4 16:20:53 majeed-virtual-machine systemd[1]: Stopped User Manager for UID 1002.
+Apr  4 16:20:53 majeed-virtual-machine systemd[1]: user@1002.service: Consumed 1.652s CPU time.
+Apr  4 16:20:53 majeed-virtual-machine systemd[1]: Stopping User Runtime Directory /run/user/1002...
+Apr  4 16:20:53 majeed-virtual-machine systemd[1]: run-user-1002-doc.mount: Deactivated successfully.
+Apr  4 16:20:53 majeed-virtual-machine systemd[1]: run-user-1002.mount: Deactivated successfully.
+Apr  4 16:20:53 majeed-virtual-machine systemd[1]: user-runtime-dir@1002.service: Deactivated successfully.
+Apr  4 16:20:53 majeed-virtual-machine systemd[1]: Stopped User Runtime Directory /run/user/1002.
+Apr  4 16:20:53 majeed-virtual-machine systemd[1]: Removed slice User Slice of UID 1002.
+Apr  4 16:20:53 majeed-virtual-machine systemd[1]: user-1002.slice: Consumed 1.976s CPU time.
+Apr  4 16:21:00 majeed-virtual-machine systemd[1]: Created slice User Slice of UID 1002.
+Apr  4 16:21:00 majeed-virtual-machine systemd[1]: Starting User Runtime Directory /run/user/1002...
+Apr  4 16:21:00 majeed-virtual-machine systemd[1]: Finished User Runtime Directory /run/user/1002.
+Apr  4 16:21:00 majeed-virtual-machine systemd[1]: Starting User Manager for UID 1002...
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Queued start job for default target Main User Target.
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Created slice User Application Slice.
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Created slice User Core Session Slice.
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Started Pending report trigger for Ubuntu Report.
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Reached target Paths.
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Reached target Timers.
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Starting D-Bus User Message Bus Socket...
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Listening on GnuPG network certificate management daemon.
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Listening on GnuPG cryptographic agent and passphrase cache (access for web browsers).
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Listening on GnuPG cryptographic agent and passphrase cache (restricted).
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Listening on GnuPG cryptographic agent (ssh-agent emulation).
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Listening on GnuPG cryptographic agent and passphrase cache.
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Listening on PipeWire Multimedia System Socket.
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Listening on debconf communication socket.
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Listening on Sound System.
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Listening on REST API socket for snapd user session agent.
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Listening on Speech Dispatcher Socket.
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Listening on D-Bus User Message Bus Socket.
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Reached target Sockets.
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Reached target Basic System.
+Apr  4 16:21:00 majeed-virtual-machine systemd[1]: Started User Manager for UID 1002.
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Started PipeWire Multimedia Service.
+Apr  4 16:21:00 majeed-virtual-machine systemd[1]: Started Session 8 of User testuser.
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Started PipeWire Media Session Manager.
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Starting Sound Service...
+Apr  4 16:21:00 majeed-virtual-machine systemd[4130]: Started Service for snap application snapd-desktop-integration.snapd-desktop-integration.
+Apr  4 16:21:01 majeed-virtual-machine systemd[4130]: Started D-Bus User Message Bus.
+Apr  4 16:21:01 majeed-virtual-machine dbus-daemon[4170]: [session uid=1002 pid=4170] AppArmor D-Bus mediation is enabled
+Apr  4 16:21:01 majeed-virtual-machine dbus-daemon[4170]: [session uid=1002 pid=4170] Activating via systemd: service name='org.freedesktop.portal.Documents' unit='xdg-document-portal.service' requested by ':1.1' (uid=1002 pid=4140 comm="/usr/bin/snap run snapd-desktop-integration " label="unconfined")
+Apr  4 16:21:01 majeed-virtual-machine systemd[4130]: Starting flatpak document portal service...
+Apr  4 16:21:01 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 2 users.
+Apr  4 16:21:01 majeed-virtual-machine dbus-daemon[4170]: [session uid=1002 pid=4170] Activating via systemd: service name='org.freedesktop.impl.portal.PermissionStore' unit='xdg-permission-store.service' requested by ':1.2' (uid=1002 pid=4176 comm="/usr/libexec/xdg-document-portal " label="unconfined")
+Apr  4 16:21:01 majeed-virtual-machine pipewire[4137]: mod.rt: RTKit error: org.freedesktop.DBus.Error.AccessDenied
+Apr  4 16:21:01 majeed-virtual-machine pipewire[4137]: mod.rt: could not set nice-level to -11: Permission denied
+Apr  4 16:21:01 majeed-virtual-machine systemd[4130]: Starting sandboxed app permission store...
+Apr  4 16:21:01 majeed-virtual-machine dbus-daemon[4170]: [session uid=1002 pid=4170] Successfully activated service 'org.freedesktop.impl.portal.PermissionStore'
+Apr  4 16:21:01 majeed-virtual-machine systemd[4130]: Started sandboxed app permission store.
+Apr  4 16:21:01 majeed-virtual-machine dbus-daemon[4170]: [session uid=1002 pid=4170] Successfully activated service 'org.freedesktop.portal.Documents'
+Apr  4 16:21:01 majeed-virtual-machine systemd[4130]: Started flatpak document portal service.
+Apr  4 16:21:01 majeed-virtual-machine systemd[1]: session-8.scope: Deactivated successfully.
+Apr  4 16:21:01 majeed-virtual-machine kernel: [ 2022.625418] workqueue: pcpu_balance_workfn hogged CPU for >10000us 4 times, consider switching to WQ_UNBOUND
+Apr  4 16:21:02 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 1 users.
+Apr  4 16:21:02 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 1 users.
+Apr  4 16:21:02 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 2 users.
+Apr  4 16:21:02 majeed-virtual-machine pipewire-media-session[4138]: mod.rt: RTKit error: org.freedesktop.DBus.Error.AccessDenied
+Apr  4 16:21:02 majeed-virtual-machine pipewire-media-session[4138]: mod.rt: could not make thread 4182 realtime using RTKit: Permission denied
+Apr  4 16:21:02 majeed-virtual-machine pipewire[4137]: mod.rt: RTKit error: org.freedesktop.DBus.Error.AccessDenied
+Apr  4 16:21:02 majeed-virtual-machine pipewire[4137]: mod.rt: could not make thread 4222 realtime using RTKit: Permission denied
+Apr  4 16:21:03 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 2 users.
+Apr  4 16:21:03 majeed-virtual-machine snapd-desktop-i[4242]: Failed to do gtk init. Waiting for a new session with desktop capabilities.
+Apr  4 16:21:03 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 2 users.
+Apr  4 16:21:03 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 2 users.
+Apr  4 16:21:03 majeed-virtual-machine snapd-desktop-i[4242]: Checking session /org/freedesktop/login1/session/_31...
+Apr  4 16:21:03 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 2 users.
+Apr  4 16:21:03 majeed-virtual-machine rtkit-daemon[1216]: Supervising 6 threads of 3 processes of 2 users.
+Apr  4 16:21:03 majeed-virtual-machine systemd[4130]: Started Sound Service.
+Apr  4 16:21:03 majeed-virtual-machine systemd[4130]: Reached target Main User Target.
+Apr  4 16:21:03 majeed-virtual-machine systemd[4130]: Startup finished in 2.590s.
+Apr  4 16:21:03 majeed-virtual-machine bluetoothd[696]: src/profile.c:register_profile() :1.159 tried to register 00001108-0000-1000-8000-00805f9b34fb which is already registered
+Apr  4 16:21:03 majeed-virtual-machine bluetoothd[696]: src/profile.c:register_profile() :1.159 tried to register 0000111f-0000-1000-8000-00805f9b34fb which is already registered
+Apr  4 16:21:03 majeed-virtual-machine pulseaudio[4139]: org.bluez.ProfileManager1.RegisterProfile() failed: org.bluez.Error.NotPermitted: UUID already registered
+Apr  4 16:21:03 majeed-virtual-machine pulseaudio[4139]: org.bluez.ProfileManager1.RegisterProfile() failed: org.bluez.Error.NotPermitted: UUID already registered
+Apr  4 16:21:11 majeed-virtual-machine systemd[1]: Stopping User Manager for UID 1002...
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Stopped target Main User Target.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Stopping D-Bus User Message Bus...
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Stopping PipeWire Media Session Manager...
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Stopping Sound Service...
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Stopping Service for snap application snapd-desktop-integration.snapd-desktop-integration...
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Stopping flatpak document portal service...
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Stopping sandboxed app permission store...
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Stopped sandboxed app permission store.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Stopped PipeWire Media Session Manager.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Stopped D-Bus User Message Bus.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Stopping PipeWire Multimedia Service...
+Apr  4 16:21:11 majeed-virtual-machine systemd[1]: run-user-1002-doc.mount: Deactivated successfully.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Stopped PipeWire Multimedia Service.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Stopped Sound Service.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: snap.snapd-desktop-integration.snapd-desktop-integration.service: Main process exited, code=exited, status=143/n/a
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: snap.snapd-desktop-integration.snapd-desktop-integration.service: Failed with result 'exit-code'.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Stopped Service for snap application snapd-desktop-integration.snapd-desktop-integration.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: snap.snapd-desktop-integration.snapd-desktop-integration.service: Consumed 1.071s CPU time.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Stopped flatpak document portal service.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Removed slice User Core Session Slice.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Stopped target Basic System.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Stopped target Paths.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Stopped Pending report trigger for Ubuntu Report.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Stopped target Sockets.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Stopped target Timers.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Closed D-Bus User Message Bus Socket.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Closed GnuPG network certificate management daemon.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Closed GnuPG cryptographic agent and passphrase cache (access for web browsers).
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Closed GnuPG cryptographic agent and passphrase cache (restricted).
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Closed GnuPG cryptographic agent (ssh-agent emulation).
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Closed GnuPG cryptographic agent and passphrase cache.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Closed PipeWire Multimedia System Socket.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Closed debconf communication socket.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Closed Sound System.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Closed REST API socket for snapd user session agent.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Closed Speech Dispatcher Socket.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Removed slice User Application Slice.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: app.slice: Consumed 1.134s CPU time.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Reached target Shutdown.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Finished Exit the Session.
+Apr  4 16:21:11 majeed-virtual-machine systemd[4130]: Reached target Exit the Session.
+Apr  4 16:21:11 majeed-virtual-machine systemd[1]: user@1002.service: Deactivated successfully.
+Apr  4 16:21:11 majeed-virtual-machine systemd[1]: Stopped User Manager for UID 1002.
+Apr  4 16:21:11 majeed-virtual-machine systemd[1]: user@1002.service: Consumed 1.977s CPU time.
+Apr  4 16:21:11 majeed-virtual-machine systemd[1]: Stopping User Runtime Directory /run/user/1002...
+Apr  4 16:21:11 majeed-virtual-machine systemd[1]: run-user-1002.mount: Deactivated successfully.
+Apr  4 16:21:11 majeed-virtual-machine systemd[1]: user-runtime-dir@1002.service: Deactivated successfully.
+Apr  4 16:21:11 majeed-virtual-machine systemd[1]: Stopped User Runtime Directory /run/user/1002.
+Apr  4 16:21:11 majeed-virtual-machine systemd[1]: Removed slice User Slice of UID 1002.
+Apr  4 16:21:11 majeed-virtual-machine systemd[1]: user-1002.slice: Consumed 2.248s CPU time.
