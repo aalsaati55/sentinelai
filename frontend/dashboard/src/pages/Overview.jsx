@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Activity, AlertTriangle, Bell, Globe, ShieldAlert, TrendingUp, Zap } from 'lucide-react'
+import { useEffect, useState, useCallback } from 'react'
+import { Activity, AlertTriangle, Bell, Globe, Radio, ShieldAlert, TrendingUp, Zap } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -9,6 +9,7 @@ import { StatCard } from '../components/StatCard'
 import { Panel } from '../components/Panel'
 import { Badge, severityFromScore } from '../components/Badge'
 import { ScoreBar } from '../components/ScoreBar'
+import { LiveFeed } from '../components/LiveFeed'
 
 const PIE_COLORS = { critical: '#f85149', high: '#ff7b72', medium: '#e3b341', low: '#3fb950' }
 const BAR_COLOR = '#58a6ff'
@@ -37,6 +38,14 @@ export function Overview({ onGoToIncidents }) {
   const [etypes, setEtypes]       = useState([])
   const [incidents, setIncidents] = useState([])
   const [loading, setLoading]     = useState(true)
+  const [liveEvents, setLiveEvents] = useState(0)
+  const [liveAlerts, setLiveAlerts] = useState(0)
+
+  const refreshSummary = useCallback(() => {
+    Promise.all([api.summary(), api.incidents({ limit: 8 })])
+      .then(([s, inc]) => { setSummary(s); setIncidents(inc) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     Promise.all([
@@ -54,6 +63,16 @@ export function Overview({ onGoToIncidents }) {
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [])
+
+  function handleNewEvent() {
+    setLiveEvents(c => c + 1)
+    refreshSummary()
+  }
+
+  function handleNewAlert() {
+    setLiveAlerts(c => c + 1)
+    refreshSummary()
+  }
 
   if (loading) return (
     <div className="flex items-center justify-center h-64 text-slate-500">
@@ -82,6 +101,17 @@ export function Overview({ onGoToIncidents }) {
         <StatCard label="Medium"   value={summary?.medium_alerts}   icon={TrendingUp}  color="yellow" sub="alerts" />
         <StatCard label="Low"      value={summary?.low_alerts}      icon={Activity}    color="green"  sub="alerts" />
       </div>
+
+      {liveEvents > 0 && (
+        <div className="flex items-center gap-3 bg-blue-500/5 border border-blue-500/20 rounded-lg px-4 py-2.5 text-sm">
+          <Radio size={13} className="text-blue-400 shrink-0" />
+          <span className="text-blue-300 font-medium">{liveEvents} live event{liveEvents !== 1 ? 's' : ''}</span>
+          {liveAlerts > 0 && (
+            <span className="text-red-400 font-medium">· {liveAlerts} new alert{liveAlerts !== 1 ? 's' : ''} detected</span>
+          )}
+          <span className="text-slate-500">— stats auto-updated</span>
+        </div>
+      )}
 
       {/* Charts row */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -115,6 +145,11 @@ export function Overview({ onGoToIncidents }) {
           ) : <p className="text-slate-500 text-sm text-center py-8">No alerts yet</p>}
         </Panel>
       </div>
+
+      {/* Live feed */}
+      <Panel title="Live Event Feed" className="h-80">
+        <LiveFeed onNewEvent={handleNewEvent} onNewAlert={handleNewAlert} />
+      </Panel>
 
       {/* Event type distribution */}
       <Panel title="Event Type Distribution">
