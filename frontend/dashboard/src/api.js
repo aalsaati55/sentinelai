@@ -101,6 +101,24 @@ export const api = {
     const a = document.createElement('a'); a.href = url; a.download = 'audit_log.csv'; a.click(); URL.revokeObjectURL(url)
   },
 
+  // Suppression
+  suppressedRules:  () => get('/suppression'),
+  suppressRule:     (rule_name, reason = '') => {
+    return fetch(`${BASE}/suppression`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ rule_name, reason }),
+    }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() })
+  },
+  unsuppressRule:   (rule_name) => {
+    return fetch(`${BASE}/suppression/${encodeURIComponent(rule_name)}`, {
+      method: 'DELETE', headers: authHeaders(),
+    }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() })
+  },
+
+  // Notifications
+  notifications: (since) => get(`/notifications?since=${encodeURIComponent(since)}`),
+
   // Audit log
   auditLog: (params = {}) => {
     const q = new URLSearchParams({ limit: 200, ...params }).toString()

@@ -1,13 +1,24 @@
 import { useEffect, useState, useMemo } from 'react'
-import { RefreshCw, X, ChevronDown, MessageSquare, Send, Download, Search } from 'lucide-react'
+import { RefreshCw, X, ChevronDown, MessageSquare, Send, Download, Search, FileText } from 'lucide-react'
 import { api, token } from '../api'
 import { Panel } from '../components/Panel'
 import { Badge, severityFromScore } from '../components/Badge'
 import { ScoreBar } from '../components/ScoreBar'
+import { IncidentReport } from './IncidentReport'
 
 function fmtTs(ts) {
   if (!ts) return '—'
   return ts.replace('T', ' ').slice(0, 16)
+}
+
+function slaAge(createdAt, status) {
+  if (!createdAt || status === 'closed') return null
+  const diffMs = Date.now() - new Date(createdAt.replace(' ', 'T')).getTime()
+  const h = Math.floor(diffMs / 3600000)
+  const m = Math.floor((diffMs % 3600000) / 60000)
+  const overdue = h >= 24
+  const label = h >= 48 ? `${Math.floor(h/24)}d ${h%24}h` : h > 0 ? `${h}h ${m}m` : `${m}m`
+  return { label, overdue }
 }
 
 function IncidentModal({ id, onClose }) {
@@ -21,6 +32,7 @@ function IncidentModal({ id, onClose }) {
   const [analysts, setAnalysts]   = useState([])
   const [assignedTo, setAssignedTo] = useState('')
   const [assigning, setAssigning] = useState(false)
+  const [showReport, setShowReport] = useState(false)
   const me = token.user()
 
   useEffect(() => {
@@ -78,6 +90,8 @@ function IncidentModal({ id, onClose }) {
   const sev = severityFromScore(inc.risk_score)
 
   return (
+    <>
+      {showReport && <IncidentReport id={id} onClose={() => setShowReport(false)} />}
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={e => e.target === e.currentTarget && onClose()}>
       <div className="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
@@ -90,9 +104,19 @@ function IncidentModal({ id, onClose }) {
               {inc.anomaly_level && <Badge value={inc.anomaly_level} override={inc.anomaly_level} />}
             </div>
           </div>
-          <button onClick={() => onClose()} className="text-slate-500 hover:text-slate-300 transition-colors ml-4 mt-0.5">
-            <X size={18} />
-          </button>
+          <div className="flex items-center gap-2 ml-4 mt-0.5">
+            <button
+              onClick={() => setShowReport(true)}
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-blue-400 bg-[#1c2128] border border-[#30363d] hover:border-blue-500 px-2.5 py-1.5 rounded-lg transition-colors"
+              title="Export PDF Report"
+            >
+              <FileText size={13} />
+              Report
+            </button>
+            <button onClick={() => onClose()} className="text-slate-500 hover:text-slate-300 transition-colors">
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Body */}
@@ -256,6 +280,7 @@ function IncidentModal({ id, onClose }) {
         </div>
       </div>
     </div>
+    </>
   )
 }
 
@@ -348,7 +373,7 @@ export function Incidents() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left">
-                {['#', 'Title', 'Source IP', 'User', 'Risk Score', 'Severity', 'Status', 'Assigned', 'Created', ''].map(h => (
+                {['#', 'Title', 'Source IP', 'User', 'Risk Score', 'Severity', 'Status', 'SLA', 'Assigned', 'Created', ''].map(h => (
                   <th key={h} className="pb-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -370,6 +395,13 @@ export function Incidents() {
                     <Badge value={i.anomaly_level || severityFromScore(i.risk_score)} />
                   </td>
                   <td className="py-3 pr-4"><Badge value={i.status} /></td>
+                  <td className="py-3 pr-4">
+                    {(() => { const s = slaAge(i.created_at, i.status); return s ? (
+                      <span className={`text-xs font-mono font-semibold ${s.overdue ? 'text-red-400' : 'text-slate-400'}`}>
+                        {s.overdue ? '⚠ ' : ''}{s.label}
+                      </span>
+                    ) : <span className="text-slate-600 text-xs">closed</span> })()}
+                  </td>
                   <td className="py-3 pr-4 text-slate-400 text-xs">{i.assigned_to || <span className="text-slate-700">—</span>}</td>
                   <td className="py-3 pr-4 text-slate-500 text-xs whitespace-nowrap">{fmtTs(i.created_at)}</td>
                   <td className="py-3">
@@ -382,7 +414,7 @@ export function Incidents() {
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan={9} className="py-10 text-center text-slate-500 text-sm">
+                <tr><td colSpan={11} className="py-10 text-center text-slate-500 text-sm">
                   {search ? `No incidents match "${search}"` : 'No incidents found. Run the pipeline to generate data.'}
                 </td></tr>
               )}

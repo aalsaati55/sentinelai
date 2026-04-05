@@ -11,6 +11,7 @@ import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { token } from './api'
 import { LogOut, User } from 'lucide-react'
+import { NotificationBell } from './components/NotificationBell'
 
 function App() {
   const [page, setPage]   = useState('overview')
@@ -70,6 +71,7 @@ function App() {
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top header bar */}
         <header className="shrink-0 h-12 bg-[#161b22] border-b border-[#30363d] flex items-center justify-end px-5 gap-3">
+          <NotificationBell />
           <div className="flex items-center gap-2 text-sm text-slate-400">
             <User size={14} className="text-slate-500" />
             <span className="font-medium text-slate-300">{user?.username}</span>

@@ -19,7 +19,7 @@ from aggregator import aggregate_events
 from anomaly_scoring import score_sessions
 from detection import run_detection
 from risk_scoring import score_alert
-from storage import insert_events_bulk, insert_alert, insert_incident
+from storage import insert_events_bulk, insert_alert, insert_incident, is_rule_suppressed
 from emailer import send_incident_alert
 
 logger = logging.getLogger(__name__)
@@ -112,8 +112,9 @@ async def ingest_lines(batch: LogBatch):
         if entry["count"] > s.get("failed_login_count", 0):
             s["failed_login_count"] = entry["count"]
 
-    # 4. Run detection rules + score alerts
+    # 4. Run detection rules + score alerts (skip suppressed rules)
     alerts = run_detection(sessions)
+    alerts = [a for a in alerts if not is_rule_suppressed(a.get("rule_name", ""))]
     for alert in alerts:
         score_alert(alert)
         insert_alert(alert)

@@ -108,6 +108,14 @@ CREATE INDEX IF NOT EXISTS idx_events_event_type ON events(event_type);
 CREATE INDEX IF NOT EXISTS idx_alerts_severity   ON alerts(severity);
 CREATE INDEX IF NOT EXISTS idx_incidents_status  ON incidents(status);
 CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at);
+
+CREATE TABLE IF NOT EXISTS suppressed_rules (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    rule_name   TEXT    NOT NULL UNIQUE,
+    suppressed_by TEXT  NOT NULL,
+    reason      TEXT,
+    created_at  TEXT    NOT NULL
+);
 """
 
 
@@ -129,6 +137,59 @@ def init_db() -> None:
             except Exception:
                 pass  # Column already exists
     logger.info("Database initialized.")
+
+
+# ──────────────────────────────────────────────
+# Suppressed Rules
+# ──────────────────────────────────────────────
+
+def get_suppressed_rules() -> List[Dict[str, Any]]:
+    with get_connection() as conn:
+        rows = conn.execute("SELECT * FROM suppressed_rules ORDER BY created_at DESC").fetchall()
+    return [dict(r) for r in rows]
+
+
+def is_rule_suppressed(rule_name: str) -> bool:
+    with get_connection() as conn:
+        row = conn.execute("SELECT id FROM suppressed_rules WHERE rule_name = ?", (rule_name,)).fetchone()
+    return row is not None
+
+
+def suppress_rule(rule_name: str, suppressed_by: str, reason: str = "") -> Dict[str, Any]:
+    with get_connection() as conn:
+        conn.execute(
+            "INSERT OR REPLACE INTO suppressed_rules (rule_name, suppressed_by, reason, created_at) VALUES (?, ?, ?, ?)",
+            (rule_name, suppressed_by, reason, now_iso()),
+        )
+        row = conn.execute("SELECT * FROM suppressed_rules WHERE rule_name = ?", (rule_name,)).fetchone()
+    return dict(row)
+
+
+def unsuppress_rule(rule_name: str) -> bool:
+    with get_connection() as conn:
+        cur = conn.execute("DELETE FROM suppressed_rules WHERE rule_name = ?", (rule_name,))
+    return cur.rowcount > 0
+
+
+# ──────────────────────────────────────────────
+# Notification helpers
+# ──────────────────────────────────────────────
+
+def get_recent_critical_alerts(since_iso: str, limit: int = 20) -> List[Dict[str, Any]]:
+    """Fetch critical/high alerts created after since_iso for the notification bell."""
+    import json as _json
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT * FROM alerts WHERE severity IN ('critical','high') AND created_at > ? ORDER BY created_at DESC LIMIT ?",
+            (since_iso, limit),
+        ).fetchall()
+    results = []
+    for r in rows:
+        row = dict(r)
+        raw = row.get("mitre_techniques")
+        row["mitre_techniques"] = _json.loads(raw) if raw else []
+        results.append(row)
+    return results
 
 
 # ──────────────────────────────────────────────
