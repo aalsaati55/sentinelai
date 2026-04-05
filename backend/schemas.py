@@ -28,15 +28,16 @@ class EventSchema(BaseModel):
 
 
 class AlertSchema(BaseModel):
-    id:            Optional[int] = None
-    event_id:      Optional[int] = None
-    rule_name:     str
-    severity:      str
-    risk_score:    int
-    anomaly_score: Optional[float] = None
-    anomaly_level: Optional[str]   = None
-    description:   str
-    created_at:    Optional[str]   = None
+    id:                Optional[int]  = None
+    event_id:          Optional[int]  = None
+    rule_name:         str
+    severity:          str
+    risk_score:        int
+    anomaly_score:     Optional[float] = None
+    anomaly_level:     Optional[str]   = None
+    description:       str
+    mitre_techniques:  Optional[list]  = []
+    created_at:        Optional[str]   = None
 
     class Config:
         from_attributes = True

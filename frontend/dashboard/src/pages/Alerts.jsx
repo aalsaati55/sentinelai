@@ -91,7 +91,7 @@ export function Alerts() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left">
-                {['#', 'Rule', 'Severity', 'Risk Score', 'Anomaly Score', 'Anomaly Level', 'Description', 'Created'].map(h => (
+                {['#', 'Rule', 'MITRE ATT&CK', 'Severity', 'Risk Score', 'Anomaly Level', 'Description', 'Created'].map(h => (
                   <th key={h} className="pb-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -107,11 +107,27 @@ export function Alerts() {
                       {a.rule_name}
                     </code>
                   </td>
+                  <td className="py-3 pr-4">
+                    <div className="flex flex-wrap gap-1">
+                      {(a.mitre_techniques || []).map(t => (
+                        <a
+                          key={t.id}
+                          href={`https://attack.mitre.org/techniques/${t.id.replace('.', '/')}/`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          title={t.name}
+                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-indigo-950 border border-indigo-700 text-indigo-300 hover:bg-indigo-900 hover:text-indigo-100 transition-colors whitespace-nowrap"
+                        >
+                          {t.id}
+                        </a>
+                      ))}
+                      {(!a.mitre_techniques || a.mitre_techniques.length === 0) && (
+                        <span className="text-slate-600 text-xs">—</span>
+                      )}
+                    </div>
+                  </td>
                   <td className="py-3 pr-4"><Badge value={a.severity} /></td>
                   <td className="py-3 pr-4"><ScoreBar score={a.risk_score} /></td>
-                  <td className="py-3 pr-4 text-slate-400 font-mono text-xs">
-                    {a.anomaly_score != null ? a.anomaly_score.toFixed(3) : '—'}
-                  </td>
                   <td className="py-3 pr-4">
                     {a.anomaly_level ? <Badge value={a.anomaly_level} /> : <span className="text-slate-600">—</span>}
                   </td>
@@ -121,7 +137,7 @@ export function Alerts() {
                   <td className="py-3 text-slate-500 text-xs whitespace-nowrap">{fmtTs(a.created_at)}</td>
                 </tr>
               )) : (
-                <tr><td colSpan={8} className="py-10 text-center text-slate-500 text-sm">
+                <tr><td colSpan={9} className="py-10 text-center text-slate-500 text-sm">
                   {search ? `No alerts match "${search}"` : 'No alerts found.'}
                 </td></tr>
               )}

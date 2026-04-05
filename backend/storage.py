@@ -57,11 +57,12 @@ CREATE TABLE IF NOT EXISTS alerts (
     event_id       INTEGER REFERENCES events(id) ON DELETE SET NULL,
     rule_name      TEXT    NOT NULL,
     severity       TEXT    NOT NULL,
-    risk_score     INTEGER NOT NULL DEFAULT 0,
-    anomaly_score  REAL,
-    anomaly_level  TEXT,
-    description    TEXT    NOT NULL,
-    created_at     TEXT    NOT NULL
+    risk_score        INTEGER NOT NULL DEFAULT 0,
+    anomaly_score     REAL,
+    anomaly_level     TEXT,
+    description       TEXT    NOT NULL,
+    mitre_techniques  TEXT,
+    created_at        TEXT    NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS incidents (
@@ -121,6 +122,7 @@ def init_db() -> None:
         # Migrations: add columns that may not exist in older DBs
         for sql in [
             "ALTER TABLE incidents ADD COLUMN assigned_to TEXT",
+            "ALTER TABLE alerts ADD COLUMN mitre_techniques TEXT",
         ]:
             try:
                 conn.execute(sql)
@@ -217,23 +219,26 @@ def insert_alert(alert: Dict[str, Any]) -> int:
     Insert an alert dict into the alerts table.
     Returns the new row id.
     """
+    import json as _json
     sql = """
         INSERT INTO alerts
             (event_id, rule_name, severity, risk_score,
-             anomaly_score, anomaly_level, description, created_at)
+             anomaly_score, anomaly_level, description, mitre_techniques, created_at)
         VALUES
             (:event_id, :rule_name, :severity, :risk_score,
-             :anomaly_score, :anomaly_level, :description, :created_at)
+             :anomaly_score, :anomaly_level, :description, :mitre_techniques, :created_at)
     """
+    techniques = alert.get("mitre_techniques", [])
     row = {
-        "event_id":      alert.get("event_id"),
-        "rule_name":     alert["rule_name"],
-        "severity":      alert["severity"],
-        "risk_score":    alert.get("risk_score", 0),
-        "anomaly_score": alert.get("anomaly_score"),
-        "anomaly_level": alert.get("anomaly_level"),
-        "description":   alert["description"],
-        "created_at":    now_iso(),
+        "event_id":         alert.get("event_id"),
+        "rule_name":        alert["rule_name"],
+        "severity":         alert["severity"],
+        "risk_score":       alert.get("risk_score", 0),
+        "anomaly_score":    alert.get("anomaly_score"),
+        "anomaly_level":    alert.get("anomaly_level"),
+        "description":      alert["description"],
+        "mitre_techniques": _json.dumps(techniques) if techniques else None,
+        "created_at":       now_iso(),
     }
     with get_connection() as conn:
         cursor = conn.execute(sql, row)
@@ -246,6 +251,7 @@ def get_alerts(
     severity: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Fetch alerts with optional severity filter."""
+    import json as _json
     params: Dict[str, Any] = {"limit": limit, "offset": offset}
     where = ""
     if severity:
@@ -255,7 +261,13 @@ def get_alerts(
     sql = f"SELECT * FROM alerts {where} ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
     with get_connection() as conn:
         rows = conn.execute(sql, params).fetchall()
-    return [dict(r) for r in rows]
+    results = []
+    for r in rows:
+        row = dict(r)
+        raw = row.get("mitre_techniques")
+        row["mitre_techniques"] = _json.loads(raw) if raw else []
+        results.append(row)
+    return results
 
 
 def count_alerts(severity: Optional[str] = None) -> int:

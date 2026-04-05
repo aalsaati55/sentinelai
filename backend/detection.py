@@ -45,6 +45,44 @@ from config import (
 logger = logging.getLogger(__name__)
 
 # ──────────────────────────────────────────────
+# MITRE ATT&CK technique mappings per rule
+# ──────────────────────────────────────────────
+MITRE_MAPPING = {
+    "brute_force_ssh": [
+        {"id": "T1110",     "name": "Brute Force"},
+        {"id": "T1110.001", "name": "Password Guessing"},
+    ],
+    "invalid_user_enumeration": [
+        {"id": "T1589.001", "name": "Gather Victim Identity Information: Credentials"},
+        {"id": "T1110.003", "name": "Password Spraying"},
+    ],
+    "success_after_failures": [
+        {"id": "T1110",     "name": "Brute Force"},
+        {"id": "T1078",     "name": "Valid Accounts"},
+    ],
+    "suspicious_login_time": [
+        {"id": "T1078",     "name": "Valid Accounts"},
+        {"id": "T1078.003", "name": "Local Accounts"},
+    ],
+    "sudo_after_suspicious_login": [
+        {"id": "T1548.003", "name": "Abuse Elevation Control: Sudo and Sudo Caching"},
+        {"id": "T1078",     "name": "Valid Accounts"},
+    ],
+    "privilege_after_login": [
+        {"id": "T1548.003", "name": "Abuse Elevation Control: Sudo and Sudo Caching"},
+        {"id": "T1548",     "name": "Abuse Elevation Control Mechanism"},
+    ],
+    "sensitive_file_access": [
+        {"id": "T1005",     "name": "Data from Local System"},
+        {"id": "T1552.001", "name": "Unsecured Credentials: Credentials In Files"},
+    ],
+    "system_service_anomaly": [
+        {"id": "T1489",     "name": "Service Stop"},
+        {"id": "T1543",     "name": "Create or Modify System Process"},
+    ],
+}
+
+# ──────────────────────────────────────────────
 # Alert builder helper
 # ──────────────────────────────────────────────
 
@@ -57,17 +95,18 @@ def _make_alert(
 ) -> Dict[str, Any]:
     """Construct a standardised alert dict from a session."""
     return {
-        "rule_name":    rule_name,
-        "severity":     severity,
-        "risk_score":   risk_score,
-        "description":  description,
-        "source_ip":    session.get("source_ip"),
-        "username":     session.get("username"),
-        "session_key":  session.get("session_key", ""),
-        "window_start": session.get("window_start", ""),
-        "window_end":   session.get("window_end", ""),
-        "event_ids":    [],       # populated after events are stored in DB
-        "session":      session,  # kept for correlation stage
+        "rule_name":        rule_name,
+        "severity":         severity,
+        "risk_score":       risk_score,
+        "description":      description,
+        "source_ip":        session.get("source_ip"),
+        "username":         session.get("username"),
+        "session_key":      session.get("session_key", ""),
+        "window_start":     session.get("window_start", ""),
+        "window_end":       session.get("window_end", ""),
+        "event_ids":        [],
+        "session":          session,
+        "mitre_techniques": MITRE_MAPPING.get(rule_name, []),
     }
 
 
