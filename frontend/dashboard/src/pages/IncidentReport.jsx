@@ -20,6 +20,157 @@ const SEV_COLOR = {
   Low:      '#22c55e',
 }
 
+function buildPrintHTML({ inc, events, notes, alerts, allMitre }) {
+  const sev = severityFromScore(inc.risk_score)
+  const sevColor = SEV_COLOR[sev] || '#111827'
+  const now = new Date().toLocaleString()
+
+  const mitreHTML = allMitre.length === 0 ? '' : `
+    <section>
+      <h2 class="section-title">MITRE ATT&amp;CK Techniques</h2>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;">
+        ${allMitre.map(t => `
+          <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;background:#eef2ff;border:1px solid #c7d2fe;font-size:12px;">
+            <b style="font-family:monospace;color:#4338ca;">${t.id}</b>
+            <span style="color:#6366f1;">${t.name}</span>
+          </span>`).join('')}
+      </div>
+    </section>`
+
+  const alertsHTML = alerts.length === 0 ? '' : `
+    <section>
+      <h2 class="section-title">Related Alerts (${alerts.length})</h2>
+      <table style="width:100%;border-collapse:collapse;font-size:12px;">
+        <thead><tr style="background:#f9fafb;">
+          ${['Rule','Severity','Score','Description','Time'].map(h => `<th style="padding:6px 8px;text-align:left;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;border-bottom:1px solid #e5e7eb;">${h}</th>`).join('')}
+        </tr></thead>
+        <tbody>
+          ${alerts.map(a => `<tr style="border-top:1px solid #e5e7eb;">
+            <td style="padding:5px 8px;font-family:monospace;font-size:11px;">${a.rule_name}</td>
+            <td style="padding:5px 8px;font-weight:700;color:${SEV_COLOR[a.severity]||'#111'};">${a.severity}</td>
+            <td style="padding:5px 8px;">${a.risk_score}</td>
+            <td style="padding:5px 8px;font-size:11px;color:#6b7280;">${(a.description||'').slice(0,100)}${(a.description||'').length>100?'…':''}</td>
+            <td style="padding:5px 8px;font-size:11px;white-space:nowrap;">${fmtTs(a.created_at)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </section>`
+
+  const eventsHTML = events.length === 0 ? '' : `
+    <section>
+      <h2 class="section-title">Event Timeline (${events.length} events)</h2>
+      ${events.map((e, idx) => `
+        <div style="display:flex;gap:12px;padding:10px 0;${idx > 0 ? 'border-top:1px solid #f3f4f6;' : ''}">
+          <div style="display:flex;flex-direction:column;align-items:center;width:16px;">
+            <div style="width:8px;height:8px;border-radius:50%;background:#6366f1;margin-top:4px;flex-shrink:0;"></div>
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;">
+              <b style="font-size:12px;font-family:monospace;color:#1f2937;">${e.event_type}</b>
+              <span style="font-size:11px;color:#9ca3af;">${fmtTs(e.timestamp)}</span>
+            </div>
+            <div style="font-size:11px;color:#6b7280;margin-top:2px;">
+              ${[e.source_ip, e.username].filter(Boolean).join(' · ')}${e.message ? ' — ' + e.message : ''}
+            </div>
+          </div>
+        </div>`).join('')}
+    </section>`
+
+  const notesHTML = notes.length === 0 ? '' : `
+    <section>
+      <h2 class="section-title">Investigation Notes (${notes.length})</h2>
+      ${notes.map(n => `
+        <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:10px 14px;margin-bottom:8px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+            <b style="font-size:12px;color:#3b82f6;">${n.username}</b>
+            <span style="font-size:11px;color:#9ca3af;">${fmtTs(n.created_at)}</span>
+          </div>
+          <p style="font-size:13px;color:#374151;margin:0;">${n.note}</p>
+        </div>`).join('')}
+    </section>`
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <title>SentinelAI Incident Report — ${inc.title}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 0; background: white; color: #111827; }
+    .header { background: #0d1117; color: white; padding: 24px 32px; }
+    .header-sub { font-size: 11px; color: #6b7280; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+    h1 { font-size: 20px; font-weight: 700; margin: 0; }
+    .summary-bar { display: flex; border-bottom: 1px solid #e5e7eb; }
+    .summary-cell { flex: 1; padding: 12px 16px; border-right: 1px solid #e5e7eb; }
+    .summary-label { font-size: 10px; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 3px; }
+    .summary-value { font-size: 13px; font-weight: 600; }
+    .body { padding: 24px 32px; }
+    section { margin-bottom: 24px; }
+    .section-title { font-size: 13px; font-weight: 700; color: #111827; text-transform: uppercase; letter-spacing: 0.06em; margin: 0 0 10px 0; padding-bottom: 6px; border-bottom: 2px solid #e5e7eb; }
+    p { font-size: 13px; color: #374151; line-height: 1.6; margin: 0; }
+    .footer { border-top: 1px solid #e5e7eb; padding-top: 16px; display: flex; justify-content: space-between; font-size: 11px; color: #9ca3af; }
+    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+      <div>
+        <div class="header-sub">SentinelAI — Incident Report</div>
+        <h1>${inc.title}</h1>
+      </div>
+      <div style="text-align:right;">
+        <div style="font-size:12px;color:#9ca3af;">Generated</div>
+        <div style="font-size:12px;color:#d1d5db;">${now}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-bar">
+    ${[
+      ['Incident ID', `#${inc.id}`, null],
+      ['Severity', sev, sevColor],
+      ['Risk Score', `${inc.risk_score}/100`, null],
+      ['Status', inc.status.toUpperCase(), null],
+      ['Assigned To', inc.assigned_to || 'Unassigned', null],
+      ['Created', fmtTs(inc.created_at), null],
+    ].map(([k, v, color]) => `
+      <div class="summary-cell">
+        <div class="summary-label">${k}</div>
+        <div class="summary-value" style="color:${color || '#111827'};">${v}</div>
+      </div>`).join('')}
+  </div>
+
+  <div class="body">
+    <section>
+      <h2 class="section-title">Description</h2>
+      <p>${inc.description || '—'}</p>
+    </section>
+
+    <section>
+      <h2 class="section-title">Source Information</h2>
+      <table style="font-size:13px;border-collapse:collapse;">
+        ${[['Source IP', inc.source_ip||'—'],['Username', inc.username||'—'],['Anomaly Level', inc.anomaly_level||'—']].map(([k,v])=>`
+          <tr><td style="padding:5px 16px 5px 0;color:#6b7280;font-weight:500;width:140px;">${k}</td><td style="padding:5px 8px;">${v}</td></tr>`).join('')}
+      </table>
+    </section>
+
+    ${mitreHTML}
+    ${alertsHTML}
+    ${eventsHTML}
+    ${notesHTML}
+
+    <div class="footer">
+      <span>SentinelAI — Confidential Security Report</span>
+      <span>Incident #${inc.id} · ${fmtTs(inc.created_at)}</span>
+    </div>
+  </div>
+
+  <script>window.onload = function(){ window.print(); }</script>
+</body>
+</html>`
+}
+
 export function IncidentReport({ id, onClose }) {
   const [inc, setInc]       = useState(null)
   const [events, setEvents] = useState([])
@@ -37,7 +188,6 @@ export function IncidentReport({ id, onClose }) {
       setInc(inc)
       setEvents(evts)
       setNotes(nts)
-      // Filter alerts related to this incident's source_ip / username
       const related = allAlerts.filter(a =>
         (inc.source_ip && a.source_ip === inc.source_ip) ||
         (inc.username  && a.username  === inc.username)
@@ -46,9 +196,20 @@ export function IncidentReport({ id, onClose }) {
     })
   }, [id])
 
+  function handlePrint() {
+    if (!inc) return
+    const mitreSet = new Map()
+    alerts.forEach(a => (a.mitre_techniques || []).forEach(t => mitreSet.set(t.id, t)))
+    const allMitre = [...mitreSet.values()]
+    const html = buildPrintHTML({ inc, events, notes, alerts, allMitre })
+    const win = window.open('', '_blank')
+    win.document.write(html)
+    win.document.close()
+  }
+
   if (!inc) return (
-    <div className="fixed inset-0 bg-white z-[100] flex items-center justify-center">
-      <p className="text-slate-500">Loading report…</p>
+    <div className="fixed inset-0 bg-black/60 z-[100] flex items-center justify-center">
+      <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-8 text-slate-400">Loading report…</div>
     </div>
   )
 
@@ -58,42 +219,11 @@ export function IncidentReport({ id, onClose }) {
   const allMitre = [...mitreSet.values()]
 
   return (
-    <>
-      {/* Print styles injected into <head> */}
-      <style>{`
-        @media print {
-          html, body { background: white !important; margin: 0 !important; padding: 0 !important; }
-          body > * { display: none !important; }
-          #sentinel-report-root {
-            display: block !important;
-            position: fixed !important;
-            inset: 0 !important;
-            background: white !important;
-            padding: 0 !important;
-            overflow: visible !important;
-            z-index: 9999 !important;
-          }
-          .report-controls { display: none !important; }
-          #incident-report {
-            box-shadow: none !important;
-            border-radius: 0 !important;
-            max-height: none !important;
-            overflow: visible !important;
-            width: 100% !important;
-            max-width: none !important;
-            position: static !important;
-          }
-        }
-      `}</style>
-
-    <div
-      id="sentinel-report-root"
-      className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4"
-    >
-      {/* Controls — hidden on print */}
-      <div className="report-controls absolute top-4 right-4 flex gap-2 z-[110]">
+    <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4">
+      {/* Controls */}
+      <div className="absolute top-4 right-4 flex gap-2 z-[110]">
         <button
-          onClick={() => window.print()}
+          onClick={handlePrint}
           className="bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
         >
           Print / Save PDF
@@ -106,9 +236,8 @@ export function IncidentReport({ id, onClose }) {
         </button>
       </div>
 
-      {/* Report content */}
+      {/* Preview */}
       <div
-        id="incident-report"
         className="bg-white text-gray-900 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl"
         style={{ fontFamily: 'system-ui, sans-serif' }}
       >
@@ -274,7 +403,6 @@ export function IncidentReport({ id, onClose }) {
         </div>
       </div>
     </div>
-    </>
   )
 }
 
