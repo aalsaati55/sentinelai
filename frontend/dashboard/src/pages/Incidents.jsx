@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { RefreshCw, X, ChevronDown, MessageSquare, Send } from 'lucide-react'
+import { RefreshCw, X, ChevronDown, MessageSquare, Send, Download } from 'lucide-react'
 import { api, token } from '../api'
 import { Panel } from '../components/Panel'
 import { Badge, severityFromScore } from '../components/Badge'
@@ -310,7 +310,14 @@ export function Incidents() {
             <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
             Refresh
           </button>
-          <span className="text-xs text-slate-500 ml-1">{incidents.length} incidents</span>
+          <button
+            onClick={() => api.exportIncidentsCsv(filter)}
+            className="flex items-center gap-2 bg-[#1c2128] border border-[#30363d] hover:border-green-500 text-slate-300 text-sm px-3 py-2 rounded-lg transition-colors ml-auto"
+          >
+            <Download size={13} />
+            Export CSV
+          </button>
+          <span className="text-xs text-slate-500">{incidents.length} incidents</span>
         </div>
 
         {/* Table */}

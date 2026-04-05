@@ -91,11 +91,22 @@ CREATE TABLE IF NOT EXISTS incident_notes (
     created_at  TEXT    NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS audit_log (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    username    TEXT    NOT NULL,
+    action      TEXT    NOT NULL,
+    target_type TEXT    NOT NULL,
+    target_id   INTEGER,
+    detail      TEXT,
+    created_at  TEXT    NOT NULL
+);
+
 CREATE INDEX IF NOT EXISTS idx_events_timestamp  ON events(timestamp);
 CREATE INDEX IF NOT EXISTS idx_events_source_ip  ON events(source_ip);
 CREATE INDEX IF NOT EXISTS idx_events_event_type ON events(event_type);
 CREATE INDEX IF NOT EXISTS idx_alerts_severity   ON alerts(severity);
 CREATE INDEX IF NOT EXISTS idx_incidents_status  ON incidents(status);
+CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at);
 """
 
 
@@ -403,11 +414,59 @@ def get_event_timeline(bucket: str = "hour") -> List[Dict[str, Any]]:
     return [dict(r) for r in rows]
 
 
+def get_incident_timeline(days: int = 30) -> List[Dict[str, Any]]:
+    """Return incident counts per day for the last N days."""
+    sql = """
+        SELECT strftime('%Y-%m-%d', created_at) as day, COUNT(*) as count
+        FROM incidents
+        WHERE created_at >= datetime('now', ?)
+        GROUP BY day
+        ORDER BY day ASC
+    """
+    with get_connection() as conn:
+        rows = conn.execute(sql, (f"-{days} days",)).fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_alert_timeline(days: int = 30) -> List[Dict[str, Any]]:
+    """Return alert counts per day per severity for the last N days."""
+    sql = """
+        SELECT strftime('%Y-%m-%d', created_at) as day, severity, COUNT(*) as count
+        FROM alerts
+        WHERE created_at >= datetime('now', ?)
+        GROUP BY day, severity
+        ORDER BY day ASC
+    """
+    with get_connection() as conn:
+        rows = conn.execute(sql, (f"-{days} days",)).fetchall()
+    return [dict(r) for r in rows]
+
+
 def get_unique_ip_count() -> int:
     with get_connection() as conn:
         return conn.execute(
             "SELECT COUNT(DISTINCT source_ip) FROM events WHERE source_ip IS NOT NULL"
         ).fetchone()[0]
+
+
+def add_audit_log(username: str, action: str, target_type: str, target_id: int = None, detail: str = None) -> None:
+    """Record an audit log entry."""
+    from utils import now_iso
+    with get_connection() as conn:
+        conn.execute(
+            "INSERT INTO audit_log (username, action, target_type, target_id, detail, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+            (username, action, target_type, target_id, detail, now_iso()),
+        )
+
+
+def get_audit_log(limit: int = 200, offset: int = 0) -> List[Dict[str, Any]]:
+    """Return audit log entries newest-first."""
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT * FROM audit_log ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            (limit, offset),
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 def add_incident_note(incident_id: int, username: str, note: str) -> dict:

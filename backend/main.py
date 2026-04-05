@@ -26,6 +26,7 @@ from routers import events, alerts, incidents, dashboard
 from routers import auth as auth_router
 from routers import live as live_router
 from routers import settings as settings_router
+from routers import audit as audit_router
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -56,6 +57,7 @@ app.include_router(incidents.router)
 app.include_router(dashboard.router)
 app.include_router(live_router.router)
 app.include_router(settings_router.router)
+app.include_router(audit_router.router)
 
 
 # ── Health check ─────────────────────────────────────────────

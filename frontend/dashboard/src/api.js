@@ -79,6 +79,38 @@ export const api = {
     })
   },
 
+  // CSV exports — authenticated fetch then trigger browser download
+  exportIncidentsCsv: async (status = '') => {
+    const q = status ? `?status=${status}` : ''
+    const r = await fetch(`${BASE}/incidents/export/csv${q}`, { headers: authHeaders() })
+    const blob = await r.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = 'incidents.csv'; a.click(); URL.revokeObjectURL(url)
+  },
+  exportAlertsCsv: async (severity = '') => {
+    const q = severity ? `?severity=${severity}` : ''
+    const r = await fetch(`${BASE}/alerts/export/csv${q}`, { headers: authHeaders() })
+    const blob = await r.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = 'alerts.csv'; a.click(); URL.revokeObjectURL(url)
+  },
+  exportAuditCsv: async () => {
+    const r = await fetch(`${BASE}/audit/export/csv`, { headers: authHeaders() })
+    const blob = await r.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = 'audit_log.csv'; a.click(); URL.revokeObjectURL(url)
+  },
+
+  // Audit log
+  auditLog: (params = {}) => {
+    const q = new URLSearchParams({ limit: 200, ...params }).toString()
+    return get(`/audit?${q}`)
+  },
+
+  // Dashboard charts
+  incidentTimeline: (days = 30) => get(`/dashboard/incident-timeline?days=${days}`),
+  alertTimeline:    (days = 30) => get(`/dashboard/alert-timeline?days=${days}`),
+
   // Auth
   login: async (username, password) => {
     const form = new URLSearchParams({ username, password })

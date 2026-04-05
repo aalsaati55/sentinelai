@@ -1,4 +1,4 @@
-import { LayoutDashboard, AlertTriangle, Bell, FileText, Shield, Users, Settings } from 'lucide-react'
+import { LayoutDashboard, AlertTriangle, Bell, FileText, Shield, Users, Settings, ClipboardList } from 'lucide-react'
 
 const NAV = [
   { id: 'overview',  label: 'Overview',  Icon: LayoutDashboard },
@@ -8,8 +8,9 @@ const NAV = [
 ]
 
 const ADMIN_NAV = [
-  { id: 'users',    label: 'Users',    Icon: Users },
-  { id: 'settings', label: 'Settings', Icon: Settings },
+  { id: 'users',    label: 'Users',     Icon: Users },
+  { id: 'audit',    label: 'Audit Log', Icon: ClipboardList },
+  { id: 'settings', label: 'Settings',  Icon: Settings },
 ]
 
 export function Sidebar({ page, setPage, userRole }) {

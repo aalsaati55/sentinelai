@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { RefreshCw, ChevronDown } from 'lucide-react'
+import { RefreshCw, ChevronDown, Download } from 'lucide-react'
 import { api } from '../api'
 import { Panel } from '../components/Panel'
 import { Badge } from '../components/Badge'
@@ -56,7 +56,14 @@ export function Alerts() {
             <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
             Refresh
           </button>
-          <span className="text-xs text-slate-500 ml-1">{alerts.length} alerts</span>
+          <button
+            onClick={() => api.exportAlertsCsv(filter)}
+            className="flex items-center gap-2 bg-[#1c2128] border border-[#30363d] hover:border-green-500 text-slate-300 text-sm px-3 py-2 rounded-lg transition-colors ml-auto"
+          >
+            <Download size={13} />
+            Export CSV
+          </button>
+          <span className="text-xs text-slate-500">{alerts.length} alerts</span>
         </div>
 
         {/* Table */}

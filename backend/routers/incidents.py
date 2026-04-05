@@ -7,7 +7,10 @@ GET  /api/incidents/{id}/events — events linked to an incident
 PATCH /api/incidents/{id}/status — update incident status (open/investigating/closed)
 """
 
+import csv
+import io
 from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -15,6 +18,7 @@ from storage import (
     get_incidents, count_incidents,
     get_incident_events, get_connection,
     add_incident_note, get_incident_notes,
+    add_audit_log,
 )
 from schemas import IncidentSchema, EventSchema
 from auth import get_current_user
@@ -40,6 +44,22 @@ def incident_count(status: Optional[str] = Query(None)):
     return {"count": count_incidents(status=status)}
 
 
+@router.get("/export/csv")
+def export_incidents_csv(status: Optional[str] = Query(None), current_user: dict = Depends(get_current_user)):
+    rows = get_incidents(limit=10000, offset=0, status=status)
+    fields = ["id", "title", "source_ip", "username", "risk_score", "anomaly_level", "status", "assigned_to", "created_at", "description"]
+    buf = io.StringIO()
+    writer = csv.DictWriter(buf, fieldnames=fields, extrasaction="ignore")
+    writer.writeheader()
+    writer.writerows(rows)
+    buf.seek(0)
+    return StreamingResponse(
+        iter([buf.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=incidents.csv"},
+    )
+
+
 @router.get("/{incident_id}", response_model=IncidentSchema)
 def get_incident(incident_id: int):
     with get_connection() as conn:
@@ -63,7 +83,7 @@ def get_linked_events(incident_id: int):
 
 
 @router.patch("/{incident_id}/status", response_model=IncidentSchema)
-def update_status(incident_id: int, body: StatusUpdate):
+def update_status(incident_id: int, body: StatusUpdate, current_user: dict = Depends(get_current_user)):
     allowed = {"open", "investigating", "closed"}
     if body.status not in allowed:
         raise HTTPException(
@@ -80,6 +100,7 @@ def update_status(incident_id: int, body: StatusUpdate):
         ).fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail="Incident not found")
+    add_audit_log(current_user["username"], "status_change", "incident", incident_id, f"Status → {body.status}")
     return dict(row)
 
 
@@ -99,6 +120,8 @@ def assign_incident(incident_id: int, body: AssignRequest, current_user: dict = 
         row = conn.execute("SELECT * FROM incidents WHERE id = ?", (incident_id,)).fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail="Incident not found")
+    assignee = body.assigned_to or "unassigned"
+    add_audit_log(current_user["username"], "assignment", "incident", incident_id, f"Assigned to {assignee}")
     return dict(row)
 
 
@@ -123,4 +146,6 @@ def create_note(incident_id: int, body: NoteCreate, current_user: dict = Depends
         exists = conn.execute("SELECT id FROM incidents WHERE id = ?", (incident_id,)).fetchone()
     if not exists:
         raise HTTPException(status_code=404, detail="Incident not found")
-    return add_incident_note(incident_id, current_user["username"], body.note.strip())
+    note = add_incident_note(incident_id, current_user["username"], body.note.strip())
+    add_audit_log(current_user["username"], "note_added", "incident", incident_id, body.note.strip()[:100])
+    return note

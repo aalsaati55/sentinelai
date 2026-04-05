@@ -3,6 +3,7 @@ import { Activity, AlertTriangle, Bell, Globe, Radio, ShieldAlert, TrendingUp, Z
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
+  LineChart, Line, CartesianGrid,
 } from 'recharts'
 import { api } from '../api'
 import { StatCard } from '../components/StatCard'
@@ -38,8 +39,10 @@ export function Overview({ onGoToIncidents }) {
   const [etypes, setEtypes]       = useState([])
   const [incidents, setIncidents] = useState([])
   const [loading, setLoading]     = useState(true)
-  const [liveEvents, setLiveEvents] = useState(0)
-  const [liveAlerts, setLiveAlerts] = useState(0)
+  const [liveEvents, setLiveEvents]         = useState(0)
+  const [liveAlerts, setLiveAlerts]         = useState(0)
+  const [incidentTrend, setIncidentTrend]   = useState([])
+  const [alertTrend, setAlertTrend]         = useState([])
 
   const refreshSummary = useCallback(() => {
     Promise.all([api.summary(), api.incidents({ limit: 8 })])
@@ -54,12 +57,23 @@ export function Overview({ onGoToIncidents }) {
       api.severity(),
       api.eventTypes(),
       api.incidents({ limit: 8 }),
-    ]).then(([s, ips, sev, et, inc]) => {
+      api.incidentTimeline(30),
+      api.alertTimeline(30),
+    ]).then(([s, ips, sev, et, inc, itl, atl]) => {
       setSummary(s)
       setTopIps(ips)
       setSeverity(sev.map(d => ({ name: d.severity, value: d.count })))
       setEtypes(et.slice(0, 10).map(d => ({ name: d.event_type.replace('_', ' '), value: d.count })))
       setIncidents(inc)
+      setIncidentTrend(itl.map(d => ({ day: d.day.slice(5), count: d.count })))
+      // Pivot alert timeline: [{day, critical, high, medium, low}]
+      const amap = {}
+      atl.forEach(({ day, severity, count }) => {
+        const k = day.slice(5)
+        if (!amap[k]) amap[k] = { day: k, critical: 0, high: 0, medium: 0, low: 0 }
+        amap[k][severity] = count
+      })
+      setAlertTrend(Object.values(amap))
       setLoading(false)
     }).catch(() => setLoading(false))
   }, [])
@@ -164,6 +178,40 @@ export function Overview({ onGoToIncidents }) {
           </ResponsiveContainer>
         ) : <p className="text-slate-500 text-sm text-center py-8">No events yet</p>}
       </Panel>
+
+      {/* Timeline charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <Panel title="Incidents — Last 30 Days">
+          {incidentTrend.length ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={incidentTrend} margin={{ left: 0, right: 16, top: 4, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#30363d" />
+                <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#8b949e' }} axisLine={false} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#8b949e' }} axisLine={false} tickLine={false} width={28} />
+                <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#58a6ff', strokeWidth: 1 }} />
+                <Line type="monotone" dataKey="count" stroke="#f85149" strokeWidth={2} dot={{ r: 3, fill: '#f85149' }} name="incidents" />
+              </LineChart>
+            </ResponsiveContainer>
+          ) : <p className="text-slate-500 text-sm text-center py-8">No incidents in the last 30 days</p>}
+        </Panel>
+
+        <Panel title="Alerts by Severity — Last 30 Days">
+          {alertTrend.length ? (
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={alertTrend} margin={{ left: 0, right: 16, top: 4, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#30363d" />
+                <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#8b949e' }} axisLine={false} tickLine={false} />
+                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#8b949e' }} axisLine={false} tickLine={false} width={28} />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+                <Bar dataKey="critical" stackId="a" fill="#f85149" name="critical" />
+                <Bar dataKey="high"     stackId="a" fill="#ff7b72" name="high" />
+                <Bar dataKey="medium"   stackId="a" fill="#e3b341" name="medium" />
+                <Bar dataKey="low"      stackId="a" fill="#3fb950" name="low" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : <p className="text-slate-500 text-sm text-center py-8">No alerts in the last 30 days</p>}
+        </Panel>
+      </div>
 
       {/* Recent incidents */}
       <Panel

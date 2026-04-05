@@ -6,6 +6,7 @@ import { Alerts } from './pages/Alerts'
 import { Events } from './pages/Events'
 import { Users } from './pages/Users'
 import { Settings } from './pages/Settings'
+import { AuditLog } from './pages/AuditLog'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { token } from './api'
@@ -60,6 +61,7 @@ function App() {
     events:    <Events />,
     users:     <Users />,
     settings:  <Settings />,
+    audit:     <AuditLog />,
   }
 
   return (

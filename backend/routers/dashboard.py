@@ -18,6 +18,8 @@ from storage import (
     get_top_source_ips,
     get_event_type_distribution,
     get_severity_breakdown,
+    get_incident_timeline,
+    get_alert_timeline,
 )
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
@@ -55,3 +57,13 @@ def event_types():
 @router.get("/severity")
 def severity_breakdown():
     return get_severity_breakdown()
+
+
+@router.get("/incident-timeline")
+def incident_timeline(days: int = Query(30, ge=1, le=365)):
+    return get_incident_timeline(days=days)
+
+
+@router.get("/alert-timeline")
+def alert_timeline(days: int = Query(30, ge=1, le=365)):
+    return get_alert_timeline(days=days)
