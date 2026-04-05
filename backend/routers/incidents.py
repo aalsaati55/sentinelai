@@ -7,15 +7,17 @@ GET  /api/incidents/{id}/events — events linked to an incident
 PATCH /api/incidents/{id}/status — update incident status (open/investigating/closed)
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel
 from typing import List, Optional
 
 from storage import (
     get_incidents, count_incidents,
     get_incident_events, get_connection,
+    add_incident_note, get_incident_notes,
 )
 from schemas import IncidentSchema, EventSchema
+from auth import get_current_user
 
 router = APIRouter(prefix="/api/incidents", tags=["incidents"])
 
@@ -79,3 +81,46 @@ def update_status(incident_id: int, body: StatusUpdate):
     if row is None:
         raise HTTPException(status_code=404, detail="Incident not found")
     return dict(row)
+
+
+class AssignRequest(BaseModel):
+    assigned_to: Optional[str] = None
+
+
+@router.patch("/{incident_id}/assign", response_model=IncidentSchema)
+def assign_incident(incident_id: int, body: AssignRequest, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE incidents SET assigned_to = ? WHERE id = ?",
+            (body.assigned_to, incident_id),
+        )
+        row = conn.execute("SELECT * FROM incidents WHERE id = ?", (incident_id,)).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    return dict(row)
+
+
+class NoteCreate(BaseModel):
+    note: str
+
+
+@router.get("/{incident_id}/notes")
+def list_notes(incident_id: int, current_user: dict = Depends(get_current_user)):
+    with get_connection() as conn:
+        exists = conn.execute("SELECT id FROM incidents WHERE id = ?", (incident_id,)).fetchone()
+    if not exists:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    return get_incident_notes(incident_id)
+
+
+@router.post("/{incident_id}/notes", status_code=201)
+def create_note(incident_id: int, body: NoteCreate, current_user: dict = Depends(get_current_user)):
+    if not body.note.strip():
+        raise HTTPException(status_code=400, detail="Note cannot be empty")
+    with get_connection() as conn:
+        exists = conn.execute("SELECT id FROM incidents WHERE id = ?", (incident_id,)).fetchone()
+    if not exists:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    return add_incident_note(incident_id, current_user["username"], body.note.strip())

@@ -4,6 +4,8 @@ import { Overview } from './pages/Overview'
 import { Incidents } from './pages/Incidents'
 import { Alerts } from './pages/Alerts'
 import { Events } from './pages/Events'
+import { Users } from './pages/Users'
+import { Settings } from './pages/Settings'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { token } from './api'
@@ -13,7 +15,6 @@ function App() {
   const [page, setPage]   = useState('overview')
   const [view, setView]   = useState(() => token.get() ? 'app' : 'login')
   const [user, setUser]   = useState(() => token.user())
-
   // Verify stored token is still valid against the backend on first load
   useEffect(() => {
     if (!token.get()) return
@@ -57,11 +58,13 @@ function App() {
     incidents: <Incidents />,
     alerts:    <Alerts />,
     events:    <Events />,
+    users:     <Users />,
+    settings:  <Settings />,
   }
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#0d1117]">
-      <Sidebar page={page} setPage={setPage} />
+      <Sidebar page={page} setPage={setPage} userRole={user?.role} />
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top header bar */}
         <header className="shrink-0 h-12 bg-[#161b22] border-b border-[#30363d] flex items-center justify-end px-5 gap-3">

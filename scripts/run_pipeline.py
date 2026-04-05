@@ -40,6 +40,7 @@ from anomaly_scoring import score_sessions
 from detection import run_detection
 from correlation import correlate_alerts
 from risk_scoring import score_alert, score_incident
+from emailer import send_incident_alert
 
 setup_logging(logging.INFO)
 logger = logging.getLogger("pipeline")
@@ -148,6 +149,9 @@ def run(reset: bool = False) -> None:
                 if e.get("id"):
                     event_ids.append(e["id"])
         link_incident_events(inc_id, list(set(event_ids)))
+
+        # Send email alert for high/critical incidents
+        send_incident_alert({**incident, "id": inc_id})
 
     # ── 8. Summary ──────────────────────────────────────────
     logger.info("=" * 60)

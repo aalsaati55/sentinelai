@@ -66,6 +66,18 @@ export const api = {
   incident:      (id) => get(`/incidents/${id}`),
   incidentEvents:(id) => get(`/incidents/${id}/events`),
   updateStatus:  (id, status) => patch(`/incidents/${id}/status`, { status }),
+  assignIncident:(id, assigned_to) => patch(`/incidents/${id}/assign`, { assigned_to }),
+  incidentNotes: (id) => get(`/incidents/${id}/notes`),
+  addNote:       (id, note) => {
+    return fetch(`${BASE}/incidents/${id}/notes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ note }),
+    }).then(async r => {
+      if (!r.ok) { const e = await r.json().catch(()=>({})); throw new Error(e.detail || 'Failed') }
+      return r.json()
+    })
+  },
 
   // Auth
   login: async (username, password) => {
@@ -94,4 +106,19 @@ export const api = {
     return r.json()
   },
   me: () => get('/auth/me'),
+
+  // User management (admin only)
+  users:          () => get('/auth/users'),
+  changeRole:     (id, role) => patch(`/auth/users/${id}/role`, { role }),
+  deleteUser:     async (id) => {
+    const r = await fetch(`${BASE}/auth/users/${id}`, {
+      method: 'DELETE',
+      headers: authHeaders(),
+    })
+    if (r.status === 401) { token.clear(); window.location.reload(); return }
+    if (!r.ok) {
+      const err = await r.json().catch(() => ({}))
+      throw new Error(err.detail || 'Delete failed')
+    }
+  },
 }

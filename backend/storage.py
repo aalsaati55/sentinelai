@@ -73,6 +73,7 @@ CREATE TABLE IF NOT EXISTS incidents (
     risk_score     INTEGER NOT NULL DEFAULT 0,
     anomaly_level  TEXT,
     status         TEXT    NOT NULL DEFAULT 'open',
+    assigned_to    TEXT,
     created_at     TEXT    NOT NULL
 );
 
@@ -80,6 +81,14 @@ CREATE TABLE IF NOT EXISTS incident_events (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     incident_id INTEGER NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
     event_id    INTEGER NOT NULL REFERENCES events(id)    ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS incident_notes (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    incident_id INTEGER NOT NULL REFERENCES incidents(id) ON DELETE CASCADE,
+    username    TEXT    NOT NULL,
+    note        TEXT    NOT NULL,
+    created_at  TEXT    NOT NULL
 );
 
 CREATE INDEX IF NOT EXISTS idx_events_timestamp  ON events(timestamp);
@@ -98,6 +107,14 @@ def init_db() -> None:
     ensure_dir(os.path.dirname(DATABASE_PATH))
     with get_connection() as conn:
         conn.executescript(_SCHEMA)
+        # Migrations: add columns that may not exist in older DBs
+        for sql in [
+            "ALTER TABLE incidents ADD COLUMN assigned_to TEXT",
+        ]:
+            try:
+                conn.execute(sql)
+            except Exception:
+                pass  # Column already exists
     logger.info("Database initialized.")
 
 
@@ -391,6 +408,28 @@ def get_unique_ip_count() -> int:
         return conn.execute(
             "SELECT COUNT(DISTINCT source_ip) FROM events WHERE source_ip IS NOT NULL"
         ).fetchone()[0]
+
+
+def add_incident_note(incident_id: int, username: str, note: str) -> dict:
+    sql = """
+        INSERT INTO incident_notes (incident_id, username, note, created_at)
+        VALUES (?, ?, ?, ?)
+    """
+    from utils import now_iso
+    with get_connection() as conn:
+        cursor = conn.execute(sql, (incident_id, username, note, now_iso()))
+        row_id = cursor.lastrowid
+        row = conn.execute("SELECT * FROM incident_notes WHERE id = ?", (row_id,)).fetchone()
+    return dict(row)
+
+
+def get_incident_notes(incident_id: int) -> List[Dict[str, Any]]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT * FROM incident_notes WHERE incident_id = ? ORDER BY created_at ASC",
+            (incident_id,)
+        ).fetchall()
+    return [dict(r) for r in rows]
 
 
 def clear_all_data() -> None:

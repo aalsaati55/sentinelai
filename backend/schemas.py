@@ -51,6 +51,7 @@ class IncidentSchema(BaseModel):
     risk_score:    int
     anomaly_level: Optional[str] = None
     status:        str = "open"
+    assigned_to:   Optional[str] = None
     created_at:    Optional[str] = None
 
     class Config:

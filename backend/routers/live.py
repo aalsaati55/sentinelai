@@ -18,6 +18,7 @@ from anomaly_scoring import score_sessions
 from detection import run_detection
 from risk_scoring import score_alert
 from storage import insert_events_bulk, insert_alert
+from emailer import send_incident_alert
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/live", tags=["live"])
@@ -95,6 +96,8 @@ async def ingest_lines(batch: LogBatch):
     for alert in alerts:
         score_alert(alert)
         insert_alert(alert)
+        if alert.get("severity") in ("critical", "high"):
+            send_incident_alert(alert)
 
     # 5. Broadcast each new event to connected dashboard clients
     for event in events:

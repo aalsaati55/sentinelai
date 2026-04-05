@@ -17,6 +17,7 @@ from typing import Optional
 from auth import (
     create_user, authenticate_user, create_access_token,
     get_current_user, get_all_users, get_user_by_username, count_users,
+    update_user_role, delete_user, get_user_by_id,
 )
 
 logger = logging.getLogger(__name__)
@@ -147,3 +148,36 @@ def list_users(current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     return get_all_users()
+
+
+class UpdateRoleRequest(BaseModel):
+    role: str
+
+
+@router.patch("/users/{user_id}/role", response_model=UserOut)
+def change_role(user_id: int, body: UpdateRoleRequest, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    if body.role not in ("admin", "analyst"):
+        raise HTTPException(status_code=400, detail="Role must be 'admin' or 'analyst'")
+    if current_user["id"] == user_id:
+        raise HTTPException(status_code=400, detail="You cannot change your own role")
+    user = get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    updated = update_user_role(user_id, body.role)
+    logger.info(f"Admin {current_user['username']} changed user {user_id} role to {body.role}")
+    return updated
+
+
+@router.delete("/users/{user_id}", status_code=204)
+def remove_user(user_id: int, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    if current_user["id"] == user_id:
+        raise HTTPException(status_code=400, detail="You cannot delete your own account")
+    user = get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    delete_user(user_id)
+    logger.info(f"Admin {current_user['username']} deleted user {user_id}")

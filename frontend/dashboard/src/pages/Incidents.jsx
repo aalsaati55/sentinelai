@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { RefreshCw, X, ChevronDown } from 'lucide-react'
-import { api } from '../api'
+import { RefreshCw, X, ChevronDown, MessageSquare, Send } from 'lucide-react'
+import { api, token } from '../api'
 import { Panel } from '../components/Panel'
 import { Badge, severityFromScore } from '../components/Badge'
 import { ScoreBar } from '../components/ScoreBar'
@@ -11,19 +11,53 @@ function fmtTs(ts) {
 }
 
 function IncidentModal({ id, onClose }) {
-  const [inc, setInc]       = useState(null)
-  const [status, setStatus] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [events, setEvents] = useState([])
+  const [inc, setInc]         = useState(null)
+  const [status, setStatus]   = useState('')
+  const [saving, setSaving]   = useState(false)
+  const [events, setEvents]   = useState([])
+  const [notes, setNotes]         = useState([])
+  const [newNote, setNewNote]     = useState('')
+  const [addingNote, setAddingNote] = useState(false)
+  const [analysts, setAnalysts]   = useState([])
+  const [assignedTo, setAssignedTo] = useState('')
+  const [assigning, setAssigning] = useState(false)
+  const me = token.user()
 
   useEffect(() => {
     if (!id) return
-    Promise.all([api.incident(id), api.incidentEvents(id)]).then(([i, evts]) => {
+    Promise.all([
+      api.incident(id),
+      api.incidentEvents(id),
+      api.incidentNotes(id),
+      api.users().catch(() => []),
+    ]).then(([i, evts, nts, users]) => {
       setInc(i)
       setStatus(i.status)
+      setAssignedTo(i.assigned_to || '')
       setEvents(evts)
+      setNotes(nts)
+      setAnalysts(users)
     })
   }, [id])
+
+  async function saveAssign() {
+    setAssigning(true)
+    try {
+      const updated = await api.assignIncident(id, assignedTo || null)
+      setAssignedTo(updated.assigned_to || '')
+    } finally { setAssigning(false) }
+  }
+
+  async function submitNote(e) {
+    e.preventDefault()
+    if (!newNote.trim()) return
+    setAddingNote(true)
+    try {
+      const note = await api.addNote(id, newNote.trim())
+      setNotes(prev => [...prev, note])
+      setNewNote('')
+    } finally { setAddingNote(false) }
+  }
 
   async function save() {
     setSaving(true)
@@ -118,28 +152,104 @@ function IncidentModal({ id, onClose }) {
             </div>
           )}
 
-          {/* Status update */}
-          <div className="flex items-center gap-3 pt-2 border-t border-[#30363d]">
-            <span className="text-xs text-slate-500 uppercase tracking-wider">Update Status</span>
-            <div className="relative">
-              <select
-                value={status}
-                onChange={e => setStatus(e.target.value)}
-                className="appearance-none bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 pr-8 outline-none focus:border-blue-500 cursor-pointer"
+          {/* Investigation Notes */}
+          <div>
+            <p className="text-xs text-slate-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+              <MessageSquare size={11} /> Investigation Notes ({notes.length})
+            </p>
+
+            {/* Existing notes */}
+            {notes.length > 0 && (
+              <div className="space-y-2 mb-3">
+                {notes.map(n => (
+                  <div key={n.id} className="bg-[#1c2128] border border-[#30363d] rounded-lg px-4 py-3">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-semibold text-blue-400">{n.username}</span>
+                      <span className="text-xs text-slate-600">{fmtTs(n.created_at)}</span>
+                    </div>
+                    <p className="text-sm text-slate-300 leading-relaxed">{n.note}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add note form */}
+            <form onSubmit={submitNote} className="flex gap-2">
+              <input
+                type="text"
+                value={newNote}
+                onChange={e => setNewNote(e.target.value)}
+                placeholder="Add investigation note…"
+                className="flex-1 bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 outline-none focus:border-blue-500 placeholder-slate-600"
+              />
+              <button
+                type="submit"
+                disabled={addingNote || !newNote.trim()}
+                className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-sm font-semibold px-3 py-2 rounded-lg transition-colors"
               >
-                <option value="open">Open</option>
-                <option value="investigating">Investigating</option>
-                <option value="closed">Closed</option>
-              </select>
-              <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                <Send size={13} />
+                {addingNote ? '…' : 'Add'}
+              </button>
+            </form>
+          </div>
+
+          {/* Status + Assignment */}
+          <div className="space-y-3 pt-2 border-t border-[#30363d]">
+            {/* Status */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className="text-xs text-slate-500 uppercase tracking-wider w-24">Status</span>
+              <div className="relative">
+                <select
+                  value={status}
+                  onChange={e => setStatus(e.target.value)}
+                  className="appearance-none bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 pr-8 outline-none focus:border-blue-500 cursor-pointer"
+                >
+                  <option value="open">Open</option>
+                  <option value="investigating">Investigating</option>
+                  <option value="closed">Closed</option>
+                </select>
+                <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+              </div>
+              <button
+                onClick={save}
+                disabled={saving}
+                className="bg-blue-500 hover:bg-blue-400 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+              >
+                {saving ? 'Saving…' : 'Save'}
+              </button>
             </div>
-            <button
-              onClick={save}
-              disabled={saving}
-              className="bg-blue-500 hover:bg-blue-400 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
-            >
-              {saving ? 'Saving…' : 'Save'}
-            </button>
+
+            {/* Assignment — admin only */}
+            {me?.role === 'admin' && (
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-xs text-slate-500 uppercase tracking-wider w-24">Assign To</span>
+                <div className="relative">
+                  <select
+                    value={assignedTo}
+                    onChange={e => setAssignedTo(e.target.value)}
+                    className="appearance-none bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 pr-8 outline-none focus:border-blue-500 cursor-pointer"
+                  >
+                    <option value="">— Unassigned —</option>
+                    {analysts.map(u => (
+                      <option key={u.id} value={u.username}>{u.username} ({u.role})</option>
+                    ))}
+                  </select>
+                  <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                </div>
+                <button
+                  onClick={saveAssign}
+                  disabled={assigning}
+                  className="bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+                >
+                  {assigning ? 'Assigning…' : 'Assign'}
+                </button>
+                {inc?.assigned_to && (
+                  <span className="text-xs text-slate-500">
+                    Currently: <span className="text-blue-400 font-semibold">{inc.assigned_to}</span>
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -208,7 +318,7 @@ export function Incidents() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left">
-                {['#', 'Title', 'Source IP', 'User', 'Risk Score', 'Anomaly', 'Status', 'Created', ''].map(h => (
+                {['#', 'Title', 'Source IP', 'User', 'Risk Score', 'Anomaly', 'Status', 'Assigned', 'Created', ''].map(h => (
                   <th key={h} className="pb-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -230,6 +340,7 @@ export function Incidents() {
                     {i.anomaly_level ? <Badge value={i.anomaly_level} /> : <span className="text-slate-600">—</span>}
                   </td>
                   <td className="py-3 pr-4"><Badge value={i.status} /></td>
+                  <td className="py-3 pr-4 text-slate-400 text-xs">{i.assigned_to || <span className="text-slate-700">—</span>}</td>
                   <td className="py-3 pr-4 text-slate-500 text-xs whitespace-nowrap">{fmtTs(i.created_at)}</td>
                   <td className="py-3">
                     <button

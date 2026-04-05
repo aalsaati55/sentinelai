@@ -18,9 +18,14 @@ from fastapi.responses import FileResponse
 from utils import setup_logging
 from storage import init_db
 from auth import init_users_table
+from dotenv_utils import load_env
+
+# Load .env before anything else so SMTP vars are available at import time
+load_env()
 from routers import events, alerts, incidents, dashboard
 from routers import auth as auth_router
 from routers import live as live_router
+from routers import settings as settings_router
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -50,6 +55,7 @@ app.include_router(alerts.router)
 app.include_router(incidents.router)
 app.include_router(dashboard.router)
 app.include_router(live_router.router)
+app.include_router(settings_router.router)
 
 
 # ── Health check ─────────────────────────────────────────────
@@ -74,4 +80,13 @@ def on_startup():
     logger.info("SentinelAI starting up — initializing database...")
     init_db()
     init_users_table()
+    # Re-apply .env into emailer module vars (in case emailer was imported before load_env)
+    import emailer
+    import os
+    emailer.SMTP_HOST     = os.environ.get("SENTINEL_SMTP_HOST", "")
+    emailer.SMTP_PORT     = int(os.environ.get("SENTINEL_SMTP_PORT", "587"))
+    emailer.SMTP_USER     = os.environ.get("SENTINEL_SMTP_USER", "")
+    emailer.SMTP_PASS     = os.environ.get("SENTINEL_SMTP_PASSWORD", "")
+    emailer.ALERT_EMAIL   = os.environ.get("SENTINEL_ALERT_EMAIL", "")
+    emailer.EMAIL_ENABLED = os.environ.get("SENTINEL_EMAIL_ENABLED", "true").lower() == "true"
     logger.info("SentinelAI ready.")

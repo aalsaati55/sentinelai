@@ -100,6 +100,18 @@ def get_all_users() -> list:
     return [dict(r) for r in rows]
 
 
+def update_user_role(user_id: int, role: str) -> Optional[dict]:
+    with get_connection() as conn:
+        conn.execute("UPDATE users SET role = ? WHERE id = ?", (role, user_id))
+    return get_user_by_id(user_id)
+
+
+def delete_user(user_id: int) -> bool:
+    with get_connection() as conn:
+        cursor = conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
+    return cursor.rowcount > 0
+
+
 def authenticate_user(username: str, password: str) -> Optional[dict]:
     user = get_user_by_username(username)
     if not user:
