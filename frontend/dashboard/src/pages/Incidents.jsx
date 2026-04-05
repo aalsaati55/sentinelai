@@ -45,6 +45,8 @@ function IncidentModal({ id, onClose }) {
     try {
       const updated = await api.assignIncident(id, assignedTo || null)
       setAssignedTo(updated.assigned_to || '')
+      setInc(updated)
+      onClose(true)
     } finally { setAssigning(false) }
   }
 

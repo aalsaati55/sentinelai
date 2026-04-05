@@ -95,7 +95,7 @@ def rule_brute_force_ssh(session: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     return _make_alert(
         rule_name="brute_force_ssh",
         severity=Severity.HIGH,
-        risk_score=30,
+        risk_score=65,
         description=description,
         session=session,
     )
@@ -120,7 +120,7 @@ def rule_invalid_user_enumeration(session: Dict[str, Any]) -> Optional[Dict[str,
     return _make_alert(
         rule_name="invalid_user_enumeration",
         severity=Severity.MEDIUM,
-        risk_score=20,
+        risk_score=35,
         description=description,
         session=session,
     )
@@ -145,7 +145,7 @@ def rule_success_after_failures(session: Dict[str, Any]) -> Optional[Dict[str, A
     return _make_alert(
         rule_name="success_after_failures",
         severity=Severity.HIGH,
-        risk_score=30,
+        risk_score=75,
         description=description,
         session=session,
     )
@@ -180,7 +180,7 @@ def rule_suspicious_login_time(session: Dict[str, Any]) -> Optional[Dict[str, An
     return _make_alert(
         rule_name="suspicious_login_time",
         severity=Severity.MEDIUM,
-        risk_score=15,
+        risk_score=35,
         description=description,
         session=session,
     )
@@ -210,7 +210,7 @@ def rule_sudo_after_suspicious_login(session: Dict[str, Any]) -> Optional[Dict[s
     return _make_alert(
         rule_name="sudo_after_suspicious_login",
         severity=Severity.HIGH,
-        risk_score=20,
+        risk_score=80,
         description=description,
         session=session,
     )
@@ -234,7 +234,7 @@ def rule_privilege_after_login(session: Dict[str, Any]) -> Optional[Dict[str, An
     return _make_alert(
         rule_name="privilege_after_login",
         severity=Severity.HIGH,
-        risk_score=20,
+        risk_score=80,
         description=description,
         session=session,
     )
@@ -271,7 +271,7 @@ def rule_sensitive_file_access(session: Dict[str, Any]) -> Optional[Dict[str, An
     return _make_alert(
         rule_name="sensitive_file_access",
         severity=Severity.HIGH,
-        risk_score=25,
+        risk_score=70,
         description=description,
         session=session,
     )

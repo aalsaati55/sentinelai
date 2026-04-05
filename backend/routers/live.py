@@ -6,9 +6,11 @@ WS   /api/live/ws       — dashboard connects here for real-time events
 """
 
 import logging
+import time
+from collections import defaultdict
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
-from typing import List
+from typing import List, Dict
 
 from ws_manager import manager
 from parser_auth import parse_auth_line
@@ -17,11 +19,16 @@ from aggregator import aggregate_events
 from anomaly_scoring import score_sessions
 from detection import run_detection
 from risk_scoring import score_alert
-from storage import insert_events_bulk, insert_alert
+from storage import insert_events_bulk, insert_alert, insert_incident
 from emailer import send_incident_alert
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/live", tags=["live"])
+
+# Rolling per-IP failed login counter — accumulates across batches within 5 min
+# Structure: { ip_user_key: {"count": int, "last_seen": float} }
+_FAIL_WINDOW = 300  # seconds
+_fail_counter: Dict[str, dict] = defaultdict(lambda: {"count": 0, "last_seen": 0.0})
 
 _PARSERS = {
     "auth":   parse_auth_line,
@@ -90,6 +97,20 @@ async def ingest_lines(batch: LogBatch):
         for s in sessions:
             s.setdefault("anomaly_score", 0.0)
             s.setdefault("anomaly_level", "low")
+
+    # Accumulate failed logins across batches per IP|user within 5-min window
+    now_ts = time.time()
+    for s in sessions:
+        key = f"{s.get('source_ip','?')}|{s.get('username','?')}"
+        entry = _fail_counter[key]
+        # Reset if outside window
+        if now_ts - entry["last_seen"] > _FAIL_WINDOW:
+            entry["count"] = 0
+        entry["count"]     += s.get("failed_login_count", 0)
+        entry["last_seen"]  = now_ts
+        # Inject accumulated count back so detection sees the full picture
+        if entry["count"] > s.get("failed_login_count", 0):
+            s["failed_login_count"] = entry["count"]
 
     # 4. Run detection rules + score alerts
     alerts = run_detection(sessions)

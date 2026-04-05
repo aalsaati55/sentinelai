@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { RefreshCw, ChevronDown, Download } from 'lucide-react'
+import { useEffect, useState, useMemo } from 'react'
+import { RefreshCw, ChevronDown, Download, Search } from 'lucide-react'
 import { api } from '../api'
 import { Panel } from '../components/Panel'
 import { Badge } from '../components/Badge'
@@ -13,6 +13,7 @@ function fmtTs(ts) {
 export function Alerts() {
   const [alerts, setAlerts]   = useState([])
   const [filter, setFilter]   = useState('')
+  const [search, setSearch]   = useState('')
   const [loading, setLoading] = useState(true)
 
   async function load() {
@@ -24,6 +25,15 @@ export function Alerts() {
   }
 
   useEffect(() => { load() }, [filter])
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return alerts
+    return alerts.filter(a =>
+      (a.rule_name   || '').toLowerCase().includes(q) ||
+      (a.description || '').toLowerCase().includes(q)
+    )
+  }, [alerts, search])
 
   return (
     <div className="space-y-5">
@@ -49,6 +59,16 @@ export function Alerts() {
             </select>
             <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
           </div>
+          <div className="relative">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search rule, description…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg pl-8 pr-3 py-2 w-52 outline-none focus:border-blue-500 placeholder-slate-600"
+            />
+          </div>
           <button
             onClick={load}
             className="flex items-center gap-2 bg-[#1c2128] border border-[#30363d] hover:border-blue-500 text-slate-300 text-sm px-3 py-2 rounded-lg transition-colors"
@@ -63,7 +83,7 @@ export function Alerts() {
             <Download size={13} />
             Export CSV
           </button>
-          <span className="text-xs text-slate-500">{alerts.length} alerts</span>
+          <span className="text-xs text-slate-500">{filtered.length} alert{filtered.length !== 1 ? 's' : ''}</span>
         </div>
 
         {/* Table */}
@@ -79,7 +99,7 @@ export function Alerts() {
             <tbody>
               {loading ? (
                 <tr><td colSpan={8} className="py-10 text-center text-slate-500">Loading…</td></tr>
-              ) : alerts.length ? alerts.map(a => (
+              ) : filtered.length ? filtered.map(a => (
                 <tr key={a.id} className="border-t border-[#30363d] hover:bg-white/[0.02] transition-colors">
                   <td className="py-3 pr-4 text-slate-500 text-xs">{a.id}</td>
                   <td className="py-3 pr-4">
@@ -102,7 +122,7 @@ export function Alerts() {
                 </tr>
               )) : (
                 <tr><td colSpan={8} className="py-10 text-center text-slate-500 text-sm">
-                  No alerts found.
+                  {search ? `No alerts match "${search}"` : 'No alerts found.'}
                 </td></tr>
               )}
             </tbody>

@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react'
-import { Activity, AlertTriangle, Bell, Globe, Radio, ShieldAlert, TrendingUp, Zap } from 'lucide-react'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import { Activity, AlertTriangle, Bell, Globe, Radio, ShieldAlert, TrendingUp, Zap, RefreshCw } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -44,11 +44,20 @@ export function Overview({ onGoToIncidents }) {
   const [incidentTrend, setIncidentTrend]   = useState([])
   const [alertTrend, setAlertTrend]         = useState([])
   const [days, setDays]                     = useState(30)
+  const [lastRefresh, setLastRefresh]       = useState(null)
+  const [refreshing, setRefreshing]         = useState(false)
+  const intervalRef                         = useRef(null)
 
-  const refreshSummary = useCallback(() => {
+  const refreshSummary = useCallback((silent = false) => {
+    if (!silent) setRefreshing(true)
     Promise.all([api.summary(), api.incidents({ limit: 8 })])
-      .then(([s, inc]) => { setSummary(s); setIncidents(inc) })
+      .then(([s, inc]) => {
+        setSummary(s)
+        setIncidents(inc)
+        setLastRefresh(new Date())
+      })
       .catch(() => {})
+      .finally(() => { if (!silent) setRefreshing(false) })
   }, [])
 
   useEffect(() => {
@@ -76,8 +85,15 @@ export function Overview({ onGoToIncidents }) {
       })
       setAlertTrend(Object.values(amap))
       setLoading(false)
+      setLastRefresh(new Date())
     }).catch(() => setLoading(false))
   }, [days])
+
+  // Auto-refresh summary every 30 seconds
+  useEffect(() => {
+    intervalRef.current = setInterval(() => refreshSummary(true), 30000)
+    return () => clearInterval(intervalRef.current)
+  }, [refreshSummary])
 
   function handleNewEvent() {
     setLiveEvents(c => c + 1)
@@ -97,9 +113,26 @@ export function Overview({ onGoToIncidents }) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-white mb-1">SOC Overview</h2>
-        <p className="text-sm text-slate-500">Real-time security posture dashboard</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-white mb-1">SOC Overview</h2>
+          <p className="text-sm text-slate-500">Real-time security posture dashboard</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {lastRefresh && (
+            <span className="text-xs text-slate-600">
+              Updated {lastRefresh.toLocaleTimeString()}
+            </span>
+          )}
+          <button
+            onClick={() => refreshSummary(false)}
+            disabled={refreshing}
+            className="flex items-center gap-2 bg-[#1c2128] border border-[#30363d] hover:border-blue-500 text-slate-400 hover:text-slate-200 text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
+          >
+            <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Stat cards */}

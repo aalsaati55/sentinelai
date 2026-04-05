@@ -94,7 +94,7 @@ AGGREGATION_WINDOW_SECONDS = 300  # 5 minutes
 # ──────────────────────────────────────────────
 # Detection thresholds
 # ──────────────────────────────────────────────
-BRUTE_FORCE_THRESHOLD      = 5    # failed logins within window to trigger alert
-INVALID_USER_THRESHOLD     = 3    # invalid user attempts within window
+BRUTE_FORCE_THRESHOLD      = 3    # failed logins within window to trigger alert
+INVALID_USER_THRESHOLD     = 2    # invalid user attempts within window
 SUSPICIOUS_HOUR_START      = 22   # 10 PM
 SUSPICIOUS_HOUR_END        = 6    # 6 AM
