@@ -17,7 +17,7 @@ from typing import Optional
 from auth import (
     create_user, authenticate_user, create_access_token,
     get_current_user, get_all_users, get_user_by_id,
-    update_user_role, delete_user, count_users,
+    get_user_by_username, update_user_role, delete_user, count_users,
 )
 from storage import add_audit_log
 

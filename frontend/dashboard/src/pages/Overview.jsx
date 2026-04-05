@@ -43,6 +43,7 @@ export function Overview({ onGoToIncidents }) {
   const [liveAlerts, setLiveAlerts]         = useState(0)
   const [incidentTrend, setIncidentTrend]   = useState([])
   const [alertTrend, setAlertTrend]         = useState([])
+  const [days, setDays]                     = useState(30)
 
   const refreshSummary = useCallback(() => {
     Promise.all([api.summary(), api.incidents({ limit: 8 })])
@@ -57,8 +58,8 @@ export function Overview({ onGoToIncidents }) {
       api.severity(),
       api.eventTypes(),
       api.incidents({ limit: 8 }),
-      api.incidentTimeline(30),
-      api.alertTimeline(30),
+      api.incidentTimeline(days),
+      api.alertTimeline(days),
     ]).then(([s, ips, sev, et, inc, itl, atl]) => {
       setSummary(s)
       setTopIps(ips)
@@ -76,7 +77,7 @@ export function Overview({ onGoToIncidents }) {
       setAlertTrend(Object.values(amap))
       setLoading(false)
     }).catch(() => setLoading(false))
-  }, [])
+  }, [days])
 
   function handleNewEvent() {
     setLiveEvents(c => c + 1)
@@ -180,8 +181,26 @@ export function Overview({ onGoToIncidents }) {
       </Panel>
 
       {/* Timeline charts */}
+      <div className="flex items-center justify-between mb-1">
+        <h3 className="text-sm font-semibold text-slate-400">Trend Charts</h3>
+        <div className="flex items-center gap-1 bg-[#1c2128] border border-[#30363d] rounded-lg p-1">
+          {[7, 30, 90].map(d => (
+            <button
+              key={d}
+              onClick={() => setDays(d)}
+              className={`text-xs px-3 py-1 rounded-md transition-colors ${
+                days === d
+                  ? 'bg-blue-600 text-white font-semibold'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              {d}d
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <Panel title="Incidents — Last 30 Days">
+        <Panel title={`Incidents — Last ${days} Days`}>
           {incidentTrend.length ? (
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={incidentTrend} margin={{ left: 0, right: 16, top: 4, bottom: 0 }}>
@@ -195,7 +214,7 @@ export function Overview({ onGoToIncidents }) {
           ) : <p className="text-slate-500 text-sm text-center py-8">No incidents in the last 30 days</p>}
         </Panel>
 
-        <Panel title="Alerts by Severity — Last 30 Days">
+        <Panel title={`Alerts by Severity — Last ${days} Days`}>
           {alertTrend.length ? (
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={alertTrend} margin={{ left: 0, right: 16, top: 4, bottom: 0 }}>

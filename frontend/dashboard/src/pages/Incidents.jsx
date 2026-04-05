@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { RefreshCw, X, ChevronDown, MessageSquare, Send, Download } from 'lucide-react'
+import { useEffect, useState, useMemo } from 'react'
+import { RefreshCw, X, ChevronDown, MessageSquare, Send, Download, Search } from 'lucide-react'
 import { api, token } from '../api'
 import { Panel } from '../components/Panel'
 import { Badge, severityFromScore } from '../components/Badge'
@@ -260,6 +260,7 @@ function IncidentModal({ id, onClose }) {
 export function Incidents() {
   const [incidents, setIncidents] = useState([])
   const [filter, setFilter]       = useState('')
+  const [search, setSearch]       = useState('')
   const [loading, setLoading]     = useState(true)
   const [selected, setSelected]   = useState(null)
 
@@ -272,6 +273,16 @@ export function Incidents() {
   }
 
   useEffect(() => { load() }, [filter])
+
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    if (!q) return incidents
+    return incidents.filter(i =>
+      (i.title      || '').toLowerCase().includes(q) ||
+      (i.source_ip  || '').toLowerCase().includes(q) ||
+      (i.username   || '').toLowerCase().includes(q)
+    )
+  }, [incidents, search])
 
   function handleModalClose(refresh) {
     setSelected(null)
@@ -303,6 +314,16 @@ export function Incidents() {
             </select>
             <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
           </div>
+          <div className="relative">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search title, IP, user…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              className="bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg pl-8 pr-3 py-2 w-52 outline-none focus:border-blue-500 placeholder-slate-600"
+            />
+          </div>
           <button
             onClick={load}
             className="flex items-center gap-2 bg-[#1c2128] border border-[#30363d] hover:border-blue-500 text-slate-300 text-sm px-3 py-2 rounded-lg transition-colors"
@@ -317,7 +338,7 @@ export function Incidents() {
             <Download size={13} />
             Export CSV
           </button>
-          <span className="text-xs text-slate-500">{incidents.length} incidents</span>
+          <span className="text-xs text-slate-500">{filtered.length} incident{filtered.length !== 1 ? 's' : ''}</span>
         </div>
 
         {/* Table */}
@@ -325,7 +346,7 @@ export function Incidents() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left">
-                {['#', 'Title', 'Source IP', 'User', 'Risk Score', 'Anomaly', 'Status', 'Assigned', 'Created', ''].map(h => (
+                {['#', 'Title', 'Source IP', 'User', 'Risk Score', 'Severity', 'Status', 'Assigned', 'Created', ''].map(h => (
                   <th key={h} className="pb-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -333,7 +354,7 @@ export function Incidents() {
             <tbody>
               {loading ? (
                 <tr><td colSpan={9} className="py-10 text-center text-slate-500">Loading…</td></tr>
-              ) : incidents.length ? incidents.map(i => (
+              ) : filtered.length ? filtered.map(i => (
                 <tr key={i.id} className="border-t border-[#30363d] hover:bg-white/[0.02] transition-colors cursor-pointer"
                     onClick={() => setSelected(i.id)}>
                   <td className="py-3 pr-4 text-slate-500 text-xs">{i.id}</td>
@@ -344,7 +365,7 @@ export function Incidents() {
                   <td className="py-3 pr-4 text-slate-400">{i.username || '—'}</td>
                   <td className="py-3 pr-4"><ScoreBar score={i.risk_score} /></td>
                   <td className="py-3 pr-4">
-                    {i.anomaly_level ? <Badge value={i.anomaly_level} /> : <span className="text-slate-600">—</span>}
+                    <Badge value={i.anomaly_level || severityFromScore(i.risk_score)} />
                   </td>
                   <td className="py-3 pr-4"><Badge value={i.status} /></td>
                   <td className="py-3 pr-4 text-slate-400 text-xs">{i.assigned_to || <span className="text-slate-700">—</span>}</td>
@@ -360,7 +381,7 @@ export function Incidents() {
                 </tr>
               )) : (
                 <tr><td colSpan={9} className="py-10 text-center text-slate-500 text-sm">
-                  No incidents found. Run the pipeline to generate data.
+                  {search ? `No incidents match "${search}"` : 'No incidents found. Run the pipeline to generate data.'}
                 </td></tr>
               )}
             </tbody>
