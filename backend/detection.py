@@ -21,14 +21,18 @@ Alert dict structure:
 }
 
 Rules implemented:
-    1. brute_force_ssh           — ≥5 failed logins within window
-    2. invalid_user_enumeration  — ≥3 invalid user attempts
-    3. success_after_failures    — login success following failures
-    4. suspicious_login_time     — login between 10 PM and 6 AM
-    5. sudo_after_suspicious_login  — sudo after a brute-force/success_after_failures session
-    6. privilege_after_login     — sudo observed after login_success in same session
-    7. sensitive_file_access     — file_access / file_modified / sensitive_command events
-    8. system_service_anomaly    — service_failed / system_error / kernel OOM/panic events
+    1.  brute_force_ssh           — ≥5 failed logins within window
+    2.  invalid_user_enumeration  — ≥3 invalid user attempts
+    3.  success_after_failures    — login success following failures
+    4.  suspicious_login_time     — login between 10 PM and 6 AM
+    5.  sudo_after_suspicious_login  — sudo after a brute-force/success_after_failures session
+    6.  privilege_after_login     — sudo observed after login_success in same session
+    7.  sensitive_file_access     — file_access / file_modified / sensitive_command events
+    8.  system_service_anomaly    — service_failed / system_error / kernel OOM/panic events
+    9.  port_scan_detected        — ≥5 blocked ports from same IP (UFW BLOCK)
+    10. repeated_sudo_failures    — ≥3 failed sudo attempts (password abuse / privilege probing)
+    11. new_user_created          — useradd/adduser executed via sudo
+    12. cron_modification         — crontab or /etc/cron modified via sudo
 """
 
 import logging
@@ -40,6 +44,18 @@ from config import (
     INVALID_USER_THRESHOLD,
     SUSPICIOUS_HOUR_START,
     SUSPICIOUS_HOUR_END,
+    SUDO_FAILURE_THRESHOLD,
+    PORT_SCAN_THRESHOLD,
+)
+
+# Patterns in cron command strings that indicate a reverse shell / C2 callback
+_REVERSE_SHELL_INDICATORS = (
+    "/dev/tcp", "/dev/udp",
+    "bash -i", "sh -i",
+    "nc ", "ncat ", "netcat ",
+    "mkfifo", "python -c", "python3 -c",
+    "perl -e", "ruby -rsocket",
+    "socat ", "pty.spawn",
 )
 
 logger = logging.getLogger(__name__)
@@ -79,6 +95,32 @@ MITRE_MAPPING = {
     "system_service_anomaly": [
         {"id": "T1489",     "name": "Service Stop"},
         {"id": "T1543",     "name": "Create or Modify System Process"},
+    ],
+    "port_scan_detected": [
+        {"id": "T1046",     "name": "Network Service Discovery"},
+        {"id": "T1595.001", "name": "Active Scanning: Scanning IP Blocks"},
+    ],
+    "repeated_sudo_failures": [
+        {"id": "T1548.003", "name": "Abuse Elevation Control: Sudo and Sudo Caching"},
+        {"id": "T1110",     "name": "Brute Force"},
+    ],
+    "new_user_created": [
+        {"id": "T1136.001", "name": "Create Account: Local Account"},
+        {"id": "T1078",     "name": "Valid Accounts"},
+    ],
+    "cron_modification": [
+        {"id": "T1053.003", "name": "Scheduled Task/Job: Cron"},
+        {"id": "T1543",     "name": "Create or Modify System Process"},
+    ],
+    "ssh_login_success": [
+        {"id": "T1078",     "name": "Valid Accounts"},
+        {"id": "T1021.004", "name": "Remote Services: SSH"},
+    ],
+    "reverse_shell_cron": [
+        {"id": "T1059.004", "name": "Command and Scripting Interpreter: Unix Shell"},
+        {"id": "T1053.003", "name": "Scheduled Task/Job: Cron"},
+        {"id": "T1071.001", "name": "Application Layer Protocol: Web Protocols"},
+        {"id": "T1105",     "name": "Ingress Tool Transfer"},
     ],
 }
 
@@ -143,12 +185,18 @@ def rule_brute_force_ssh(session: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 def rule_invalid_user_enumeration(session: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """
     Invalid user enumeration detection.
-    Fires when ≥ INVALID_USER_THRESHOLD invalid-user login attempts are seen
-    in the same session, indicating username guessing / enumeration.
-    Base risk: 20
+    Uses ip_invalid_user_count — the total invalid-user attempts from this IP
+    across ALL sessions (including different fake usernames), so that
+    ssh fakeuser1 / fakeuser2 / fakeuser3 all count toward the threshold.
+    Base risk: 35
     """
-    count = session.get("invalid_user_count", 0)
+    # Use cross-session IP total so different fake usernames accumulate
+    count = session.get("ip_invalid_user_count", 0) or session.get("invalid_user_count", 0)
     if count < INVALID_USER_THRESHOLD:
+        return None
+
+    # Only fire on the session that actually has invalid_user events (avoid duplicate alerts)
+    if session.get("invalid_user_count", 0) == 0:
         return None
 
     description = (
@@ -183,8 +231,8 @@ def rule_success_after_failures(session: Dict[str, Any]) -> Optional[Dict[str, A
     )
     return _make_alert(
         rule_name="success_after_failures",
-        severity=Severity.HIGH,
-        risk_score=75,
+        severity=Severity.CRITICAL,
+        risk_score=80,
         description=description,
         session=session,
     )
@@ -228,17 +276,21 @@ def rule_suspicious_login_time(session: Dict[str, Any]) -> Optional[Dict[str, An
 def rule_sudo_after_suspicious_login(session: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """
     Sudo usage in a session that also triggered brute force or success-after-failures.
-    Fires when a session has both suspicious login patterns AND sudo activity,
-    suggesting an attacker gaining root access after compromising credentials.
-    Base risk: 20
+    Also fires when sudo is seen from an IP that had recent brute-force failures
+    (cross-session detection for when hydra and manual SSH are in separate windows).
+    Base risk: 85
     """
     has_sudo = session.get("sudo_count", 0) > 0
+    if not has_sudo:
+        return None
+
     is_suspicious_login = (
         session.get("failed_login_count", 0) >= BRUTE_FORCE_THRESHOLD
         or session.get("success_after_failures", False)
+        or session.get("ip_had_recent_failures", False)  # cross-session flag
     )
 
-    if not (has_sudo and is_suspicious_login):
+    if not is_suspicious_login:
         return None
 
     description = (
@@ -248,8 +300,8 @@ def rule_sudo_after_suspicious_login(session: Dict[str, Any]) -> Optional[Dict[s
     )
     return _make_alert(
         rule_name="sudo_after_suspicious_login",
-        severity=Severity.HIGH,
-        risk_score=80,
+        severity=Severity.CRITICAL,
+        risk_score=85,
         description=description,
         session=session,
     )
@@ -258,22 +310,32 @@ def rule_sudo_after_suspicious_login(session: Dict[str, Any]) -> Optional[Dict[s
 def rule_privilege_after_login(session: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """
     Privilege escalation (sudo) immediately following a successful login.
-    Fires when a session shows login_success followed by sudo in the same window.
-    Base risk: 20
+    Fires when a session shows login_success followed by sudo in the same window,
+    OR when sudo is seen after a successful login from an IP with recent failures.
+    Base risk: 85
     """
-    if not session.get("privilege_after_login"):
+    # In-session: sudo came after a login_success
+    in_session = session.get("privilege_after_login", False)
+    # Cross-session: successful login + sudo, IP had recent brute-force activity
+    cross_session = (
+        session.get("success_login_count", 0) > 0
+        and session.get("sudo_count", 0) > 0
+        and session.get("ip_had_recent_failures", False)
+    )
+
+    if not (in_session or cross_session):
         return None
 
     description = (
-        f"Privilege escalation observed: sudo executed immediately after "
+        f"Privilege escalation observed: sudo executed after "
         f"successful login for user '{session.get('username')}' from "
         f"{session.get('source_ip')}. "
         f"Review sudo commands for unauthorized actions."
     )
     return _make_alert(
         rule_name="privilege_after_login",
-        severity=Severity.HIGH,
-        risk_score=80,
+        severity=Severity.CRITICAL,
+        risk_score=85,
         description=description,
         session=session,
     )
@@ -349,19 +411,192 @@ def rule_system_service_anomaly(session: Dict[str, Any]) -> Optional[Dict[str, A
     )
 
 
+def rule_port_scan_detected(session: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """
+    Port scan detection.
+    Fires when ≥ PORT_SCAN_THRESHOLD distinct destination ports are blocked
+    from the same source IP within the aggregation window (UFW BLOCK events).
+    Base risk: 55
+    """
+    unique_ports = session.get("unique_ports_scanned", 0)
+    if unique_ports < PORT_SCAN_THRESHOLD:
+        return None
+
+    count = session.get("port_scan_count", 0)
+    description = (
+        f"Port scan detected: {count} blocked connection attempt(s) across "
+        f"{unique_ports} distinct port(s) from {session.get('source_ip')}. "
+        f"Host is actively probing open services."
+    )
+    return _make_alert(
+        rule_name="port_scan_detected",
+        severity=Severity.HIGH,
+        risk_score=65,
+        description=description,
+        session=session,
+    )
+
+
+def rule_repeated_sudo_failures(session: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """
+    Repeated sudo authentication failures.
+    Fires when ≥ SUDO_FAILURE_THRESHOLD sudo failures occur in a session,
+    indicating privilege escalation probing or password abuse.
+    Base risk: 50
+    """
+    count = session.get("sudo_failure_count", 0)
+    if count < SUDO_FAILURE_THRESHOLD:
+        return None
+
+    description = (
+        f"{count} sudo authentication failure(s) for user '{session.get('username')}'. "
+        f"Possible privilege escalation attempt or password abuse."
+    )
+    return _make_alert(
+        rule_name="repeated_sudo_failures",
+        severity=Severity.HIGH,
+        risk_score=60,
+        description=description,
+        session=session,
+    )
+
+
+def rule_new_user_created(session: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """
+    New local user account created via sudo (useradd / adduser / usermod).
+    Fires when any new_user_created event appears in the session.
+    Base risk: 70
+    """
+    if session.get("new_user_count", 0) == 0:
+        return None
+
+    # Extract the actual command from the event message for detail
+    cmds = [
+        e.get("message", "")
+        for e in session.get("events", [])
+        if e.get("event_type") == EventType.NEW_USER_CREATED
+    ]
+    detail = cmds[0][:120] if cmds else ""
+    description = (
+        f"New user account created or modified by '{session.get('username')}' via sudo. "
+        f"Detail: {detail}"
+    )
+    return _make_alert(
+        rule_name="new_user_created",
+        severity=Severity.HIGH,
+        risk_score=75,
+        description=description,
+        session=session,
+    )
+
+
+def rule_reverse_shell_cron(session: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """
+    Detects reverse shell or C2 callback commands executing via cron.
+    Fires when a CRON_JOB event's command contains known reverse-shell patterns
+    (e.g. /dev/tcp, bash -i, nc, mkfifo, python -c).
+    This is always Critical — no legitimate cron job contains these patterns.
+    Base risk: 95
+    """
+    shell_events = [
+        e for e in session.get("events", [])
+        if e.get("event_type") == EventType.CRON_JOB
+        and any(ind in e.get("message", "").lower() for ind in _REVERSE_SHELL_INDICATORS)
+    ]
+    if not shell_events:
+        return None
+
+    cmd = shell_events[0].get("message", "")[:200]
+    description = (
+        f"REVERSE SHELL detected in cron job executed by '{session.get('username')}': "
+        f"{cmd}. "
+        f"Immediate incident response required — host is likely compromised."
+    )
+    return _make_alert(
+        rule_name="reverse_shell_cron",
+        severity=Severity.CRITICAL,
+        risk_score=95,
+        description=description,
+        session=session,
+    )
+
+
+def rule_cron_modification(session: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """
+    Crontab or cron directory modified via sudo.
+    Fires when any cron_modification event appears in the session,
+    indicating possible persistence establishment.
+    Base risk: 65
+    """
+    if session.get("cron_mod_count", 0) == 0:
+        return None
+
+    cmds = [
+        e.get("message", "")
+        for e in session.get("events", [])
+        if e.get("event_type") == EventType.CRON_MODIFICATION
+    ]
+    detail = cmds[0][:120] if cmds else ""
+    description = (
+        f"Cron schedule modified by '{session.get('username')}' via sudo — "
+        f"possible persistence mechanism. Detail: {detail}"
+    )
+    return _make_alert(
+        rule_name="cron_modification",
+        severity=Severity.HIGH,
+        risk_score=70,
+        description=description,
+        session=session,
+    )
+
+
+def rule_ssh_login_success(session: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """
+    Any successful SSH login from an external/remote source.
+    Fires a Low alert so every successful access is recorded, even without prior failures.
+    Does NOT fire if success_after_failures already fired (that is a higher-severity alert).
+    Base risk: 20
+    """
+    if session.get("success_login_count", 0) == 0:
+        return None
+
+    # Skip — success_after_failures rule will fire a more severe alert
+    if session.get("success_after_failures", False):
+        return None
+
+    description = (
+        f"Successful SSH login recorded for user '{session.get('username')}' "
+        f"from {session.get('source_ip')}. "
+        f"Verify this access was authorised."
+    )
+    return _make_alert(
+        rule_name="ssh_login_success",
+        severity=Severity.LOW,
+        risk_score=20,
+        description=description,
+        session=session,
+    )
+
+
 # ──────────────────────────────────────────────
 # Ordered rule registry
 # Add new rules here — no other code needs to change.
 # ──────────────────────────────────────────────
 _RULES = [
-    rule_brute_force_ssh,
-    rule_invalid_user_enumeration,
+    rule_reverse_shell_cron,        # Critical — checked first, highest priority
     rule_success_after_failures,
-    rule_suspicious_login_time,
     rule_sudo_after_suspicious_login,
     rule_privilege_after_login,
+    rule_new_user_created,
+    rule_cron_modification,
+    rule_brute_force_ssh,
+    rule_repeated_sudo_failures,
+    rule_port_scan_detected,
     rule_sensitive_file_access,
+    rule_invalid_user_enumeration,
+    rule_suspicious_login_time,
     rule_system_service_anomaly,
+    rule_ssh_login_success,         # Low — checked last
 ]
 
 

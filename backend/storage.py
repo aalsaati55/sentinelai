@@ -131,6 +131,8 @@ def init_db() -> None:
         for sql in [
             "ALTER TABLE incidents ADD COLUMN assigned_to TEXT",
             "ALTER TABLE alerts ADD COLUMN mitre_techniques TEXT",
+            "ALTER TABLE alerts ADD COLUMN source_ip TEXT",
+            "ALTER TABLE alerts ADD COLUMN username TEXT",
         ]:
             try:
                 conn.execute(sql)
@@ -284,10 +286,12 @@ def insert_alert(alert: Dict[str, Any]) -> int:
     sql = """
         INSERT INTO alerts
             (event_id, rule_name, severity, risk_score,
-             anomaly_score, anomaly_level, description, mitre_techniques, created_at)
+             anomaly_score, anomaly_level, description, mitre_techniques,
+             source_ip, username, created_at)
         VALUES
             (:event_id, :rule_name, :severity, :risk_score,
-             :anomaly_score, :anomaly_level, :description, :mitre_techniques, :created_at)
+             :anomaly_score, :anomaly_level, :description, :mitre_techniques,
+             :source_ip, :username, :created_at)
     """
     techniques = alert.get("mitre_techniques", [])
     row = {
@@ -299,6 +303,8 @@ def insert_alert(alert: Dict[str, Any]) -> int:
         "anomaly_level":    alert.get("anomaly_level"),
         "description":      alert["description"],
         "mitre_techniques": _json.dumps(techniques) if techniques else None,
+        "source_ip":        alert.get("source_ip"),
+        "username":         alert.get("username"),
         "created_at":       now_iso(),
     }
     with get_connection() as conn:

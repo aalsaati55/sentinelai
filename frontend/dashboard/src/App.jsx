@@ -7,6 +7,7 @@ import { Events } from './pages/Events'
 import { Users } from './pages/Users'
 import { Settings } from './pages/Settings'
 import { AuditLog } from './pages/AuditLog'
+import { AttackMap } from './pages/AttackMap'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { token } from './api'
@@ -60,6 +61,7 @@ function App() {
     incidents: <Incidents />,
     alerts:    <Alerts />,
     events:    <Events />,
+    attackmap: <AttackMap />,
     users:     <Users />,
     settings:  <Settings />,
     audit:     <AuditLog />,

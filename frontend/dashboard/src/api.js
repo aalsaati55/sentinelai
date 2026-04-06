@@ -116,6 +116,11 @@ export const api = {
     }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() })
   },
 
+  // GeoIP
+  geoLookup:  (ip) => get(`/geoip/lookup?ip=${encodeURIComponent(ip)}`),
+  geoBulk:    (ips) => fetch(`${BASE}/geoip/bulk`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ ips }) }).then(r => r.json()),
+  geoMap:     () => get('/geoip/map'),
+
   // Notifications
   notifications: (since) => get(`/notifications?since=${encodeURIComponent(since)}`),
 

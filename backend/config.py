@@ -58,6 +58,11 @@ class EventType:
     NETWORK_ANOMALY        = "network_anomaly"
     CUSTOM_ALERT           = "custom_alert"
 
+    # New attack surface events
+    PORT_SCAN              = "port_scan"
+    NEW_USER_CREATED       = "new_user_created"
+    CRON_MODIFICATION      = "cron_modification"
+
     # Fallback
     UNKNOWN                = "unknown"
 
@@ -89,12 +94,14 @@ RISK_CRITICAL_MIN = 80
 # ──────────────────────────────────────────────
 # Aggregation window (seconds)
 # ──────────────────────────────────────────────
-AGGREGATION_WINDOW_SECONDS = 300  # 5 minutes
+AGGREGATION_WINDOW_SECONDS = 900  # 15 minutes
 
 # ──────────────────────────────────────────────
 # Detection thresholds
 # ──────────────────────────────────────────────
-BRUTE_FORCE_THRESHOLD      = 3    # failed logins within window to trigger alert
-INVALID_USER_THRESHOLD     = 2    # invalid user attempts within window
+BRUTE_FORCE_THRESHOLD      = 5    # wrong-password failures on a real user to trigger alert
+INVALID_USER_THRESHOLD     = 4    # distinct invalid-user attempts from same IP
 SUSPICIOUS_HOUR_START      = 22   # 10 PM
 SUSPICIOUS_HOUR_END        = 6    # 6 AM
+SUDO_FAILURE_THRESHOLD     = 5    # sudo password failures before alert
+PORT_SCAN_THRESHOLD        = 10   # distinct blocked ports before port-scan alert

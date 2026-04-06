@@ -37,6 +37,8 @@ class AlertSchema(BaseModel):
     anomaly_level:     Optional[str]   = None
     description:       str
     mitre_techniques:  Optional[list]  = []
+    source_ip:         Optional[str]   = None
+    username:          Optional[str]   = None
     created_at:        Optional[str]   = None
 
     class Config:

@@ -38,19 +38,25 @@ from typing import List, Dict, Any, Optional
 from config import (
     EventType,
     AGGREGATION_WINDOW_SECONDS,
+    BRUTE_FORCE_THRESHOLD,
 )
+
+# Threshold: how many blocked ports from same IP = port scan
+PORT_SCAN_THRESHOLD = 5
 
 logger = logging.getLogger(__name__)
 
 # Event types counted toward each feature
-_FAILURE_TYPES  = {EventType.LOGIN_FAILURE, EventType.LOGIN_INVALID_USER}
-_SUCCESS_TYPES  = {EventType.LOGIN_SUCCESS}
-_INVALID_TYPES  = {EventType.LOGIN_INVALID_USER}
+_FAILURE_TYPES         = {EventType.LOGIN_FAILURE, EventType.LOGIN_INVALID_USER}  # any auth failure
+_PASSWORD_FAIL_TYPES   = {EventType.LOGIN_FAILURE}                               # wrong password only (real user)
+_SUCCESS_TYPES         = {EventType.LOGIN_SUCCESS}
+_INVALID_TYPES         = {EventType.LOGIN_INVALID_USER}
 _SUDO_TYPES     = {EventType.SUDO_SUCCESS, EventType.SUDO_FAILURE,
                    EventType.SUDO_SESSION_OPENED}
 _CUSTOM_TYPES   = {EventType.FILE_ACCESS, EventType.FILE_MODIFIED,
                    EventType.SENSITIVE_COMMAND, EventType.NETWORK_ANOMALY,
                    EventType.CUSTOM_ALERT}
+_PORT_SCAN_TYPES = {EventType.PORT_SCAN}
 
 
 # ──────────────────────────────────────────────
@@ -97,14 +103,23 @@ def _build_session(key: str, events: List[Dict[str, Any]]) -> Dict[str, Any]:
     activity_hour = window_start.hour if window_start else 0
 
     # Feature counts
-    event_types          = [e["event_type"] for e in events]
-    failed_login_count   = sum(1 for t in event_types if t in _FAILURE_TYPES)
-    success_login_count  = sum(1 for t in event_types if t in _SUCCESS_TYPES)
-    invalid_user_count   = sum(1 for t in event_types if t in _INVALID_TYPES)
-    sudo_count           = sum(1 for t in event_types if t in _SUDO_TYPES)
-    custom_event_count   = sum(1 for t in event_types if t in _CUSTOM_TYPES)
-    unique_usernames     = len({e.get("username") for e in events if e.get("username")})
-    event_rate           = round(len(events) / duration_minutes, 2)
+    event_types            = [e["event_type"] for e in events]
+    failed_login_count     = sum(1 for t in event_types if t in _PASSWORD_FAIL_TYPES)  # wrong-password only
+    any_failure_count      = sum(1 for t in event_types if t in _FAILURE_TYPES)        # all failures incl. invalid user
+    success_login_count    = sum(1 for t in event_types if t in _SUCCESS_TYPES)
+    invalid_user_count     = sum(1 for t in event_types if t in _INVALID_TYPES)
+    sudo_count             = sum(1 for t in event_types if t in _SUDO_TYPES)
+    custom_event_count     = sum(1 for t in event_types if t in _CUSTOM_TYPES)
+    port_scan_count        = sum(1 for t in event_types if t in _PORT_SCAN_TYPES)
+    new_user_count         = sum(1 for t in event_types if t == EventType.NEW_USER_CREATED)
+    cron_mod_count         = sum(1 for t in event_types if t == EventType.CRON_MODIFICATION)
+    sudo_failure_count     = sum(1 for t in event_types if t == EventType.SUDO_FAILURE)
+    unique_usernames       = len({e.get("username") for e in events if e.get("username")})
+    # Count distinct ports hit for port scan detection
+    blocked_ports          = {e.get("message", "").split("port ")[-1].split()[0]
+                               for e in events if e.get("event_type") == EventType.PORT_SCAN}
+    unique_ports_scanned   = len(blocked_ports)
+    event_rate             = round(len(events) / duration_minutes, 2)
 
     # Behavioral flags
     seen_failure  = False
@@ -115,7 +130,7 @@ def _build_session(key: str, events: List[Dict[str, Any]]) -> Dict[str, Any]:
 
     for e in events:
         et = e["event_type"]
-        if et in _FAILURE_TYPES:
+        if et in _FAILURE_TYPES:  # any failure (incl. invalid user) counts for success_after_failures
             seen_failure = True
         if et in _SUCCESS_TYPES:
             seen_success = True
@@ -135,15 +150,23 @@ def _build_session(key: str, events: List[Dict[str, Any]]) -> Dict[str, Any]:
         "activity_hour":           activity_hour,
         "events":                  events,
         "event_count":             len(events),
-        "failed_login_count":      failed_login_count,
+        "failed_login_count":      failed_login_count,       # wrong password on real user only
+        "any_failure_count":       any_failure_count,        # all auth failures incl. invalid user
         "success_login_count":     success_login_count,
         "invalid_user_count":      invalid_user_count,
         "sudo_count":              sudo_count,
+        "sudo_failure_count":      sudo_failure_count,
         "custom_event_count":      custom_event_count,
+        "port_scan_count":         port_scan_count,
+        "unique_ports_scanned":    unique_ports_scanned,
+        "new_user_count":          new_user_count,
+        "cron_mod_count":          cron_mod_count,
         "unique_usernames":        unique_usernames,
         "event_rate":              event_rate,
         "success_after_failures":  success_after_failures,
         "privilege_after_login":   privilege_after_login,
+        "ip_had_recent_failures":  False,  # populated post-build in aggregate_events
+        "ip_invalid_user_count":   0,      # populated post-build: total invalid-user attempts from this IP
     }
 
 
@@ -202,6 +225,30 @@ def aggregate_events(events: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         for window_events in windows:
             session = _build_session(key, window_events)
             sessions.append(session)
+
+    # Second pass: compute cross-session IP-level counters.
+    # Sort sessions by window_start so we process chronologically.
+    sessions.sort(key=lambda s: s.get("window_start", ""))
+
+    # Tally total invalid-user attempts per IP across ALL sessions (different usernames)
+    from collections import defaultdict as _dd
+    ip_invalid_totals: dict = _dd(int)
+    for session in sessions:
+        ip = session.get("source_ip")
+        if ip:
+            ip_invalid_totals[ip] += session.get("invalid_user_count", 0)
+
+    # Apply ip_invalid_user_count and ip_had_recent_failures to each session
+    ips_with_failures: set = set()
+    for session in sessions:
+        ip = session.get("source_ip")
+        if ip:
+            session["ip_invalid_user_count"] = ip_invalid_totals[ip]
+            if ip in ips_with_failures:
+                session["ip_had_recent_failures"] = True
+        # Register this IP as having password failures if it hit brute-force threshold
+        if ip and session.get("failed_login_count", 0) >= BRUTE_FORCE_THRESHOLD:
+            ips_with_failures.add(ip)
 
     logger.info(f"Aggregated {len(sorted_events)} events into {len(sessions)} sessions.")
     return sessions

@@ -171,6 +171,12 @@ def _try_accepted(line: str) -> Optional[Dict[str, Any]]:
     )
 
 
+# Keywords that indicate new user creation
+_NEW_USER_CMDS = ("useradd", "adduser", "usermod")
+# Keywords that indicate cron modification
+_CRON_MOD_CMDS = ("crontab", "/etc/cron", "/var/spool/cron")
+
+
 def _try_sudo_command(line: str) -> Optional[Dict[str, Any]]:
     m = RE_SUDO_COMMAND.match(line)
     if not m:
@@ -178,15 +184,28 @@ def _try_sudo_command(line: str) -> Optional[Dict[str, Any]]:
     ts, hostname, _proc, username, run_as_user, command = (
         m.group(1), m.group(2), m.group(3), m.group(4), m.group(5), m.group(6)
     )
+    cmd_lower = command.lower()
+
+    # Classify by command content
+    if any(kw in cmd_lower for kw in _NEW_USER_CMDS):
+        event_type = EventType.NEW_USER_CREATED
+        msg = f"User '{username}' created/modified a user account via sudo: {command.strip()}"
+    elif any(kw in cmd_lower for kw in _CRON_MOD_CMDS):
+        event_type = EventType.CRON_MODIFICATION
+        msg = f"User '{username}' modified cron configuration via sudo: {command.strip()}"
+    else:
+        event_type = EventType.SUDO_SUCCESS
+        msg = f"User '{username}' ran sudo command as '{run_as_user}': {command.strip()}"
+
     return build_event(
         timestamp=_normalize_timestamp(ts),
         log_source=LogSource.AUTH,
-        event_type=EventType.SUDO_SUCCESS,
+        event_type=event_type,
         source_ip=None,
         username=username,
         hostname=hostname,
         status=EventStatus.SUCCESS,
-        message=f"User '{username}' ran sudo command as '{run_as_user}': {command.strip()}",
+        message=msg,
         raw_log=line,
     )
 

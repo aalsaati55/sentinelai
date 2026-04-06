@@ -1,9 +1,18 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
 import { RefreshCw, ChevronDown, Download, Search, VolumeX, Volume2 } from 'lucide-react'
 import { api, token } from '../api'
+
 import { Panel } from '../components/Panel'
 import { Badge } from '../components/Badge'
 import { ScoreBar } from '../components/ScoreBar'
+
+function countryFlag(code) {
+  if (!code || code.length !== 2) return null
+  if (code === '--') return '🏠'
+  const o = 0x1F1E6 - 65
+  return String.fromCodePoint(code.toUpperCase().charCodeAt(0) + o) +
+         String.fromCodePoint(code.toUpperCase().charCodeAt(1) + o)
+}
 
 function fmtTs(ts) {
   if (!ts) return '—'
@@ -17,6 +26,7 @@ export function Alerts() {
   const [loading, setLoading]       = useState(true)
   const [suppressed, setSuppressed] = useState(new Set())
   const [suppressing, setSuppressing] = useState('')
+  const [geoMap, setGeoMap]         = useState({})
   const me = token.user()
 
   const loadSuppressed = useCallback(async () => {
@@ -30,7 +40,16 @@ export function Alerts() {
     setLoading(true)
     const params = filter ? { severity: filter } : {}
     try {
-      setAlerts(await api.alerts(params))
+      const data = await api.alerts(params)
+      setAlerts(data)
+      // Bulk geo-lookup for all distinct source IPs
+      const ips = [...new Set(data.map(a => a.source_ip).filter(Boolean))]
+      if (ips.length > 0) {
+        try {
+          const geo = await api.geoBulk(ips)
+          setGeoMap(geo)
+        } catch (_) {}
+      }
     } finally { setLoading(false) }
   }
 
@@ -114,77 +133,94 @@ export function Alerts() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left">
-                {['#', 'Rule', 'MITRE ATT&CK', 'Severity', 'Risk Score', 'Anomaly Level', 'Description', 'Created'].map(h => (
+                {['#', 'Rule', 'MITRE ATT&CK', 'Severity', 'Risk Score', 'Anomaly Level', 'Source', 'Description', 'Created'].map(h => (
                   <th key={h} className="pb-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {loading ? (
-                <tr><td colSpan={8} className="py-10 text-center text-slate-500">Loading…</td></tr>
-              ) : filtered.length ? filtered.map(a => (
-                <tr key={a.id} className={`border-t border-[#30363d] transition-colors ${suppressed.has(a.rule_name) ? 'opacity-40' : 'hover:bg-white/[0.02]'}`}>
-                  <td className="py-3 pr-4 text-slate-500 text-xs">{a.id}</td>
-                  <td className="py-3 pr-4">
-                    <div className="flex items-center gap-2">
-                      <code className="text-xs bg-[#1c2128] border border-[#30363d] px-2 py-0.5 rounded text-slate-300 font-mono">
-                        {a.rule_name}
-                      </code>
-                      {suppressed.has(a.rule_name) && (
-                        <span className="text-[10px] text-slate-500 border border-[#30363d] px-1.5 py-0.5 rounded">suppressed</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-3 pr-4">
-                    <div className="flex flex-wrap gap-1">
-                      {(a.mitre_techniques || []).map(t => (
-                        <a
-                          key={t.id}
-                          href={`https://attack.mitre.org/techniques/${t.id.replace('.', '/')}/`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          title={t.name}
-                          className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-indigo-950 border border-indigo-700 text-indigo-300 hover:bg-indigo-900 hover:text-indigo-100 transition-colors whitespace-nowrap"
-                        >
-                          {t.id}
-                        </a>
-                      ))}
-                      {(!a.mitre_techniques || a.mitre_techniques.length === 0) && (
-                        <span className="text-slate-600 text-xs">—</span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-3 pr-4"><Badge value={a.severity} /></td>
-                  <td className="py-3 pr-4"><ScoreBar score={a.risk_score} /></td>
-                  <td className="py-3 pr-4">
-                    {a.anomaly_level ? <Badge value={a.anomaly_level} /> : <span className="text-slate-600">—</span>}
-                  </td>
-                  <td className="py-3 pr-4 text-slate-400 text-xs max-w-[280px]">
-                    <span className="truncate block" title={a.description}>{a.description}</span>
-                  </td>
-                  <td className="py-3 text-slate-500 text-xs whitespace-nowrap">{fmtTs(a.created_at)}</td>
-                  {me?.role === 'admin' && (
-                    <td className="py-3 pl-2">
-                      <button
-                        onClick={() => toggleSuppress(a.rule_name)}
-                        disabled={suppressing === a.rule_name}
-                        title={suppressed.has(a.rule_name) ? 'Unsuppress rule' : 'Suppress rule'}
-                        className={`p-1.5 rounded transition-colors ${
-                          suppressed.has(a.rule_name)
-                            ? 'text-slate-500 hover:text-green-400 hover:bg-green-500/10'
-                            : 'text-slate-500 hover:text-red-400 hover:bg-red-500/10'
-                        }`}
-                      >
-                        {suppressed.has(a.rule_name) ? <Volume2 size={13} /> : <VolumeX size={13} />}
-                      </button>
-                    </td>
-                  )}
-                </tr>
-              )) : (
+              {loading && (
+                <tr><td colSpan={9} className="py-10 text-center text-slate-500">Loading…</td></tr>
+              )}
+              {!loading && filtered.length === 0 && (
                 <tr><td colSpan={9} className="py-10 text-center text-slate-500 text-sm">
                   {search ? `No alerts match "${search}"` : 'No alerts found.'}
                 </td></tr>
               )}
+              {!loading && filtered.map(a => {
+                const geo = a.source_ip ? geoMap[a.source_ip] : null
+                const flag = geo?.country_code ? countryFlag(geo.country_code) : null
+                return (
+                  <tr key={a.id} className={`border-t border-[#30363d] transition-colors ${suppressed.has(a.rule_name) ? 'opacity-40' : 'hover:bg-white/[0.02]'}`}>
+                    <td className="py-3 pr-4 text-slate-500 text-xs">{a.id}</td>
+                    <td className="py-3 pr-4">
+                      <div className="flex items-center gap-2">
+                        <code className="text-xs bg-[#1c2128] border border-[#30363d] px-2 py-0.5 rounded text-slate-300 font-mono">
+                          {a.rule_name}
+                        </code>
+                        {suppressed.has(a.rule_name) && (
+                          <span className="text-[10px] text-slate-500 border border-[#30363d] px-1.5 py-0.5 rounded">suppressed</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3 pr-4">
+                      <div className="flex flex-wrap gap-1">
+                        {(a.mitre_techniques || []).map(t => (
+                          <a
+                            key={t.id}
+                            href={`https://attack.mitre.org/techniques/${t.id.replace('.', '/')}/`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={t.name}
+                            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-indigo-950 border border-indigo-700 text-indigo-300 hover:bg-indigo-900 hover:text-indigo-100 transition-colors whitespace-nowrap"
+                          >
+                            {t.id}
+                          </a>
+                        ))}
+                        {(!a.mitre_techniques || a.mitre_techniques.length === 0) && (
+                          <span className="text-slate-600 text-xs">—</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3 pr-4"><Badge value={a.severity} /></td>
+                    <td className="py-3 pr-4"><ScoreBar score={a.risk_score} /></td>
+                    <td className="py-3 pr-4">
+                      {a.anomaly_level ? <Badge value={a.anomaly_level} /> : <span className="text-slate-600">—</span>}
+                    </td>
+                    <td className="py-3 pr-4 whitespace-nowrap">
+                      {a.source_ip ? (
+                        <div className="flex items-center gap-1.5">
+                          {flag && <span className="text-base leading-none" title={geo?.country}>{flag}</span>}
+                          <div>
+                            <code className="text-[11px] font-mono text-slate-300">{a.source_ip}</code>
+                            {geo?.city && <div className="text-[10px] text-slate-500">{geo.city}{geo.country_code ? `, ${geo.country_code}` : ''}</div>}
+                          </div>
+                        </div>
+                      ) : <span className="text-slate-600 text-xs">—</span>}
+                    </td>
+                    <td className="py-3 pr-4 text-slate-400 text-xs max-w-[280px]">
+                      <span className="truncate block" title={a.description}>{a.description}</span>
+                    </td>
+                    <td className="py-3 text-slate-500 text-xs whitespace-nowrap">{fmtTs(a.created_at)}</td>
+                    {me?.role === 'admin' && (
+                      <td className="py-3 pl-2">
+                        <button
+                          onClick={() => toggleSuppress(a.rule_name)}
+                          disabled={suppressing === a.rule_name}
+                          title={suppressed.has(a.rule_name) ? 'Unsuppress rule' : 'Suppress rule'}
+                          className={`p-1.5 rounded transition-colors ${
+                            suppressed.has(a.rule_name)
+                              ? 'text-slate-500 hover:text-green-400 hover:bg-green-500/10'
+                              : 'text-slate-500 hover:text-red-400 hover:bg-red-500/10'
+                          }`}
+                        >
+                          {suppressed.has(a.rule_name) ? <Volume2 size={13} /> : <VolumeX size={13} />}
+                        </button>
+                      </td>
+                    )}
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>

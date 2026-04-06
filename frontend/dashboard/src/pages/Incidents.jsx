@@ -6,6 +6,14 @@ import { Badge, severityFromScore } from '../components/Badge'
 import { ScoreBar } from '../components/ScoreBar'
 import { IncidentReport } from './IncidentReport'
 
+function countryFlag(code) {
+  if (!code || code.length !== 2) return null
+  if (code === '--') return '🏠'
+  const o = 0x1F1E6 - 65
+  return String.fromCodePoint(code.toUpperCase().charCodeAt(0) + o) +
+         String.fromCodePoint(code.toUpperCase().charCodeAt(1) + o)
+}
+
 function fmtTs(ts) {
   if (!ts) return '—'
   return ts.replace('T', ' ').slice(0, 16)
@@ -286,16 +294,22 @@ function IncidentModal({ id, onClose }) {
 
 export function Incidents() {
   const [incidents, setIncidents] = useState([])
+  const [selected, setSelected]   = useState(null)
   const [filter, setFilter]       = useState('')
   const [search, setSearch]       = useState('')
   const [loading, setLoading]     = useState(true)
-  const [selected, setSelected]   = useState(null)
+  const [geoMap, setGeoMap]       = useState({})
 
   async function load() {
     setLoading(true)
     const params = filter ? { status: filter } : {}
     try {
-      setIncidents(await api.incidents(params))
+      const data = await api.incidents(params)
+      setIncidents(data)
+      const ips = [...new Set(data.map(i => i.source_ip).filter(Boolean))]
+      if (ips.length > 0) {
+        try { const geo = await api.geoBulk(ips); setGeoMap(geo) } catch (_) {}
+      }
     } finally { setLoading(false) }
   }
 
@@ -388,7 +402,18 @@ export function Incidents() {
                   <td className="py-3 pr-4 text-slate-200 max-w-[220px]">
                     <span className="truncate block">{i.title}</span>
                   </td>
-                  <td className="py-3 pr-4 text-slate-400 font-mono text-xs">{i.source_ip || '—'}</td>
+                  <td className="py-3 pr-4 whitespace-nowrap">
+                    {i.source_ip ? (
+                      <div className="flex items-center gap-1">
+                        {geoMap[i.source_ip]?.country_code && (
+                          <span className="text-sm leading-none" title={geoMap[i.source_ip]?.country}>
+                            {countryFlag(geoMap[i.source_ip].country_code)}
+                          </span>
+                        )}
+                        <code className="text-[11px] font-mono text-slate-300">{i.source_ip}</code>
+                      </div>
+                    ) : <span className="text-slate-600 text-xs">—</span>}
+                  </td>
                   <td className="py-3 pr-4 text-slate-400">{i.username || '—'}</td>
                   <td className="py-3 pr-4"><ScoreBar score={i.risk_score} /></td>
                   <td className="py-3 pr-4">

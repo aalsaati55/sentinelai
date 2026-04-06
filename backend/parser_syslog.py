@@ -64,6 +64,13 @@ RE_SYSTEM_ERROR = re.compile(
     re.IGNORECASE,
 )
 
+# UFW / iptables BLOCK — port scan / connection attempt indicator
+# kernel: [UFW BLOCK] IN=eth0 ... SRC=1.2.3.4 DST=... DPT=22 ...
+RE_UFW_BLOCK = re.compile(
+    r"^(\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+(\S+)\s+kernel:.*\[UFW BLOCK\].*SRC=([\d\.]+).*DPT=(\d+)",
+    re.IGNORECASE,
+)
+
 
 # ──────────────────────────────────────────────
 # Timestamp normalizer (same approach as parser_auth)
@@ -194,10 +201,30 @@ def _try_system_error(line: str) -> Optional[Dict[str, Any]]:
     )
 
 
+def _try_ufw_block(line: str) -> Optional[Dict[str, Any]]:
+    """Detect UFW BLOCK entries — blocked inbound connections (port scan indicator)."""
+    m = RE_UFW_BLOCK.match(line)
+    if not m:
+        return None
+    ts, hostname, src_ip, dpt = m.group(1), m.group(2), m.group(3), m.group(4)
+    return build_event(
+        timestamp=_normalize_timestamp(ts),
+        log_source=LogSource.SYSLOG,
+        event_type=EventType.PORT_SCAN,
+        source_ip=src_ip,
+        username=None,
+        hostname=hostname,
+        status=EventStatus.FAILURE,
+        message=f"Blocked connection from {src_ip} to port {dpt}",
+        raw_log=line,
+    )
+
+
 # ──────────────────────────────────────────────
 # Ordered handler list
 # ──────────────────────────────────────────────
 _HANDLERS = [
+    _try_ufw_block,       # UFW BLOCK before kernel to catch it specifically
     _try_kernel,          # check kernel first (different prefix pattern)
     _try_service_failed,  # check failed before started/stopped to avoid overlap
     _try_service_started,
