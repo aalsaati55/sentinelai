@@ -50,7 +50,13 @@ _fail_counter: Dict[str, dict] = defaultdict(lambda: {"count": 0, "last_seen": 0
 # Key is source_ip only — accumulates fakeuser1, fakeuser2, fakeuser3 etc.
 _invalid_user_counter: Dict[str, dict] = defaultdict(lambda: {"count": 0, "last_seen": 0.0})
 
-# ── Cross-batch behavioral flags ──────────────────────────────────────────────
+# ── Rolling per-IP port scan counter ───────────────────────────────────────
+# Accumulates distinct blocked ports per IP across batches so nmap scans
+# (which arrive one UFW line at a time) build up to the detection threshold.
+# Structure: { ip: {"ports": set(), "last_seen": float, "fired_severity": str|None} }
+_port_scan_counter: Dict[str, dict] = {}
+
+# ── Cross-batch behavioral flags ─────────────────────────────────────────────
 # Tracks IPs that had ≥THRESHOLD failures so that a later success batch
 # from the same IP can still fire success_after_failures / privilege_after_login.
 # Structure: { ip: last_seen_ts }
@@ -151,6 +157,42 @@ async def ingest_lines(batch: LogBatch):
         # Inject accumulated IP-level total so invalid_user_enumeration rule fires correctly
         if inv_entry["count"] > s.get("ip_invalid_user_count", 0):
             s["ip_invalid_user_count"] = inv_entry["count"]
+
+        # Port scan accumulation (keyed per ip only — UFW lines arrive one at a time)
+        if ip not in _port_scan_counter:
+            _port_scan_counter[ip] = {"ports": set(), "last_seen": 0.0, "fired_severity": None}
+        ps_entry = _port_scan_counter[ip]
+        # Reset if outside window
+        if now_ts - ps_entry["last_seen"] > _FAIL_WINDOW:
+            ps_entry["ports"] = set()
+            ps_entry["fired_severity"] = None
+        # Extract blocked ports from this session's PORT_SCAN events
+        for e in s.get("events", []):
+            if e.get("event_type") == "port_scan":
+                msg = e.get("message", "")
+                if "port " in msg:
+                    port_str = msg.split("port ")[-1].split()[0].strip()
+                    if port_str.isdigit():
+                        ps_entry["ports"].add(port_str)
+        ps_entry["last_seen"] = now_ts
+        total_ports = len(ps_entry["ports"])
+        # Determine what severity would fire at this count
+        new_sev = None
+        if total_ports >= 8:
+            new_sev = "high"
+        elif total_ports >= 3:
+            new_sev = "medium"
+        # Only inject if we haven't fired at this severity yet (prevents duplicate medium alerts)
+        # and always inject if escalating from medium → high
+        _sev_rank = {"medium": 1, "high": 2}
+        prev_rank = _sev_rank.get(ps_entry["fired_severity"], 0)
+        new_rank  = _sev_rank.get(new_sev, 0)
+        if new_sev and new_rank > prev_rank:
+            s["ip_unique_ports_scanned"] = total_ports
+            ps_entry["fired_severity"] = new_sev
+        elif new_sev and new_rank == prev_rank:
+            # Already fired at this level — suppress by not injecting
+            pass
 
         # Cross-batch success_after_failures:
         # If this IP had ≥ threshold failures in a prior batch within the window,

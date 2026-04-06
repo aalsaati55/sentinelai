@@ -182,7 +182,7 @@ python -m pytest tests/ -v
 | `cron_modification` | 🟠 High | Cron schedule edited via sudo |
 | `brute_force_ssh` | 🟠 High | ≥5 wrong-password failures on a real username from same IP |
 | `repeated_sudo_failures` | 🟠 High | ≥5 sudo authentication failures |
-| `port_scan_detected` | 🟠 High | ≥10 distinct UFW-blocked ports from same IP |
+| `port_scan_detected` | 🟡 Medium /  High | 3–7 blocked ports = Medium (simple scan); 8+ blocked ports = High (aggressive scan) |
 | `sensitive_file_access` | 🟠 High | Custom security log events (file access, sensitive commands) |
 | `invalid_user_enumeration` | 🟡 Medium | ≥4 SSH attempts with non-existent usernames from same IP (cross-session) |
 | `suspicious_login_time` | 🟡 Medium | SSH login activity between 22:00 – 06:00 |

@@ -413,25 +413,42 @@ def rule_system_service_anomaly(session: Dict[str, Any]) -> Optional[Dict[str, A
 
 def rule_port_scan_detected(session: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """
-    Port scan detection.
-    Fires when ≥ PORT_SCAN_THRESHOLD distinct destination ports are blocked
-    from the same source IP within the aggregation window (UFW BLOCK events).
-    Base risk: 55
+    Port scan detection — two severity tiers.
+    Uses ip_unique_ports_scanned (cross-batch IP total injected by live.py)
+    so that individual UFW BLOCK lines accumulate across separate ingest batches.
+
+    Medium : 3–7  distinct blocked ports  — simple / light scan
+    High   : 8+   distinct blocked ports  — aggressive / full scan
     """
-    unique_ports = session.get("unique_ports_scanned", 0)
-    if unique_ports < PORT_SCAN_THRESHOLD:
+    # Prefer cross-batch IP total; fall back to single-session count
+    unique_ports = session.get("ip_unique_ports_scanned") or session.get("unique_ports_scanned", 0)
+
+    MEDIUM_THRESHOLD = 3
+    HIGH_THRESHOLD   = 8
+
+    if unique_ports < MEDIUM_THRESHOLD:
         return None
 
     count = session.get("port_scan_count", 0)
+
+    if unique_ports >= HIGH_THRESHOLD:
+        severity  = Severity.HIGH
+        risk_score = 65
+        label = "Aggressive port scan"
+    else:
+        severity  = Severity.MEDIUM
+        risk_score = 40
+        label = "Port scan"
+
     description = (
-        f"Port scan detected: {count} blocked connection attempt(s) across "
+        f"{label} detected: {count} blocked connection attempt(s) across "
         f"{unique_ports} distinct port(s) from {session.get('source_ip')}. "
         f"Host is actively probing open services."
     )
     return _make_alert(
         rule_name="port_scan_detected",
-        severity=Severity.HIGH,
-        risk_score=65,
+        severity=severity,
+        risk_score=risk_score,
         description=description,
         session=session,
     )

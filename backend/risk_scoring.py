@@ -54,8 +54,7 @@ _RULE_SCORE_CEILING: Dict[str, int] = {
     # Medium ceiling — reconnaissance / low-threat activity
     "suspicious_login_time":    59,
     "invalid_user_enumeration": 59,
-    # High ceiling — real threats but not yet confirmed compromise
-    "port_scan_detected":       79,
+    # High ceiling — real threat but not confirmed compromise
     "repeated_sudo_failures":   79,
     # No ceiling for Critical rules — they can only go up
     # reverse_shell_cron, success_after_failures, privilege_after_login,
