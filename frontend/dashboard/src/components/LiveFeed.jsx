@@ -2,6 +2,26 @@ import { useEffect, useRef, useState } from 'react'
 import { Radio, ShieldAlert, Activity } from 'lucide-react'
 import { token } from '../api'
 
+const ORIGINAL_TITLE = document.title
+
+function requestNotificationPermission() {
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission()
+  }
+}
+
+function fireNotification(alert) {
+  if (!('Notification' in window) || Notification.permission !== 'granted') return
+  const sev = (alert.severity || '').toUpperCase()
+  const rule = (alert.rule_name || '').replace(/_/g, ' ')
+  const ip   = alert.source_ip || 'unknown'
+  new Notification(`🚨 SentinelAI — ${sev} Alert`, {
+    body: `${rule} from ${ip}`,
+    icon: '/favicon.ico',
+    tag:  `sentinel-${alert.rule_name}-${ip}`,
+  })
+}
+
 const MAX_ITEMS = 50
 
 const SEVERITY_COLORS = {
@@ -26,11 +46,28 @@ function fmtTime(ts) {
 }
 
 export function LiveFeed({ onNewAlert, onNewEvent }) {
-  const [items, setItems]       = useState([])
+  const [items, setItems]         = useState([])
   const [connected, setConnected] = useState(false)
-  const [alertCount, setAlertCount] = useState(0)
+  const [alertCount, setAlertCount]     = useState(0)
+  const [unreadCritical, setUnreadCritical] = useState(0)
   const wsRef   = useRef(null)
   const listRef = useRef(null)
+
+  // Update tab title with unread critical/high badge
+  useEffect(() => {
+    if (unreadCritical > 0) {
+      document.title = `(${unreadCritical}) 🚨 ${ORIGINAL_TITLE}`
+    } else {
+      document.title = ORIGINAL_TITLE
+    }
+  }, [unreadCritical])
+
+  // Reset badge when tab becomes active
+  useEffect(() => {
+    function onFocus() { setUnreadCritical(0) }
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
+  }, [])
 
   useEffect(() => {
     function connect() {
@@ -41,6 +78,7 @@ export function LiveFeed({ onNewAlert, onNewEvent }) {
 
       ws.onopen = () => {
         setConnected(true)
+        requestNotificationPermission()
         // keep-alive ping every 20s
         ws._pingInterval = setInterval(() => {
           if (ws.readyState === WebSocket.OPEN) ws.send('ping')
@@ -70,6 +108,14 @@ export function LiveFeed({ onNewAlert, onNewEvent }) {
             setItems(prev => [item, ...prev].slice(0, MAX_ITEMS))
             setAlertCount(c => c + 1)
             onNewAlert?.(msg.data)
+            // Fire browser notification + tab badge for Critical and High
+            const sev = msg.data?.severity
+            if (sev === 'critical' || sev === 'high') {
+              fireNotification(msg.data)
+              if (!document.hasFocus()) {
+                setUnreadCritical(c => c + 1)
+              }
+            }
           }
         } catch {}
       }

@@ -43,6 +43,7 @@ export function Overview({ onGoToIncidents }) {
   const [liveAlerts, setLiveAlerts]         = useState(0)
   const [incidentTrend, setIncidentTrend]   = useState([])
   const [alertTrend, setAlertTrend]         = useState([])
+  const [countryData, setCountryData]       = useState([])
   const [days, setDays]                     = useState(30)
   const [lastRefresh, setLastRefresh]       = useState(null)
   const [refreshing, setRefreshing]         = useState(false)
@@ -69,7 +70,8 @@ export function Overview({ onGoToIncidents }) {
       api.incidents({ limit: 8 }),
       api.incidentTimeline(days),
       api.alertTimeline(days),
-    ]).then(([s, ips, sev, et, inc, itl, atl]) => {
+      api.geoMap(),
+    ]).then(([s, ips, sev, et, inc, itl, atl, geo]) => {
       setSummary(s)
       setTopIps(ips)
       setSeverity(sev.map(d => ({ name: d.severity, value: d.count })))
@@ -84,6 +86,20 @@ export function Overview({ onGoToIncidents }) {
         amap[k][severity] = count
       })
       setAlertTrend(Object.values(amap))
+      // Build country attack counts from GeoIP map data
+      const geoPoints = geo?.points || []
+      if (geoPoints.length > 0) {
+        const cmap = {}
+        geoPoints.forEach(({ country, alert_count }) => {
+          const c = country || 'Unknown'
+          cmap[c] = (cmap[c] || 0) + (alert_count || 1)
+        })
+        const sorted = Object.entries(cmap)
+          .map(([country, count]) => ({ country, count }))
+          .sort((a, b) => b.count - a.count)
+          .slice(0, 10)
+        setCountryData(sorted)
+      }
       setLoading(false)
       setLastRefresh(new Date())
     }).catch(() => setLoading(false))
@@ -193,6 +209,20 @@ export function Overview({ onGoToIncidents }) {
           ) : <p className="text-slate-500 text-sm text-center py-8">No alerts yet</p>}
         </Panel>
       </div>
+
+      {/* Attacks by Country */}
+      {countryData.length > 0 && (
+        <Panel title="Attacks by Country">
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={countryData} layout="vertical" margin={{ left: 8, right: 16 }}>
+              <XAxis type="number" tick={{ fontSize: 11, fill: '#8b949e' }} axisLine={false} tickLine={false} />
+              <YAxis dataKey="country" type="category" tick={{ fontSize: 11, fill: '#8b949e' }} width={130} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
+              <Bar dataKey="count" name="alerts" fill="#f85149" radius={[0, 4, 4, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </Panel>
+      )}
 
       {/* Live feed */}
       <Panel title="Live Event Feed" className="h-80">
