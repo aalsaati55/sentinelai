@@ -109,6 +109,15 @@ CREATE INDEX IF NOT EXISTS idx_alerts_severity   ON alerts(severity);
 CREATE INDEX IF NOT EXISTS idx_incidents_status  ON incidents(status);
 CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at);
 
+CREATE TABLE IF NOT EXISTS watchlist (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_ip   TEXT    NOT NULL UNIQUE,
+    reason      TEXT,
+    added_by    TEXT    NOT NULL DEFAULT 'system',
+    alert_count INTEGER NOT NULL DEFAULT 1,
+    created_at  TEXT    NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS suppressed_rules (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     rule_name   TEXT    NOT NULL UNIQUE,
@@ -133,6 +142,7 @@ def init_db() -> None:
             "ALTER TABLE alerts ADD COLUMN mitre_techniques TEXT",
             "ALTER TABLE alerts ADD COLUMN source_ip TEXT",
             "ALTER TABLE alerts ADD COLUMN username TEXT",
+            "ALTER TABLE watchlist ADD COLUMN alert_count INTEGER NOT NULL DEFAULT 1",
         ]:
             try:
                 conn.execute(sql)
@@ -170,6 +180,53 @@ def suppress_rule(rule_name: str, suppressed_by: str, reason: str = "") -> Dict[
 def unsuppress_rule(rule_name: str) -> bool:
     with get_connection() as conn:
         cur = conn.execute("DELETE FROM suppressed_rules WHERE rule_name = ?", (rule_name,))
+    return cur.rowcount > 0
+
+
+# ──────────────────────────────────────────────
+# Watchlist
+# ──────────────────────────────────────────────
+
+def get_watchlist() -> List[Dict[str, Any]]:
+    with get_connection() as conn:
+        rows = conn.execute("SELECT * FROM watchlist ORDER BY created_at DESC").fetchall()
+    return [dict(r) for r in rows]
+
+
+def get_watchlisted_ips() -> set:
+    """Return set of all watchlisted IPs for fast O(1) lookups."""
+    with get_connection() as conn:
+        rows = conn.execute("SELECT source_ip FROM watchlist").fetchall()
+    return {r["source_ip"] for r in rows}
+
+
+def is_ip_watchlisted(ip: str) -> bool:
+    with get_connection() as conn:
+        row = conn.execute("SELECT id FROM watchlist WHERE source_ip = ?", (ip,)).fetchone()
+    return row is not None
+
+
+def add_to_watchlist(ip: str, reason: str = "", added_by: str = "system") -> Dict[str, Any]:
+    """Add IP to watchlist or increment its alert_count if already listed."""
+    with get_connection() as conn:
+        existing = conn.execute("SELECT * FROM watchlist WHERE source_ip = ?", (ip,)).fetchone()
+        if existing:
+            conn.execute(
+                "UPDATE watchlist SET alert_count = alert_count + 1, reason = ? WHERE source_ip = ?",
+                (reason or dict(existing)["reason"], ip),
+            )
+        else:
+            conn.execute(
+                "INSERT INTO watchlist (source_ip, reason, added_by, alert_count, created_at) VALUES (?, ?, ?, 1, ?)",
+                (ip, reason, added_by, now_iso()),
+            )
+        row = conn.execute("SELECT * FROM watchlist WHERE source_ip = ?", (ip,)).fetchone()
+    return dict(row)
+
+
+def remove_from_watchlist(ip: str) -> bool:
+    with get_connection() as conn:
+        cur = conn.execute("DELETE FROM watchlist WHERE source_ip = ?", (ip,))
     return cur.rowcount > 0
 
 

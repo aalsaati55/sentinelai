@@ -5,6 +5,7 @@ POST /api/live/ingest   — agent sends raw log lines here
 WS   /api/live/ws       — dashboard connects here for real-time events
 """
 
+import json as _json
 import logging
 import time
 import hashlib
@@ -20,7 +21,11 @@ from aggregator import aggregate_events
 from anomaly_scoring import score_sessions
 from detection import run_detection
 from risk_scoring import score_alert
-from storage import insert_events_bulk, insert_alert, insert_incident, is_rule_suppressed
+from storage import (
+    insert_events_bulk, insert_alert, insert_incident, is_rule_suppressed,
+    add_to_watchlist, get_alerts, get_incidents, link_incident_events, get_connection,
+)
+from correlation import correlate_alerts
 from emailer import send_incident_alert
 
 logger = logging.getLogger(__name__)
@@ -221,8 +226,51 @@ async def ingest_lines(batch: LogBatch):
         insert_alert(alert)
         if alert.get("severity") in ("critical", "high"):
             send_incident_alert(alert)
+        # Auto-watchlist source IP on Critical or High alerts
+        if alert.get("severity") in ("critical", "high") and alert.get("source_ip"):
+            add_to_watchlist(
+                alert["source_ip"],
+                reason=f"Auto-watchlisted: {alert.get('rule_name', 'unknown')} fired",
+                added_by="system",
+            )
+            logger.info(f"[watchlist] Auto-added {alert['source_ip']} (rule: {alert.get('rule_name')})")
 
-    # 5. Broadcast each new event to connected dashboard clients
+    # 5. Auto-correlate new alerts into incidents (per affected source IP)
+    if alerts:
+        affected_ips = {a.get("source_ip") for a in alerts if a.get("source_ip")}
+        for ip in affected_ips:
+            # Fetch all stored alerts for this IP
+            with get_connection() as conn:
+                rows = conn.execute(
+                    "SELECT * FROM alerts WHERE source_ip = ? ORDER BY created_at ASC",
+                    (ip,)
+                ).fetchall()
+            ip_alerts = []
+            for r in rows:
+                row = dict(r)
+                raw = row.get("mitre_techniques")
+                row["mitre_techniques"] = _json.loads(raw) if raw else []
+                ip_alerts.append(row)
+
+            # Dedup by IP + title — ignore username so fakeuser1/2/3 don't spawn separate incidents
+            existing = get_incidents(limit=500)
+            existing_keys = {
+                (i.get("source_ip"), i["title"])
+                for i in existing
+            }
+
+            new_incidents = correlate_alerts(ip_alerts)
+            for inc in new_incidents:
+                if (ip, inc["title"]) in existing_keys:
+                    continue
+                inc_id = insert_incident(inc)
+                # Link event IDs to the incident
+                event_ids = [a["event_id"] for a in inc.get("alerts", []) if a.get("event_id")]
+                if event_ids:
+                    link_incident_events(inc_id, event_ids)
+                logger.info(f"[live] Auto-created incident #{inc_id}: {inc['title']} (ip={ip})")
+
+    # 6. Broadcast each new event to connected dashboard clients
     for event in events:
         await manager.broadcast({
             "type": "event",

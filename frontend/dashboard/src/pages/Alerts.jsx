@@ -27,6 +27,7 @@ export function Alerts() {
   const [suppressed, setSuppressed] = useState(new Set())
   const [suppressing, setSuppressing] = useState('')
   const [geoMap, setGeoMap]         = useState({})
+  const [watchlistedIps, setWatchlistedIps] = useState(new Set())
   const me = token.user()
 
   const loadSuppressed = useCallback(async () => {
@@ -54,7 +55,10 @@ export function Alerts() {
   }
 
   useEffect(() => { load() }, [filter])
-  useEffect(() => { loadSuppressed() }, [])
+  useEffect(() => {
+    loadSuppressed()
+    api.watchlist().then(wl => setWatchlistedIps(new Set(wl.map(w => w.source_ip)))).catch(() => {})
+  }, [])
 
   async function toggleSuppress(ruleName) {
     setSuppressing(ruleName)
@@ -195,6 +199,7 @@ export function Alerts() {
                             <code className="text-[11px] font-mono text-slate-300">{a.source_ip}</code>
                             {geo?.city && <div className="text-[10px] text-slate-500">{geo.city}{geo.country_code ? `, ${geo.country_code}` : ''}</div>}
                           </div>
+                          {watchlistedIps.has(a.source_ip) && <span title="Watchlisted IP">🚫</span>}
                         </div>
                       ) : <span className="text-slate-600 text-xs">—</span>}
                     </td>

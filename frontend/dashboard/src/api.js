@@ -121,6 +121,26 @@ export const api = {
   geoBulk:    (ips) => fetch(`${BASE}/geoip/bulk`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify({ ips }) }).then(r => r.json()),
   geoMap:     () => get('/geoip/map'),
 
+  // Watchlist
+  watchlist:          () => get('/watchlist'),
+  watchlistCheck:     (ip) => get(`/watchlist/check/${encodeURIComponent(ip)}`),
+  watchlistAdd:       (source_ip, reason = '') => {
+    return fetch(`${BASE}/watchlist`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...authHeaders() },
+      body: JSON.stringify({ source_ip, reason }),
+    }).then(async r => {
+      if (!r.ok) { const e = await r.json().catch(() => ({})); throw new Error(e.detail || 'Failed') }
+      return r.json()
+    })
+  },
+  watchlistRemove:    (ip) => fetch(`${BASE}/watchlist/${encodeURIComponent(ip)}`, {
+    method: 'DELETE', headers: authHeaders(),
+  }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() }),
+
+  // Incident playbook
+  incidentPlaybook:   (id) => get(`/incidents/${id}/playbook`),
+
   // Notifications
   notifications: (since) => get(`/notifications?since=${encodeURIComponent(since)}`),
 

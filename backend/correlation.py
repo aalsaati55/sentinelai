@@ -30,7 +30,7 @@ Correlation patterns (evaluated in priority order):
 """
 
 import logging
-from collections import defaultdict
+from collections import defaultdict, Counter
 from typing import List, Dict, Any, Set
 
 logger = logging.getLogger(__name__)
@@ -285,37 +285,38 @@ def correlate_alerts(alerts: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     if not alerts:
         return []
 
-    # Group alerts by (source_ip, username)
+    # Group alerts by source_ip only — all usernames from the same IP belong to one incident
     groups: Dict[str, List[Dict[str, Any]]] = defaultdict(list)
     for alert in alerts:
-        ip   = alert.get("source_ip") or "unknown_ip"
-        user = alert.get("username")  or "unknown_user"
-        key  = f"{ip}|{user}"
-        groups[key].append(alert)
+        ip  = alert.get("source_ip") or "unknown_ip"
+        groups[ip].append(alert)
 
     incidents: List[Dict[str, Any]] = []
 
-    for key, group_alerts in groups.items():
-        ip, user = key.split("|", 1)
-        ip   = ip   if ip   != "unknown_ip"   else None
-        user = user if user != "unknown_user" else None
+    for ip, group_alerts in groups.items():
+        ip   = ip if ip != "unknown_ip" else None
+        # Pick the most common/relevant username for display (most frequent non-None)
+        usernames = [a.get("username") for a in group_alerts if a.get("username")]
+        user = Counter(usernames).most_common(1)[0][0] if usernames else None
 
         rules = {a["rule_name"] for a in group_alerts}
 
-        # Try patterns in priority order
-        matched = False
-        for pattern_fn in _PATTERNS:
-            incident = pattern_fn(rules, group_alerts, ip, user)
-            if incident is not None:
-                incidents.append(incident)
-                matched = True
-                break
+        # First: try chain patterns (full compromise, ssh compromise, brute+success)
+        # These are HIGH-VALUE incidents that show attack chains — add them as extras
+        for pattern_fn in _PATTERNS[:3]:  # only full_compromise, ssh_compromise, brute_force_success
+            chain_inc = pattern_fn(rules, group_alerts, ip, user)
+            if chain_inc is not None:
+                incidents.append(chain_inc)
+                break  # only one chain incident per IP
 
-        # Fallback: one incident per unmatched alert
-        if not matched:
-            for alert in group_alerts:
+        # Always: one incident per distinct rule (port scan, brute force, invalid user, etc.)
+        seen_rules: Set[str] = set()
+        for alert in group_alerts:
+            rule = alert["rule_name"]
+            if rule not in seen_rules:
+                seen_rules.add(rule)
                 incidents.append(
-                    _pattern_single_alert({alert["rule_name"]}, [alert], ip, user)
+                    _pattern_single_alert({rule}, [alert], ip, user)
                 )
 
     logger.info(f"Correlation complete: {len(incidents)} incidents from {len(alerts)} alerts.")

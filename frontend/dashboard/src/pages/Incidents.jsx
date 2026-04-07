@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { RefreshCw, X, ChevronDown, MessageSquare, Send, Download, Search, FileText } from 'lucide-react'
+import { RefreshCw, X, ChevronDown, MessageSquare, Send, Download, Search, FileText, ShieldAlert, ShieldCheck, ShieldOff, CheckSquare, Square } from 'lucide-react'
 import { api, token } from '../api'
 import { Panel } from '../components/Panel'
 import { Badge, severityFromScore } from '../components/Badge'
@@ -29,7 +29,16 @@ function slaAge(createdAt, status) {
   return { label, overdue }
 }
 
-function IncidentModal({ id, onClose }) {
+const CATEGORY_COLORS = {
+  contain:     'bg-red-500/10 text-red-400 border-red-500/20',
+  block:       'bg-orange-500/10 text-orange-400 border-orange-500/20',
+  investigate: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  remediate:   'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  monitor:     'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+  escalate:    'bg-slate-500/10 text-slate-400 border-slate-500/20',
+}
+
+function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistChange }) {
   const [inc, setInc]         = useState(null)
   const [status, setStatus]   = useState('')
   const [saving, setSaving]   = useState(false)
@@ -41,6 +50,10 @@ function IncidentModal({ id, onClose }) {
   const [assignedTo, setAssignedTo] = useState('')
   const [assigning, setAssigning] = useState(false)
   const [showReport, setShowReport] = useState(false)
+  const [playbook, setPlaybook]   = useState(null)
+  const [checkedSteps, setCheckedSteps] = useState({})
+  const [showPlaybook, setShowPlaybook] = useState(false)
+  const [watchlisting, setWatchlisting] = useState(false)
   const me = token.user()
 
   useEffect(() => {
@@ -50,15 +63,30 @@ function IncidentModal({ id, onClose }) {
       api.incidentEvents(id),
       api.incidentNotes(id),
       api.users().catch(() => []),
-    ]).then(([i, evts, nts, users]) => {
+      api.incidentPlaybook(id).catch(() => null),
+    ]).then(([i, evts, nts, users, pb]) => {
       setInc(i)
       setStatus(i.status)
       setAssignedTo(i.assigned_to || '')
       setEvents(evts)
       setNotes(nts)
       setAnalysts(users)
+      if (pb) setPlaybook(pb)
     })
   }, [id])
+
+  async function toggleWatchlist() {
+    if (!inc?.source_ip) return
+    setWatchlisting(true)
+    try {
+      if (watchlistedIps.has(inc.source_ip)) {
+        await api.watchlistRemove(inc.source_ip)
+      } else {
+        await api.watchlistAdd(inc.source_ip, `Manually watchlisted from incident #${id}`)
+      }
+      onWatchlistChange?.()
+    } finally { setWatchlisting(false) }
+  }
 
   async function saveAssign() {
     setAssigning(true)
@@ -113,6 +141,21 @@ function IncidentModal({ id, onClose }) {
             </div>
           </div>
           <div className="flex items-center gap-2 ml-4 mt-0.5">
+            {inc?.source_ip && (
+              <button
+                onClick={toggleWatchlist}
+                disabled={watchlisting}
+                title={watchlistedIps.has(inc.source_ip) ? 'Remove from watchlist' : 'Add IP to watchlist'}
+                className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border transition-colors disabled:opacity-50 ${
+                  watchlistedIps.has(inc.source_ip)
+                    ? 'bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20'
+                    : 'bg-[#1c2128] border-[#30363d] text-slate-400 hover:text-orange-400 hover:border-orange-500'
+                }`}
+              >
+                <ShieldOff size={13} />
+                {watchlistedIps.has(inc.source_ip) ? 'Watchlisted' : 'Watchlist'}
+              </button>
+            )}
             <button
               onClick={() => setShowReport(true)}
               className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-blue-400 bg-[#1c2128] border border-[#30363d] hover:border-blue-500 px-2.5 py-1.5 rounded-lg transition-colors"
@@ -183,6 +226,56 @@ function IncidentModal({ id, onClose }) {
                   </tbody>
                 </table>
               </div>
+            </div>
+          )}
+
+          {/* Response Playbook */}
+          {playbook && playbook.steps.length > 0 && (
+            <div>
+              <button
+                onClick={() => setShowPlaybook(v => !v)}
+                className="flex items-center gap-2 text-xs text-slate-400 uppercase tracking-wider mb-3 hover:text-slate-200 transition-colors w-full text-left"
+              >
+                <ShieldAlert size={11} className="text-orange-400" />
+                Response Playbook
+                <span className="ml-auto text-slate-600 text-xs">{showPlaybook ? '▲ hide' : '▼ show'}</span>
+                <span className="bg-orange-500/10 text-orange-400 border border-orange-500/20 text-xs px-1.5 py-0.5 rounded-full font-semibold">
+                  {playbook.steps.length} steps
+                </span>
+              </button>
+              {showPlaybook && (
+                <div className="space-y-1.5">
+                  {playbook.steps.map((step, i) => (
+                    <div
+                      key={i}
+                      onClick={() => setCheckedSteps(p => ({ ...p, [i]: !p[i] }))}
+                      className={`flex items-start gap-3 rounded-lg border px-3 py-2.5 cursor-pointer transition-colors ${
+                        checkedSteps[i]
+                          ? 'bg-green-500/5 border-green-500/20 opacity-60'
+                          : `border ${CATEGORY_COLORS[step.category] || 'border-[#30363d] text-slate-300'} bg-[#1c2128]/40`
+                      }`}
+                    >
+                      {checkedSteps[i]
+                        ? <CheckSquare size={14} className="text-green-400 mt-0.5 shrink-0" />
+                        : <Square size={14} className="mt-0.5 shrink-0 opacity-50" />
+                      }
+                      <div className="flex-1 min-w-0">
+                        <p className={`text-xs leading-relaxed ${ checkedSteps[i] ? 'line-through text-slate-500' : '' }`}>
+                          {step.step}
+                        </p>
+                      </div>
+                      <span className={`text-[10px] border rounded px-1.5 py-0.5 shrink-0 font-semibold uppercase ${
+                        CATEGORY_COLORS[step.category] || 'border-slate-600 text-slate-500'
+                      }`}>
+                        {step.category_meta?.label || step.category}
+                      </span>
+                    </div>
+                  ))}
+                  <p className="text-xs text-slate-600 text-right pt-1">
+                    {Object.values(checkedSteps).filter(Boolean).length} / {playbook.steps.length} completed
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
@@ -293,12 +386,20 @@ function IncidentModal({ id, onClose }) {
 }
 
 export function Incidents() {
-  const [incidents, setIncidents] = useState([])
-  const [selected, setSelected]   = useState(null)
-  const [filter, setFilter]       = useState('')
-  const [search, setSearch]       = useState('')
-  const [loading, setLoading]     = useState(true)
-  const [geoMap, setGeoMap]       = useState({})
+  const [incidents, setIncidents]     = useState([])
+  const [selected, setSelected]       = useState(null)
+  const [filter, setFilter]           = useState('')
+  const [search, setSearch]           = useState('')
+  const [loading, setLoading]         = useState(true)
+  const [geoMap, setGeoMap]           = useState({})
+  const [watchlistedIps, setWatchlistedIps] = useState(new Set())
+
+  async function loadWatchlist() {
+    try {
+      const wl = await api.watchlist()
+      setWatchlistedIps(new Set(wl.map(w => w.source_ip)))
+    } catch (_) {}
+  }
 
   async function load() {
     setLoading(true)
@@ -313,7 +414,7 @@ export function Incidents() {
     } finally { setLoading(false) }
   }
 
-  useEffect(() => { load() }, [filter])
+  useEffect(() => { load(); loadWatchlist() }, [filter])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()
@@ -332,7 +433,7 @@ export function Incidents() {
 
   return (
     <div className="space-y-5">
-      {selected && <IncidentModal id={selected} onClose={handleModalClose} />}
+      {selected && <IncidentModal id={selected} onClose={handleModalClose} watchlistedIps={watchlistedIps} onWatchlistChange={loadWatchlist} />}
 
       <div>
         <h2 className="text-xl font-bold text-white mb-1">Incidents</h2>
@@ -411,6 +512,9 @@ export function Incidents() {
                           </span>
                         )}
                         <code className="text-[11px] font-mono text-slate-300">{i.source_ip}</code>
+                        {watchlistedIps.has(i.source_ip) && (
+                          <span title="Watchlisted IP" className="text-red-400 text-xs">🚫</span>
+                        )}
                       </div>
                     ) : <span className="text-slate-600 text-xs">—</span>}
                   </td>

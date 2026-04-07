@@ -29,6 +29,7 @@ from routers import settings as settings_router
 from routers import audit as audit_router
 from routers import suppression as suppression_router
 from routers import geoip as geoip_router
+from routers.watchlist import router as watchlist_router, playbook_router
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -62,6 +63,8 @@ app.include_router(settings_router.router)
 app.include_router(audit_router.router)
 app.include_router(suppression_router.router)
 app.include_router(geoip_router.router)
+app.include_router(watchlist_router)
+app.include_router(playbook_router)
 
 
 # ── Health check ─────────────────────────────────────────────
