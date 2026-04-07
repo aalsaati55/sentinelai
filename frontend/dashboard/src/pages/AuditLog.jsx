@@ -9,19 +9,23 @@ function fmtTs(ts) {
 }
 
 const ACTION_STYLES = {
-  status_change: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  assignment:    'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  note_added:    'bg-green-500/10 text-green-400 border-green-500/20',
-  role_change:   'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-  user_deleted:  'bg-red-500/10 text-red-400 border-red-500/20',
+  status_change:    'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  assignment:       'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  note_added:       'bg-green-500/10 text-green-400 border-green-500/20',
+  role_change:      'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+  user_deleted:     'bg-red-500/10 text-red-400 border-red-500/20',
+  'Watchlist Add':  'bg-red-500/10 text-red-400 border-red-500/20',
+  'Watchlist Remove': 'bg-slate-500/10 text-slate-300 border-slate-500/20',
 }
 
 const ACTION_LABELS = {
-  status_change: 'Status Change',
-  assignment:    'Assignment',
-  note_added:    'Note Added',
-  role_change:   'Role Change',
-  user_deleted:  'User Deleted',
+  status_change:    'Status Change',
+  assignment:       'Assignment',
+  note_added:       'Note Added',
+  role_change:      'Role Change',
+  user_deleted:     'User Deleted',
+  'Watchlist Add':  'Watchlist Add',
+  'Watchlist Remove': 'Watchlist Remove',
 }
 
 function ActionBadge({ action }) {
@@ -72,6 +76,8 @@ export function AuditLog() {
             <option value="note_added">Note Added</option>
             <option value="role_change">Role Change</option>
             <option value="user_deleted">User Deleted</option>
+            <option value="Watchlist Add">Watchlist Add</option>
+            <option value="Watchlist Remove">Watchlist Remove</option>
           </select>
 
           <button

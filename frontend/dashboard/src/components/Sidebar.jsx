@@ -1,4 +1,4 @@
-import { LayoutDashboard, AlertTriangle, Bell, FileText, Shield, Users, Settings, ClipboardList, Globe } from 'lucide-react'
+import { LayoutDashboard, AlertTriangle, Bell, FileText, Shield, Users, Settings, ClipboardList, Globe, ShieldOff } from 'lucide-react'
 
 const NAV = [
   { id: 'overview',   label: 'Overview',    Icon: LayoutDashboard },
@@ -6,6 +6,7 @@ const NAV = [
   { id: 'alerts',     label: 'Alerts',      Icon: Bell },
   { id: 'events',     label: 'Events',      Icon: FileText },
   { id: 'attackmap',  label: 'Attack Map',  Icon: Globe },
+  { id: 'watchlist',  label: 'Watchlist',   Icon: ShieldOff },
 ]
 
 const ADMIN_NAV = [

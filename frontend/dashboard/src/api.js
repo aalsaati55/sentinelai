@@ -140,6 +140,7 @@ export const api = {
 
   // Incident playbook
   incidentPlaybook:   (id) => get(`/incidents/${id}/playbook`),
+  riskTrend:          (days = 7) => get(`/dashboard/risk-trend?days=${days}`),
 
   // Notifications
   notifications: (since) => get(`/notifications?since=${encodeURIComponent(since)}`),

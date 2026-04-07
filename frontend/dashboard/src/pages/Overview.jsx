@@ -1,9 +1,9 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { Activity, AlertTriangle, Bell, Globe, Radio, ShieldAlert, TrendingUp, Zap, RefreshCw } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
-  LineChart, Line, CartesianGrid,
+  LineChart, Line, CartesianGrid, Area, AreaChart,
 } from 'recharts'
 import { api } from '../api'
 import { StatCard } from '../components/StatCard'
@@ -44,10 +44,13 @@ export function Overview({ onGoToIncidents }) {
   const [incidentTrend, setIncidentTrend]   = useState([])
   const [alertTrend, setAlertTrend]         = useState([])
   const [countryData, setCountryData]       = useState([])
+  const [riskTrend, setRiskTrend]           = useState([])
   const [days, setDays]                     = useState(30)
   const [lastRefresh, setLastRefresh]       = useState(null)
+  const [secondsAgo, setSecondsAgo]         = useState(0)
   const [refreshing, setRefreshing]         = useState(false)
   const intervalRef                         = useRef(null)
+  const tickRef                             = useRef(null)
 
   const refreshSummary = useCallback((silent = false) => {
     if (!silent) setRefreshing(true)
@@ -71,7 +74,8 @@ export function Overview({ onGoToIncidents }) {
       api.incidentTimeline(days),
       api.alertTimeline(days),
       api.geoMap(),
-    ]).then(([s, ips, sev, et, inc, itl, atl, geo]) => {
+      api.riskTrend(7),
+    ]).then(([s, ips, sev, et, inc, itl, atl, geo, rt]) => {
       setSummary(s)
       setTopIps(ips)
       setSeverity(sev.map(d => ({ name: d.severity, value: d.count })))
@@ -100,16 +104,27 @@ export function Overview({ onGoToIncidents }) {
           .slice(0, 10)
         setCountryData(sorted)
       }
+      setRiskTrend(rt.map(d => ({ day: d.day.slice(5), avg: d.avg_risk, max: d.max_risk, alerts: d.alert_count })))
       setLoading(false)
       setLastRefresh(new Date())
+      setSecondsAgo(0)
     }).catch(() => setLoading(false))
   }, [days])
 
   // Auto-refresh summary every 30 seconds
   useEffect(() => {
-    intervalRef.current = setInterval(() => refreshSummary(true), 30000)
+    intervalRef.current = setInterval(() => {
+      refreshSummary(true)
+      setSecondsAgo(0)
+    }, 30000)
     return () => clearInterval(intervalRef.current)
   }, [refreshSummary])
+
+  // Tick seconds-ago counter every second
+  useEffect(() => {
+    tickRef.current = setInterval(() => setSecondsAgo(s => s + 1), 1000)
+    return () => clearInterval(tickRef.current)
+  }, [])
 
   function handleNewEvent() {
     setLiveEvents(c => c + 1)
@@ -137,7 +152,7 @@ export function Overview({ onGoToIncidents }) {
         <div className="flex items-center gap-3">
           {lastRefresh && (
             <span className="text-xs text-slate-600">
-              Updated {lastRefresh.toLocaleTimeString()}
+              {secondsAgo < 5 ? 'Just updated' : `Updated ${secondsAgo}s ago`}
             </span>
           )}
           <button
@@ -175,6 +190,41 @@ export function Overview({ onGoToIncidents }) {
           )}
           <span className="text-slate-500">— stats auto-updated</span>
         </div>
+      )}
+
+      {/* Risk Trend Sparkline */}
+      {riskTrend.length > 0 && (
+        <Panel title="Risk Score Trend — Last 7 Days">
+          <div className="flex items-center gap-6 mb-3">
+            <div>
+              <p className="text-2xl font-bold text-white">{riskTrend[riskTrend.length - 1]?.avg ?? '—'}</p>
+              <p className="text-xs text-slate-500">avg risk score today</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-red-400">{riskTrend[riskTrend.length - 1]?.max ?? '—'}</p>
+              <p className="text-xs text-slate-500">peak risk score today</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-orange-400">{riskTrend.reduce((s, d) => s + d.alerts, 0)}</p>
+              <p className="text-xs text-slate-500">total alerts (7d)</p>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={110}>
+            <AreaChart data={riskTrend} margin={{ left: 0, right: 8, top: 4, bottom: 0 }}>
+              <defs>
+                <linearGradient id="riskGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="5%" stopColor="#f85149" stopOpacity={0.3} />
+                  <stop offset="95%" stopColor="#f85149" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#8b949e' }} axisLine={false} tickLine={false} />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 10, fill: '#8b949e' }} axisLine={false} tickLine={false} width={28} />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#f85149', strokeWidth: 1 }} />
+              <Area type="monotone" dataKey="avg" stroke="#f85149" strokeWidth={2} fill="url(#riskGrad)" name="avg risk" dot={{ r: 3, fill: '#f85149' }} />
+              <Area type="monotone" dataKey="max" stroke="#ff7b72" strokeWidth={1} fill="none" strokeDasharray="4 2" name="peak risk" dot={false} />
+            </AreaChart>
+          </ResponsiveContainer>
+        </Panel>
       )}
 
       {/* Charts row */}

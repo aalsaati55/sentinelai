@@ -67,3 +67,25 @@ def incident_timeline(days: int = Query(30, ge=1, le=365)):
 @router.get("/alert-timeline")
 def alert_timeline(days: int = Query(30, ge=1, le=365)):
     return get_alert_timeline(days=days)
+
+
+@router.get("/risk-trend")
+def risk_trend(days: int = Query(7, ge=1, le=90)):
+    """Return average and max risk score per day for the last N days."""
+    from storage import get_connection
+    import datetime
+    with get_connection() as conn:
+        rows = conn.execute(
+            """
+            SELECT DATE(created_at) as day,
+                   ROUND(AVG(risk_score), 1) as avg_risk,
+                   MAX(risk_score) as max_risk,
+                   COUNT(*) as alert_count
+            FROM alerts
+            WHERE created_at >= DATE('now', ?)
+            GROUP BY DATE(created_at)
+            ORDER BY day ASC
+            """,
+            (f"-{days} days",)
+        ).fetchall()
+    return [dict(r) for r in rows]
