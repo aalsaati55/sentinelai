@@ -6,23 +6,49 @@ A full-stack AI-assisted SIEM (Security Information and Event Management) protot
 
 ## Features
 
+### Core Detection & Ingestion
 - **Live log ingestion** — log agent on Ubuntu VM streams `auth.log` and `syslog` to the SIEM in real time via HTTP POST; WebSocket broadcasts updates to the dashboard instantly
 - **14-rule detection engine** — covers brute force, user enumeration, privilege escalation, port scans, cron backdoors, reverse shells, sudo failures, new account creation, and more
 - **Professional severity tuning** — 4-band severity (Low / Medium / High / Critical) with per-rule score ceilings so the SIEM is never over-sensitive
 - **Cross-session correlation** — detects attack chains that span multiple SSH connections (e.g. brute force in one session → sudo escalation in a later session from the same IP)
-- **Alert correlation** — groups related alerts into incidents using attack-chain pattern matching
+- **Smart incident deduplication** — groups alerts by source IP + attack type only, ignoring username variations — one incident per attack pattern per IP
+- **Alert correlation** — groups related alerts into incidents using attack-chain pattern matching (7 patterns)
 - **ML anomaly scoring** — Isolation Forest trained per-run to flag statistically abnormal sessions
 - **Risk scoring** — final 0–100 score per alert and incident combining base score + anomaly bonus + correlation bonus
+- **Duplicate event suppression** — within-batch deduplication prevents the same log line from being processed multiple times
+
+### Dashboard & Visualisation
 - **GeoIP enrichment** — every source IP resolved to country + city via `ip-api.com` with in-memory caching; flag emoji and city shown in Alerts and Incidents tables
 - **Attack Map** — live world map showing attacker source IPs as colour-coded dots (Critical = red, High = orange, Medium = yellow, Low = green) with a summary table below
-- **Duplicate event suppression** — within-batch deduplication prevents the same log line from being processed multiple times
+- **Risk trend sparkline** — Overview page shows average and peak risk scores over the last 7 days
+- **Overview auto-refresh** — dashboard refreshes every 30 seconds with a live "last updated X seconds ago" countdown
+- **Live feed severity filter** — filter the live event feed by All / Alerts only / Critical / High+ to cut noise during demos
+
+### Incident Management
+- **Incident response playbook** — each incident shows a tailored checklist of response steps derived from its specific alert rules (contain, block, investigate, remediate, monitor, escalate)
+- **Investigation notes** — add timestamped notes per incident; note count badge shown live in the incidents table and updates in real time when a note is added
+- **Status workflow** — Open → Investigating → Closed with audit-logged status changes
+- **Incident assignment** — assign incidents to analysts; recorded in audit log
+- **SLA timer** — each open incident shows how long it has been open; turns red after 24 hours
+- **PDF incident report** — export a full incident report for any incident
+
+### IP Watchlist
+- **Dedicated Watchlist page** — `/watchlist` route with IP table, reason, added date, added-by, and remove button
+- **Manual watchlist management** — admins can add IPs with a preset reason dropdown (brute force, port scan, enumeration, etc.) or a custom reason; removals also supported
+- **Auto-watchlisting** — IPs that trigger Critical alerts are automatically added to the watchlist
+- **Watchlist badge** — 🚫 icon shown next to watchlisted IPs in the Alerts and Incidents tables
+- **Audit logging** — manual watchlist additions and removals are recorded in the audit log with username, IP, and reason
+
+### User & Admin Features
 - **FastAPI REST backend** — full CRUD endpoints for events, alerts, incidents, dashboard stats, and GeoIP
 - **JWT authentication** — register/login with bcrypt password hashing; first user auto-assigned admin role
 - **Role-based access** — `admin` (full access) and `analyst` (read + update incidents)
 - **Rule suppression** — admins can suppress noisy rules directly from the Alerts page
-- **Incident management** — assign incidents, add notes, update status, export PDF incident reports
+- **Audit log** — tracks all admin actions: status changes, assignments, role changes, note additions, watchlist add/remove — filterable by action type with CSV export
 - **Email alerting** — High and Critical incidents trigger email notifications via SMTP
-- **React SOC dashboard** — Overview, Incidents, Alerts, Events, Attack Map pages with live filtering and CSV export
+- **Browser notifications** — Critical and High alerts fire desktop notifications when the tab is in the background; unread count shown in the browser tab title
+- **Copy IP button** — one-click clipboard copy next to every source IP in Alerts and Incidents tables
+- **React SOC dashboard** — Overview, Incidents, Alerts, Events, Attack Map, Watchlist, Audit Log pages with live filtering and CSV export
 - **137 unit tests** — covering correlation, risk scoring, and anomaly scoring modules
 
 ---
@@ -57,20 +83,29 @@ sentinelai/
 │       ├── alerts.py            # /api/alerts + rule suppression
 │       ├── incidents.py         # /api/incidents + notes + assignment
 │       ├── geoip.py             # /api/geoip — lookup, bulk, attack map IPs
+│       ├── watchlist.py         # /api/watchlist + /api/incidents/{id}/playbook
 │       └── live.py              # /api/live/ingest (POST) + /api/live/ws (WS)
 ├── frontend/
 │   └── dashboard/               # Vite + React + Tailwind CSS
 │       └── src/
 │           ├── App.jsx          # Routing, auth state, JWT verification
 │           ├── api.js           # All API calls with auth headers
+│           ├── components/
+│           │   ├── LiveFeed.jsx         # WebSocket feed with severity filter
+│           │   ├── Sidebar.jsx          # Navigation sidebar
+│           │   ├── Panel.jsx            # Reusable card panel
+│           │   ├── Badge.jsx            # Severity/status badges
+│           │   └── ScoreBar.jsx         # Risk score bar
 │           └── pages/
 │               ├── Login.jsx
 │               ├── Register.jsx
-│               ├── Overview.jsx
-│               ├── Incidents.jsx        # GeoIP flag + city in Source IP column
-│               ├── Alerts.jsx           # GeoIP flag + city, rule suppression
+│               ├── Overview.jsx         # Risk trend sparkline + auto-refresh
+│               ├── Incidents.jsx        # Notes badge, copy IP, playbook modal
+│               ├── Alerts.jsx           # GeoIP flag, rule suppression, copy IP
 │               ├── Events.jsx
 │               ├── AttackMap.jsx        # Live world map + attacker table
+│               ├── Watchlist.jsx        # IP watchlist management page
+│               ├── AuditLog.jsx         # Audit log with action filter + CSV export
 │               └── IncidentReport.jsx   # PDF-printable incident report
 ├── database/                    # sentinelai.db (auto-created on startup)
 ├── data/logs/                   # Log files from Ubuntu VM
@@ -268,6 +303,9 @@ ALERT_EMAILS=soc@yourorg.com,analyst@yourorg.com
 | Update incident status, add notes | ✅ | ✅ |
 | Assign incidents | ✅ | ✅ |
 | Export incident PDF report | ✅ | ✅ |
+| View watchlist | ✅ | ✅ |
+| View audit log | ✅ | ✅ |
+| Add / remove watchlist entries | ❌ | ✅ |
 | Suppress detection rules | ❌ | ✅ |
 | View all users | ❌ | ✅ |
 | Manage user accounts | ❌ | ✅ |
@@ -282,6 +320,7 @@ ALERT_EMAILS=soc@yourorg.com,analyst@yourorg.com
 | Auth | JWT (python-jose), bcrypt (passlib) |
 | ML | Isolation Forest (scikit-learn), StandardScaler |
 | GeoIP | ip-api.com (HTTP, in-memory cache) |
-| Frontend | React 18, Vite, Tailwind CSS, Recharts, Lucide |
+| Frontend | React 18, Vite, Tailwind CSS, Recharts, Lucide Icons |
 | Real-time | WebSocket (FastAPI), log agent (`tail -F` + HTTP POST) |
+| Notifications | Browser Notifications API (desktop alerts for Critical/High) |
 | Testing | pytest (137 tests) |
