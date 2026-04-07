@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { RefreshCw, ChevronDown, Download, Search, VolumeX, Volume2 } from 'lucide-react'
+import { RefreshCw, ChevronDown, Download, Search, VolumeX, Volume2, Copy, Check } from 'lucide-react'
 import { api, token } from '../api'
 
 import { Panel } from '../components/Panel'
@@ -17,6 +17,19 @@ function countryFlag(code) {
 function fmtTs(ts) {
   if (!ts) return '—'
   return ts.replace('T', ' ').slice(0, 16)
+}
+
+function CopyIpButton({ ip }) {
+  const [copied, setCopied] = useState(false)
+  return (
+    <button
+      onClick={() => navigator.clipboard.writeText(ip).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500) })}
+      title="Copy IP"
+      className="p-0.5 rounded text-slate-600 hover:text-slate-300 transition-colors"
+    >
+      {copied ? <Check size={11} className="text-green-400" /> : <Copy size={11} />}
+    </button>
+  )
 }
 
 export function Alerts() {
@@ -200,6 +213,7 @@ export function Alerts() {
                             {geo?.city && <div className="text-[10px] text-slate-500">{geo.city}{geo.country_code ? `, ${geo.country_code}` : ''}</div>}
                           </div>
                           {watchlistedIps.has(a.source_ip) && <span title="Watchlisted IP">🚫</span>}
+                          <CopyIpButton ip={a.source_ip} />
                         </div>
                       ) : <span className="text-slate-600 text-xs">—</span>}
                     </td>

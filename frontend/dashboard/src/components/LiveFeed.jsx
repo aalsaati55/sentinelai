@@ -50,6 +50,7 @@ export function LiveFeed({ onNewAlert, onNewEvent }) {
   const [connected, setConnected] = useState(false)
   const [alertCount, setAlertCount]     = useState(0)
   const [unreadCritical, setUnreadCritical] = useState(0)
+  const [severityFilter, setSeverityFilter] = useState('all')
   const wsRef   = useRef(null)
   const listRef = useRef(null)
 
@@ -128,10 +129,25 @@ export function LiveFeed({ onNewAlert, onNewEvent }) {
     }
   }, [])
 
+  const FILTERS = [
+    { id: 'all',      label: 'All' },
+    { id: 'alerts',   label: 'Alerts only' },
+    { id: 'critical', label: 'Critical' },
+    { id: 'high',     label: 'High+' },
+  ]
+
+  const visibleItems = items.filter(item => {
+    if (severityFilter === 'all')      return true
+    if (severityFilter === 'alerts')   return item._kind === 'alert'
+    if (severityFilter === 'critical') return item._kind === 'alert' && item.severity === 'critical'
+    if (severityFilter === 'high')     return item._kind === 'alert' && (item.severity === 'critical' || item.severity === 'high')
+    return true
+  })
+
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <Radio size={14} className={connected ? 'text-green-400' : 'text-slate-600'} />
           <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
@@ -149,16 +165,37 @@ export function LiveFeed({ onNewAlert, onNewEvent }) {
         )}
       </div>
 
+      {/* Severity filter */}
+      <div className="flex items-center gap-1 mb-2">
+        {FILTERS.map(f => (
+          <button
+            key={f.id}
+            onClick={() => setSeverityFilter(f.id)}
+            className={`text-[10px] px-2 py-0.5 rounded-full border transition-colors font-medium ${
+              severityFilter === f.id
+                ? f.id === 'critical' ? 'bg-red-500/20 border-red-500/40 text-red-400'
+                  : f.id === 'high'   ? 'bg-orange-500/20 border-orange-500/40 text-orange-400'
+                  : 'bg-blue-500/20 border-blue-500/40 text-blue-400'
+                : 'bg-transparent border-[#30363d] text-slate-600 hover:text-slate-400'
+            }`}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
       {/* Feed list */}
       <div ref={listRef} className="flex-1 overflow-y-auto space-y-1.5 min-h-0">
-        {items.length === 0 ? (
+        {visibleItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-slate-600 text-xs gap-2 py-8">
             <Activity size={20} />
-            <p>Waiting for live events from the agent…</p>
-            <p className="text-slate-700">Start the log agent on the target VM</p>
+            {items.length === 0
+              ? <><p>Waiting for live events from the agent…</p><p className="text-slate-700">Start the log agent on the target VM</p></>
+              : <p>No {severityFilter === 'critical' ? 'critical' : severityFilter === 'high' ? 'high+' : ''} items in the feed yet</p>
+            }
           </div>
         ) : (
-          items.map(item => (
+          visibleItems.map(item => (
             item._kind === 'alert'
               ? <AlertRow key={item._id} item={item} />
               : <EventRow key={item._id} item={item} />

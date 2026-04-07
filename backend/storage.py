@@ -458,7 +458,13 @@ def get_incidents(
         where = "WHERE status = :status"
         params["status"] = status
 
-    sql = f"SELECT * FROM incidents {where} ORDER BY created_at DESC LIMIT :limit OFFSET :offset"
+    sql = f"""
+        SELECT i.*,
+               (SELECT COUNT(*) FROM incident_notes n WHERE n.incident_id = i.id) AS note_count
+        FROM incidents i {where}
+        ORDER BY i.created_at DESC
+        LIMIT :limit OFFSET :offset
+    """
     with get_connection() as conn:
         rows = conn.execute(sql, params).fetchall()
     return [dict(r) for r in rows]

@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo } from 'react'
-import { RefreshCw, X, ChevronDown, MessageSquare, Send, Download, Search, FileText, ShieldAlert, ShieldCheck, ShieldOff, CheckSquare, Square } from 'lucide-react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
+import { RefreshCw, X, ChevronDown, MessageSquare, Send, Download, Search, FileText, ShieldAlert, ShieldCheck, ShieldOff, CheckSquare, Square, Copy, Check } from 'lucide-react'
 import { api, token } from '../api'
 import { Panel } from '../components/Panel'
 import { Badge, severityFromScore } from '../components/Badge'
@@ -38,7 +38,20 @@ const CATEGORY_COLORS = {
   escalate:    'bg-slate-500/10 text-slate-400 border-slate-500/20',
 }
 
-function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistChange }) {
+function CopyIpButton({ ip }) {
+  const [copied, setCopied] = useState(false)
+  return (
+    <button
+      onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(ip).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1500) }) }}
+      title="Copy IP"
+      className="p-0.5 rounded text-slate-600 hover:text-slate-300 transition-colors"
+    >
+      {copied ? <Check size={11} className="text-green-400" /> : <Copy size={11} />}
+    </button>
+  )
+}
+
+function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistChange, onNoteAdded }) {
   const [inc, setInc]         = useState(null)
   const [status, setStatus]   = useState('')
   const [saving, setSaving]   = useState(false)
@@ -106,6 +119,7 @@ function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistCha
       const note = await api.addNote(id, newNote.trim())
       setNotes(prev => [...prev, note])
       setNewNote('')
+      onNoteAdded?.(id)
     } finally { setAddingNote(false) }
   }
 
@@ -433,7 +447,7 @@ export function Incidents() {
 
   return (
     <div className="space-y-5">
-      {selected && <IncidentModal id={selected} onClose={handleModalClose} watchlistedIps={watchlistedIps} onWatchlistChange={loadWatchlist} />}
+      {selected && <IncidentModal id={selected} onClose={handleModalClose} watchlistedIps={watchlistedIps} onWatchlistChange={loadWatchlist} onNoteAdded={incId => setIncidents(prev => prev.map(i => i.id === incId ? { ...i, note_count: (i.note_count || 0) + 1 } : i))} />}
 
       <div>
         <h2 className="text-xl font-bold text-white mb-1">Incidents</h2>
@@ -501,7 +515,15 @@ export function Incidents() {
                     onClick={() => setSelected(i.id)}>
                   <td className="py-3 pr-4 text-slate-500 text-xs">{i.id}</td>
                   <td className="py-3 pr-4 text-slate-200 max-w-[220px]">
-                    <span className="truncate block">{i.title}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="truncate block">{i.title}</span>
+                      {i.note_count > 0 && (
+                        <span title={`${i.note_count} investigation note${i.note_count !== 1 ? 's' : ''}`}
+                          className="shrink-0 flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/20">
+                          <MessageSquare size={9} />{i.note_count}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="py-3 pr-4 whitespace-nowrap">
                     {i.source_ip ? (
@@ -515,6 +537,7 @@ export function Incidents() {
                         {watchlistedIps.has(i.source_ip) && (
                           <span title="Watchlisted IP" className="text-red-400 text-xs">🚫</span>
                         )}
+                        <CopyIpButton ip={i.source_ip} />
                       </div>
                     ) : <span className="text-slate-600 text-xs">—</span>}
                   </td>

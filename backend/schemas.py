@@ -56,6 +56,7 @@ class IncidentSchema(BaseModel):
     status:        str = "open"
     assigned_to:   Optional[str] = None
     created_at:    Optional[str] = None
+    note_count:    Optional[int] = 0
 
     class Config:
         from_attributes = True
