@@ -16,6 +16,7 @@ const ACTION_STYLES = {
   user_deleted:     'bg-red-500/10 text-red-400 border-red-500/20',
   'Watchlist Add':  'bg-red-500/10 text-red-400 border-red-500/20',
   'Watchlist Remove': 'bg-slate-500/10 text-slate-300 border-slate-500/20',
+  soar_executed:    'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
 }
 
 const ACTION_LABELS = {
@@ -26,6 +27,7 @@ const ACTION_LABELS = {
   user_deleted:     'User Deleted',
   'Watchlist Add':  'Watchlist Add',
   'Watchlist Remove': 'Watchlist Remove',
+  soar_executed:    'SOAR Executed',
 }
 
 function ActionBadge({ action }) {
@@ -78,6 +80,7 @@ export function AuditLog() {
             <option value="user_deleted">User Deleted</option>
             <option value="Watchlist Add">Watchlist Add</option>
             <option value="Watchlist Remove">Watchlist Remove</option>
+            <option value="soar_executed">SOAR Executed</option>
           </select>
 
           <button

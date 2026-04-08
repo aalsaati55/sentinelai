@@ -45,6 +45,8 @@ export function Overview({ onGoToIncidents }) {
   const [alertTrend, setAlertTrend]         = useState([])
   const [countryData, setCountryData]       = useState([])
   const [riskTrend, setRiskTrend]           = useState([])
+  const [mttdMttr, setMttdMttr]             = useState(null)
+  const [teamActivity, setTeamActivity]     = useState([])
   const [days, setDays]                     = useState(30)
   const [lastRefresh, setLastRefresh]       = useState(null)
   const [secondsAgo, setSecondsAgo]         = useState(0)
@@ -75,7 +77,11 @@ export function Overview({ onGoToIncidents }) {
       api.alertTimeline(days),
       api.geoMap(),
       api.riskTrend(7),
-    ]).then(([s, ips, sev, et, inc, itl, atl, geo, rt]) => {
+      api.mttdMttr(),
+      api.teamActivity(),
+    ]).then(([s, ips, sev, et, inc, itl, atl, geo, rt, mm, ta]) => {
+      if (mm) setMttdMttr(mm)
+      if (ta) setTeamActivity(ta)
       setSummary(s)
       setTopIps(ips)
       setSeverity(sev.map(d => ({ name: d.severity, value: d.count })))
@@ -180,6 +186,36 @@ export function Overview({ onGoToIncidents }) {
         <StatCard label="Medium"   value={summary?.medium_alerts}   icon={TrendingUp}  color="yellow" sub="alerts" />
         <StatCard label="Low"      value={summary?.low_alerts}      icon={Activity}    color="green"  sub="alerts" />
       </div>
+
+      {/* MTTD / MTTR */}
+      {mttdMttr && (
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <Zap size={13} className="text-blue-400" />
+              <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Mean Time to Detect (MTTD)</span>
+            </div>
+            <p className="text-2xl font-bold text-white">
+              {mttdMttr.mttd_minutes < 1 ? '<1m' : mttdMttr.mttd_minutes < 60
+                ? `${Math.round(mttdMttr.mttd_minutes)}m`
+                : `${(mttdMttr.mttd_minutes / 60).toFixed(1)}h`}
+            </p>
+            <p className="text-xs text-slate-600 mt-1">Avg. time from first alert to incident creation</p>
+          </div>
+          <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-4">
+            <div className="flex items-center gap-2 mb-1">
+              <ShieldAlert size={13} className="text-green-400" />
+              <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Mean Time to Respond (MTTR)</span>
+            </div>
+            <p className="text-2xl font-bold text-white">
+              {mttdMttr.mttr_minutes === 0 ? 'N/A' : mttdMttr.mttr_minutes < 60
+                ? `${Math.round(mttdMttr.mttr_minutes)}m`
+                : `${(mttdMttr.mttr_minutes / 60).toFixed(1)}h`}
+            </p>
+            <p className="text-xs text-slate-600 mt-1">Avg. time from incident creation to close</p>
+          </div>
+        </div>
+      )}
 
       {liveEvents > 0 && (
         <div className="flex items-center gap-3 bg-blue-500/5 border border-blue-500/20 rounded-lg px-4 py-2.5 text-sm">
@@ -344,6 +380,59 @@ export function Overview({ onGoToIncidents }) {
           ) : <p className="text-slate-500 text-sm text-center py-8">No alerts in the last 30 days</p>}
         </Panel>
       </div>
+
+      {/* Team Activity Metrics */}
+      {teamActivity.length > 0 && (
+        <Panel title="Team Activity">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-left">
+                  {['Analyst', 'Incidents Closed', 'Assigned', 'Notes Added', 'SOAR Executed', 'Avg Resolution'].map(h => (
+                    <th key={h} className="pb-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {teamActivity.map((a, i) => (
+                  <tr key={a.username} className="border-t border-[#30363d] hover:bg-white/[0.02] transition-colors">
+                    <td className="py-2.5 pr-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-[10px] font-bold text-blue-400 shrink-0">
+                          {a.username[0]?.toUpperCase()}
+                        </div>
+                        <span className="text-slate-200 text-xs font-medium">{a.username}</span>
+                        {i === 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-semibold">TOP</span>}
+                      </div>
+                    </td>
+                    <td className="py-2.5 pr-4">
+                      <span className={`text-sm font-bold ${a.incidents_closed > 0 ? 'text-green-400' : 'text-slate-600'}`}>
+                        {a.incidents_closed}
+                      </span>
+                    </td>
+                    <td className="py-2.5 pr-4 text-slate-400 text-xs">{a.incidents_assigned}</td>
+                    <td className="py-2.5 pr-4 text-slate-400 text-xs">{a.notes_added}</td>
+                    <td className="py-2.5 pr-4">
+                      <span className={`text-xs ${a.soar_executed > 0 ? 'text-yellow-400 font-semibold' : 'text-slate-600'}`}>
+                        {a.soar_executed > 0 ? `⚡ ${a.soar_executed}` : '—'}
+                      </span>
+                    </td>
+                    <td className="py-2.5 pr-4 text-xs text-slate-400">
+                      {a.avg_resolution_minutes == null ? (
+                        <span className="text-slate-600">—</span>
+                      ) : a.avg_resolution_minutes < 60 ? (
+                        `${Math.round(a.avg_resolution_minutes)}m`
+                      ) : (
+                        `${(a.avg_resolution_minutes / 60).toFixed(1)}h`
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Panel>
+      )}
 
       {/* Recent incidents */}
       <Panel

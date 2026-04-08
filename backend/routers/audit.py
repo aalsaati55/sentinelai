@@ -9,11 +9,32 @@ import csv
 import io
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
+from typing import Optional
 
-from storage import get_audit_log
+from storage import get_audit_log, add_audit_log
 from auth import get_current_user
 
 router = APIRouter(prefix="/api/audit", tags=["audit"])
+
+
+class AuditEntry(BaseModel):
+    action:      str
+    target_type: str
+    target_id:   Optional[int] = None
+    detail:      Optional[str] = None
+
+
+@router.post("", status_code=201)
+def create_audit_entry(body: AuditEntry, current_user: dict = Depends(get_current_user)):
+    add_audit_log(
+        username=current_user["username"],
+        action=body.action,
+        target_type=body.target_type,
+        target_id=body.target_id,
+        detail=body.detail,
+    )
+    return {"ok": True}
 
 
 @router.get("")

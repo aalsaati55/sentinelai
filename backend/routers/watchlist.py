@@ -236,3 +236,150 @@ def get_playbook(incident_id: int, current_user: dict = Depends(get_current_user
         s["category_meta"] = _CATEGORY_LABELS.get(s["category"], {"label": s["category"].title(), "color": "slate"})
 
     return {"incident_id": incident_id, "rules_triggered": rules, "steps": steps}
+
+
+# ── SOAR — separate prefix ────────────────────────────────────────────────────
+soar_router = APIRouter(prefix="/api/incidents", tags=["soar"])
+
+_SOAR_COMMANDS = {
+    "brute_force_ssh": [
+        {"label": "Block attacker IP via UFW",          "cmd": "sudo ufw deny from {ip} to any && sudo ufw reload"},
+        {"label": "Kill active SSH sessions from IP",   "cmd": "sudo pkill -f 'sshd.*{ip}'"},
+        {"label": "Check if attacker got in",           "cmd": "sudo grep '{ip}' /var/log/auth.log | grep 'Accepted'"},
+        {"label": "Review all failed attempts",         "cmd": "sudo grep '{ip}' /var/log/auth.log | grep 'Failed' | tail -30"},
+        {"label": "Lock targeted user account",         "cmd": "sudo passwd -l {username}"},
+    ],
+    "success_after_failures": [
+        {"label": "Block attacker IP immediately",      "cmd": "sudo ufw deny from {ip} to any && sudo ufw reload"},
+        {"label": "Kill active SSH session from IP",    "cmd": "sudo pkill -f 'sshd.*{ip}'"},
+        {"label": "Check what attacker accessed",       "cmd": "sudo last | grep '{ip}'"},
+        {"label": "Check for new files created",        "cmd": "sudo find / -newer /var/log/auth.log -type f 2>/dev/null | head -20"},
+        {"label": "Force password reset for user",      "cmd": "sudo passwd --expire {username}"},
+        {"label": "Check running processes after login","cmd": "sudo ps aux | grep -v grep | grep sshd"},
+    ],
+    "invalid_user_enumeration": [
+        {"label": "Block attacker IP via UFW",          "cmd": "sudo ufw deny from {ip} to any && sudo ufw reload"},
+        {"label": "Check enumerated usernames",         "cmd": "sudo grep '{ip}' /var/log/auth.log | grep 'Invalid user' | awk '{print $8}' | sort | uniq -c | sort -rn"},
+        {"label": "Review UFW current rules",           "cmd": "sudo ufw status numbered"},
+    ],
+    "port_scan_detected": [
+        {"label": "Block scanning IP via UFW",          "cmd": "sudo ufw deny from {ip} to any && sudo ufw reload"},
+        {"label": "Check which ports were probed",      "cmd": "sudo grep '{ip}' /var/log/syslog | grep 'UFW BLOCK' | awk '{print $21}' | sort | uniq -c | sort -rn"},
+        {"label": "List currently open ports",          "cmd": "sudo ss -tlnp"},
+        {"label": "Review UFW firewall rules",          "cmd": "sudo ufw status verbose"},
+    ],
+    "reverse_shell_cron": [
+        {"label": "Block attacker IP via UFW",          "cmd": "sudo ufw deny from {ip} to any && sudo ufw reload"},
+        {"label": "List all cron jobs (all users)",     "cmd": "sudo for u in $(cut -f1 -d: /etc/passwd); do crontab -u $u -l 2>/dev/null | grep -v '^#' && echo \"User: $u\"; done"},
+        {"label": "Check for outbound connections",     "cmd": "sudo ss -tnp | grep ESTAB"},
+        {"label": "Kill suspicious reverse shell",      "cmd": "sudo pkill -f 'bash -i\\|/dev/tcp\\|nc -e'"},
+        {"label": "Check recently modified cron files", "cmd": "sudo ls -la /etc/cron* /var/spool/cron/crontabs/ 2>/dev/null"},
+        {"label": "Remove malicious cron entry",        "cmd": "sudo crontab -e"},
+    ],
+    "new_user_created": [
+        {"label": "Block attacker IP via UFW",          "cmd": "sudo ufw deny from {ip} to any && sudo ufw reload"},
+        {"label": "List recently created users",        "cmd": "sudo grep 'new user' /var/log/auth.log | tail -10"},
+        {"label": "Lock backdoor account",              "cmd": "sudo passwd -l {username}"},
+        {"label": "Delete backdoor account",            "cmd": "sudo userdel -r {username}"},
+        {"label": "Audit sudoers file",                 "cmd": "sudo cat /etc/sudoers && sudo ls /etc/sudoers.d/"},
+        {"label": "Check /etc/passwd for new entries",  "cmd": "sudo tail -5 /etc/passwd"},
+    ],
+    "privilege_after_login": [
+        {"label": "Block attacker IP via UFW",          "cmd": "sudo ufw deny from {ip} to any && sudo ufw reload"},
+        {"label": "Kill active SSH session from IP",    "cmd": "sudo pkill -f 'sshd.*{ip}'"},
+        {"label": "Check sudo command history",         "cmd": "sudo grep '{ip}' /var/log/auth.log | grep 'sudo'"},
+        {"label": "Revoke sudo rights from user",       "cmd": "sudo deluser {username} sudo"},
+        {"label": "Check for privilege escalation",     "cmd": "sudo grep 'COMMAND' /var/log/auth.log | tail -20"},
+    ],
+    "sudo_after_suspicious_login": [
+        {"label": "Block attacker IP via UFW",          "cmd": "sudo ufw deny from {ip} to any && sudo ufw reload"},
+        {"label": "Kill active SSH session from IP",    "cmd": "sudo pkill -f 'sshd.*{ip}'"},
+        {"label": "Review sudo commands run",           "cmd": "sudo grep 'sudo' /var/log/auth.log | grep '{ip}' | tail -20"},
+        {"label": "Revoke sudo rights from user",       "cmd": "sudo deluser {username} sudo"},
+        {"label": "Check /etc/sudoers for changes",     "cmd": "sudo cat /etc/sudoers"},
+    ],
+    "repeated_sudo_failures": [
+        {"label": "Block attacker IP via UFW",          "cmd": "sudo ufw deny from {ip} to any && sudo ufw reload"},
+        {"label": "Check sudo failure history",         "cmd": "sudo grep 'sudo.*authentication failure' /var/log/auth.log | grep '{ip}'"},
+        {"label": "Lock the targeted account",          "cmd": "sudo passwd -l {username}"},
+    ],
+    "cron_modification": [
+        {"label": "Block attacker IP via UFW",          "cmd": "sudo ufw deny from {ip} to any && sudo ufw reload"},
+        {"label": "Inspect all crontabs",               "cmd": "sudo crontab -l && sudo cat /etc/crontab"},
+        {"label": "Check recently modified cron files", "cmd": "sudo find /etc/cron* /var/spool/cron -newer /var/log/auth.log 2>/dev/null"},
+        {"label": "Remove suspicious cron entry",       "cmd": "sudo crontab -e"},
+    ],
+}
+
+_DEFAULT_SOAR = [
+    {"label": "Block source IP via UFW",                "cmd": "sudo ufw deny from {ip} to any && sudo ufw reload"},
+    {"label": "Check active connections from IP",       "cmd": "sudo ss -tnp | grep '{ip}'"},
+    {"label": "Review recent auth log entries",         "cmd": "sudo grep '{ip}' /var/log/auth.log | tail -30"},
+]
+
+
+@soar_router.get("/{incident_id}/soar")
+def get_soar_commands(incident_id: int, current_user: dict = Depends(get_current_user)):
+    """Return pre-built remediation shell commands for an incident with IP/username filled in."""
+    with get_connection() as conn:
+        inc = conn.execute(
+            "SELECT id, title, source_ip, username FROM incidents WHERE id = ?",
+            (incident_id,),
+        ).fetchone()
+    if not inc:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    inc = dict(inc)
+    ip       = inc.get("source_ip") or "UNKNOWN_IP"
+    username = inc.get("username")  or "UNKNOWN_USER"
+    title_lower = inc["title"].lower()
+
+    # Match rules from title
+    _TITLE_TO_RULE = {
+        "brute force":              "brute_force_ssh",
+        "credential compromise":    "success_after_failures",
+        "ssh compromise":           "success_after_failures",
+        "full system compromise":   "reverse_shell_cron",
+        "invalid user":             "invalid_user_enumeration",
+        "enumeration":              "invalid_user_enumeration",
+        "port scan":                "port_scan_detected",
+        "reverse shell":            "reverse_shell_cron",
+        "new user":                 "new_user_created",
+        "cron":                     "cron_modification",
+        "privilege":                "privilege_after_login",
+        "sudo after":               "sudo_after_suspicious_login",
+        "sudo failure":             "repeated_sudo_failures",
+    }
+
+    rules = []
+    for keyword, rule in _TITLE_TO_RULE.items():
+        if keyword in title_lower and rule not in rules:
+            rules.append(rule)
+
+    # Build command list
+    raw_cmds = []
+    seen = set()
+    for rule in rules:
+        for c in _SOAR_COMMANDS.get(rule, []):
+            if c["label"] not in seen:
+                seen.add(c["label"])
+                raw_cmds.append(c)
+
+    if not raw_cmds:
+        raw_cmds = _DEFAULT_SOAR
+
+    # Fill in IP and username placeholders
+    commands = [
+        {
+            "label": c["label"],
+            "cmd":   c["cmd"].replace("{ip}", ip).replace("{username}", username),
+        }
+        for c in raw_cmds
+    ]
+
+    return {
+        "incident_id": incident_id,
+        "source_ip":   ip,
+        "username":    username,
+        "commands":    commands,
+    }

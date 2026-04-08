@@ -20,6 +20,7 @@ from storage import (
     get_severity_breakdown,
     get_incident_timeline,
     get_alert_timeline,
+    get_connection,
 )
 
 router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
@@ -67,6 +68,128 @@ def incident_timeline(days: int = Query(30, ge=1, le=365)):
 @router.get("/alert-timeline")
 def alert_timeline(days: int = Query(30, ge=1, le=365)):
     return get_alert_timeline(days=days)
+
+
+@router.get("/team-activity")
+def team_activity():
+    """Return per-analyst activity metrics: incidents closed, notes added, assignments, avg resolution time."""
+    with get_connection() as conn:
+        # Notes added per analyst
+        notes_rows = conn.execute("""
+            SELECT username, COUNT(*) as notes_added
+            FROM incident_notes
+            GROUP BY username
+        """).fetchall()
+
+        # Incidents closed per analyst (from audit log status_change → closed)
+        closed_rows = conn.execute("""
+            SELECT username, COUNT(*) as incidents_closed
+            FROM audit_log
+            WHERE action = 'status_change' AND detail LIKE '%closed%'
+            GROUP BY username
+        """).fetchall()
+
+        # Incidents assigned per analyst
+        assigned_rows = conn.execute("""
+            SELECT assigned_to as username, COUNT(*) as incidents_assigned
+            FROM incidents
+            WHERE assigned_to IS NOT NULL AND assigned_to != ''
+            GROUP BY assigned_to
+        """).fetchall()
+
+        # Avg resolution time per analyst (minutes) from audit log
+        resolution_rows = conn.execute("""
+            SELECT al.username,
+                   ROUND(AVG(
+                       (JULIANDAY(al.created_at) - JULIANDAY(i.created_at)) * 1440
+                   ), 1) as avg_resolution_minutes
+            FROM audit_log al
+            JOIN incidents i ON i.id = al.target_id
+            WHERE al.action = 'status_change' AND al.detail LIKE '%closed%'
+            GROUP BY al.username
+        """).fetchall()
+
+        # SOAR commands executed per analyst
+        soar_rows = conn.execute("""
+            SELECT username, COUNT(*) as soar_executed
+            FROM audit_log
+            WHERE action = 'soar_executed'
+            GROUP BY username
+        """).fetchall()
+
+    # Merge all into a dict keyed by username
+    analysts = {}
+
+    def _get(u):
+        if u not in analysts:
+            analysts[u] = {
+                "username": u,
+                "incidents_closed": 0,
+                "incidents_assigned": 0,
+                "notes_added": 0,
+                "soar_executed": 0,
+                "avg_resolution_minutes": None,
+            }
+        return analysts[u]
+
+    for r in notes_rows:    _get(r["username"])["notes_added"]          = r["notes_added"]
+    for r in closed_rows:   _get(r["username"])["incidents_closed"]     = r["incidents_closed"]
+    for r in assigned_rows: _get(r["username"])["incidents_assigned"]   = r["incidents_assigned"]
+    for r in resolution_rows: _get(r["username"])["avg_resolution_minutes"] = r["avg_resolution_minutes"]
+    for r in soar_rows:     _get(r["username"])["soar_executed"]        = r["soar_executed"]
+
+    # Sort by incidents closed desc
+    result = sorted(analysts.values(), key=lambda a: a["incidents_closed"], reverse=True)
+    return result
+
+
+@router.get("/mttd-mttr")
+def mttd_mttr():
+    """Return Mean Time to Detect and Mean Time to Respond in minutes."""
+    import datetime
+    with get_connection() as conn:
+        # MTTD: avg minutes between first alert for an IP and incident creation
+        mttd_row = conn.execute("""
+            SELECT ROUND(AVG(
+                (JULIANDAY(i.created_at) - JULIANDAY(a.first_alert)) * 1440
+            ), 1) as mttd_minutes
+            FROM incidents i
+            JOIN (
+                SELECT source_ip, MIN(created_at) as first_alert
+                FROM alerts
+                GROUP BY source_ip
+            ) a ON a.source_ip = i.source_ip
+            WHERE i.source_ip IS NOT NULL
+        """).fetchone()
+
+        # MTTR: avg minutes between incident creation and close (status=closed)
+        mttr_row = conn.execute("""
+            SELECT ROUND(AVG(
+                (JULIANDAY(al.created_at) - JULIANDAY(i.created_at)) * 1440
+            ), 1) as mttr_minutes
+            FROM incidents i
+            JOIN audit_log al ON al.target_id = i.id
+                AND al.action = 'status_change'
+                AND al.detail LIKE '%closed%'
+            WHERE i.status = 'closed'
+        """).fetchone()
+
+        # Open incident durations
+        open_rows = conn.execute("""
+            SELECT id, title, source_ip, created_at,
+                   ROUND((JULIANDAY('now') - JULIANDAY(created_at)) * 1440, 0) as open_minutes
+            FROM incidents
+            WHERE status = 'open'
+            ORDER BY created_at ASC
+        """).fetchall()
+
+    mttd = mttd_row["mttd_minutes"] if mttd_row and mttd_row["mttd_minutes"] else 0
+    mttr = mttr_row["mttr_minutes"] if mttr_row and mttr_row["mttr_minutes"] else 0
+    return {
+        "mttd_minutes": mttd,
+        "mttr_minutes": mttr,
+        "open_incidents": [dict(r) for r in open_rows],
+    }
 
 
 @router.get("/risk-trend")

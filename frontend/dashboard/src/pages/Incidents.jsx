@@ -69,6 +69,10 @@ function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistCha
   const [watchlisting, setWatchlisting] = useState(false)
   const [threatIntel, setThreatIntel]   = useState(null)
   const [tiLoading, setTiLoading]       = useState(false)
+  const [soar, setSoar]                 = useState(null)
+  const [showSoar, setShowSoar]         = useState(false)
+  const [copiedCmd, setCopiedCmd]       = useState(null)
+  const [loggedCmds, setLoggedCmds]     = useState(new Set())
   const me = token.user()
 
   useEffect(() => {
@@ -95,8 +99,27 @@ function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistCha
           .catch(() => {})
           .finally(() => setTiLoading(false))
       }
+      api.incidentSoar(id).then(d => setSoar(d)).catch(() => {})
     })
   }, [id])
+
+  function copyCmd(cmd, idx) {
+    navigator.clipboard.writeText(cmd)
+    setCopiedCmd(idx)
+    setTimeout(() => setCopiedCmd(null), 1500)
+  }
+
+  function copyAllCmds() {
+    if (!soar) return
+    navigator.clipboard.writeText(soar.commands.map(c => c.cmd).join('\n'))
+    setCopiedCmd('all')
+    setTimeout(() => setCopiedCmd(null), 1500)
+  }
+
+  async function logExecuted(label, idx) {
+    await api.logSoarExecuted(id, label)
+    setLoggedCmds(prev => new Set([...prev, idx]))
+  }
 
   async function toggleWatchlist() {
     if (!inc?.source_ip) return
@@ -337,6 +360,66 @@ function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistCha
                   <p className="text-xs text-slate-600 text-right pt-1">
                     {Object.values(checkedSteps).filter(Boolean).length} / {playbook.steps.length} completed
                   </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* SOAR Remediation Commands */}
+          {soar && soar.commands.length > 0 && (
+            <div>
+              <button
+                onClick={() => setShowSoar(v => !v)}
+                className="flex items-center gap-2 text-xs text-slate-400 uppercase tracking-wider mb-3 hover:text-slate-200 transition-colors w-full text-left"
+              >
+                <Zap size={11} className="text-yellow-400" />
+                SOAR Remediation Commands
+                <span className="ml-auto text-slate-600 text-xs">{showSoar ? '▲ hide' : '▼ show'}</span>
+                <span className="bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 text-xs px-1.5 py-0.5 rounded-full font-semibold">
+                  {soar.commands.length} commands
+                </span>
+              </button>
+              {showSoar && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="text-[11px] text-slate-600">Target: <code className="text-slate-400 font-mono">{soar.source_ip}</code></p>
+                    <button
+                      onClick={copyAllCmds}
+                      className="flex items-center gap-1 text-[10px] px-2 py-1 rounded border border-[#30363d] text-slate-500 hover:text-slate-200 hover:border-slate-500 transition-colors"
+                    >
+                      {copiedCmd === 'all' ? <Check size={10} className="text-green-400" /> : <Copy size={10} />}
+                      {copiedCmd === 'all' ? 'Copied!' : 'Copy all'}
+                    </button>
+                  </div>
+                  {soar.commands.map((c, i) => (
+                    <div key={i} className={`rounded-lg border transition-colors ${loggedCmds.has(i) ? 'border-green-500/30 bg-green-500/5' : 'border-[#30363d] bg-[#0d1117]'}`}>
+                      <div className="flex items-center justify-between px-3 py-1.5 border-b border-[#30363d]/50">
+                        <span className={`text-[11px] font-medium ${loggedCmds.has(i) ? 'text-green-400' : 'text-slate-400'}`}>
+                          {loggedCmds.has(i) ? '✓ ' : ''}{c.label}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => copyCmd(c.cmd, i)}
+                            title="Copy command"
+                            className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border border-[#30363d] text-slate-600 hover:text-slate-200 hover:border-slate-500 transition-colors"
+                          >
+                            {copiedCmd === i ? <Check size={9} className="text-green-400" /> : <Copy size={9} />}
+                            {copiedCmd === i ? 'Copied' : 'Copy'}
+                          </button>
+                          {!loggedCmds.has(i) && (
+                            <button
+                              onClick={() => logExecuted(c.label, i)}
+                              title="Mark as executed"
+                              className="text-[10px] px-1.5 py-0.5 rounded border border-[#30363d] text-slate-600 hover:text-green-400 hover:border-green-500/40 transition-colors"
+                            >
+                              ✓ Executed
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      <pre className="px-3 py-2 text-[11px] font-mono text-green-300 overflow-x-auto whitespace-pre-wrap break-all">{c.cmd}</pre>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>

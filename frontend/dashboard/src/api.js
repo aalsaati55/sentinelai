@@ -146,9 +146,19 @@ export const api = {
     body: JSON.stringify({ ips }),
   }).then(r => r.json()),
 
-  // Incident playbook
+  // Incident playbook + SOAR
   incidentPlaybook:   (id) => get(`/incidents/${id}/playbook`),
+  incidentSoar:       (id) => get(`/incidents/${id}/soar`),
   riskTrend:          (days = 7) => get(`/dashboard/risk-trend?days=${days}`),
+  mttdMttr:           () => get(`/dashboard/mttd-mttr`),
+  teamActivity:       () => get(`/dashboard/team-activity`),
+
+  // SOAR audit log
+  logSoarExecuted: (incidentId, label) => fetch(`${BASE}/audit`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ action: 'soar_executed', target_type: 'incident', target_id: incidentId, detail: `SOAR: ${label}` }),
+  }).then(r => r.json()).catch(() => {}),
 
   // Notifications
   notifications: (since) => get(`/notifications?since=${encodeURIComponent(since)}`),
