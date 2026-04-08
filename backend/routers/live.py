@@ -24,6 +24,7 @@ from risk_scoring import score_alert
 from storage import (
     insert_events_bulk, insert_alert, insert_incident, is_rule_suppressed,
     add_to_watchlist, get_alerts, get_incidents, link_incident_events, get_connection,
+    clear_watchlist_removed,
 )
 from correlation import correlate_alerts
 from emailer import send_incident_alert
@@ -228,6 +229,7 @@ async def ingest_lines(batch: LogBatch):
             send_incident_alert(alert)
         # Auto-watchlist source IP on Critical or High alerts
         if alert.get("severity") in ("critical", "high") and alert.get("source_ip"):
+            clear_watchlist_removed(alert["source_ip"])
             add_to_watchlist(
                 alert["source_ip"],
                 reason=f"Auto-watchlisted: {alert.get('rule_name', 'unknown')} fired",

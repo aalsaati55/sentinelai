@@ -30,6 +30,7 @@ from routers import audit as audit_router
 from routers import suppression as suppression_router
 from routers import geoip as geoip_router
 from routers.watchlist import router as watchlist_router, playbook_router
+from routers.threatintel import router as threatintel_router
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -65,6 +66,7 @@ app.include_router(suppression_router.router)
 app.include_router(geoip_router.router)
 app.include_router(watchlist_router)
 app.include_router(playbook_router)
+app.include_router(threatintel_router)
 
 
 # ── Health check ─────────────────────────────────────────────

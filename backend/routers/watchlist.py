@@ -16,7 +16,7 @@ from typing import Optional
 from storage import (
     get_watchlist, add_to_watchlist, remove_from_watchlist,
     is_ip_watchlisted, get_incident_events, get_connection,
-    add_audit_log,
+    add_audit_log, clear_watchlist_removed,
 )
 from auth import get_current_user
 from utils import now_iso
@@ -121,6 +121,7 @@ def list_watchlist(current_user: dict = Depends(get_current_user)):
 def add_watchlist_entry(body: WatchlistAdd, current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
+    clear_watchlist_removed(body.source_ip)
     entry = add_to_watchlist(body.source_ip, body.reason or "", added_by=current_user["username"])
     add_audit_log(
         username=current_user["username"],
@@ -135,7 +136,7 @@ def add_watchlist_entry(body: WatchlistAdd, current_user: dict = Depends(get_cur
 def remove_watchlist_entry(source_ip: str, current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
-    removed = remove_from_watchlist(source_ip)
+    removed = remove_from_watchlist(source_ip, removed_by=current_user["username"])
     if not removed:
         raise HTTPException(status_code=404, detail="IP not in watchlist")
     add_audit_log(

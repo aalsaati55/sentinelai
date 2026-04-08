@@ -41,6 +41,7 @@ export function Alerts() {
   const [suppressing, setSuppressing] = useState('')
   const [geoMap, setGeoMap]         = useState({})
   const [watchlistedIps, setWatchlistedIps] = useState(new Set())
+  const [tiMap, setTiMap]           = useState({})
   const me = token.user()
 
   const loadSuppressed = useCallback(async () => {
@@ -59,10 +60,8 @@ export function Alerts() {
       // Bulk geo-lookup for all distinct source IPs
       const ips = [...new Set(data.map(a => a.source_ip).filter(Boolean))]
       if (ips.length > 0) {
-        try {
-          const geo = await api.geoBulk(ips)
-          setGeoMap(geo)
-        } catch (_) {}
+        try { const geo = await api.geoBulk(ips); setGeoMap(geo) } catch (_) {}
+        try { const ti = await api.threatIntelBulk(ips); setTiMap(ti) } catch (_) {}
       }
     } finally { setLoading(false) }
   }
@@ -213,6 +212,12 @@ export function Alerts() {
                             {geo?.city && <div className="text-[10px] text-slate-500">{geo.city}{geo.country_code ? `, ${geo.country_code}` : ''}</div>}
                           </div>
                           {watchlistedIps.has(a.source_ip) && <span title="Watchlisted IP">🚫</span>}
+                          {tiMap[a.source_ip]?.abuse_score >= 75 && (
+                            <span title={`AbuseIPDB: ${tiMap[a.source_ip].abuse_score}%`} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 whitespace-nowrap">🔴 Threat</span>
+                          )}
+                          {tiMap[a.source_ip]?.abuse_score >= 25 && tiMap[a.source_ip]?.abuse_score < 75 && (
+                            <span title={`AbuseIPDB: ${tiMap[a.source_ip].abuse_score}%`} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30 whitespace-nowrap">⚠ Suspicious</span>
+                          )}
                           <CopyIpButton ip={a.source_ip} />
                         </div>
                       ) : <span className="text-slate-600 text-xs">—</span>}

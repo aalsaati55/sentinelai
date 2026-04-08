@@ -125,6 +125,27 @@ CREATE TABLE IF NOT EXISTS suppressed_rules (
     reason      TEXT,
     created_at  TEXT    NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS watchlist_removed (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    source_ip   TEXT    NOT NULL UNIQUE,
+    removed_by  TEXT    NOT NULL,
+    removed_at  TEXT    NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS threat_intel_cache (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    ip               TEXT    NOT NULL UNIQUE,
+    abuse_score      INTEGER NOT NULL DEFAULT 0,
+    total_reports    INTEGER NOT NULL DEFAULT 0,
+    country_code     TEXT,
+    isp              TEXT,
+    domain           TEXT,
+    is_tor           INTEGER NOT NULL DEFAULT 0,
+    categories       TEXT,
+    last_reported_at TEXT,
+    cached_at        TEXT    NOT NULL
+);
 """
 
 
@@ -143,6 +164,7 @@ def init_db() -> None:
             "ALTER TABLE alerts ADD COLUMN source_ip TEXT",
             "ALTER TABLE alerts ADD COLUMN username TEXT",
             "ALTER TABLE watchlist ADD COLUMN alert_count INTEGER NOT NULL DEFAULT 1",
+            "ALTER TABLE threat_intel_cache ADD COLUMN is_tor INTEGER NOT NULL DEFAULT 0",
         ]:
             try:
                 conn.execute(sql)
@@ -224,10 +246,28 @@ def add_to_watchlist(ip: str, reason: str = "", added_by: str = "system") -> Dic
     return dict(row)
 
 
-def remove_from_watchlist(ip: str) -> bool:
+def remove_from_watchlist(ip: str, removed_by: str = "admin") -> bool:
     with get_connection() as conn:
         cur = conn.execute("DELETE FROM watchlist WHERE source_ip = ?", (ip,))
+        if cur.rowcount > 0:
+            conn.execute(
+                "INSERT OR REPLACE INTO watchlist_removed (source_ip, removed_by, removed_at) VALUES (?, ?, ?)",
+                (ip, removed_by, now_iso()),
+            )
     return cur.rowcount > 0
+
+
+def was_watchlist_manually_removed(ip: str) -> bool:
+    """Returns True if this IP was previously manually removed from watchlist."""
+    with get_connection() as conn:
+        row = conn.execute("SELECT id FROM watchlist_removed WHERE source_ip = ?", (ip,)).fetchone()
+    return row is not None
+
+
+def clear_watchlist_removed(ip: str) -> None:
+    """Clear the manual-removal record so auto-watchlist can re-add it."""
+    with get_connection() as conn:
+        conn.execute("DELETE FROM watchlist_removed WHERE source_ip = ?", (ip,))
 
 
 # ──────────────────────────────────────────────

@@ -138,6 +138,14 @@ export const api = {
     method: 'DELETE', headers: authHeaders(),
   }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() }),
 
+  // Threat Intelligence
+  threatIntel:      (ip) => get(`/threatintel/${encodeURIComponent(ip)}`),
+  threatIntelBulk:  (ips) => fetch(`${BASE}/threatintel/bulk`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ ips }),
+  }).then(r => r.json()),
+
   // Incident playbook
   incidentPlaybook:   (id) => get(`/incidents/${id}/playbook`),
   riskTrend:          (days = 7) => get(`/dashboard/risk-trend?days=${days}`),

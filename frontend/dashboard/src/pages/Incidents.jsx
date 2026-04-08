@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { RefreshCw, X, ChevronDown, MessageSquare, Send, Download, Search, FileText, ShieldAlert, ShieldCheck, ShieldOff, CheckSquare, Square, Copy, Check } from 'lucide-react'
+import { RefreshCw, X, ChevronDown, MessageSquare, Send, Download, Search, FileText, ShieldAlert, ShieldCheck, ShieldOff, CheckSquare, Square, Copy, Check, Zap, AlertTriangle } from 'lucide-react'
 import { api, token } from '../api'
 import { Panel } from '../components/Panel'
 import { Badge, severityFromScore } from '../components/Badge'
@@ -67,6 +67,8 @@ function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistCha
   const [checkedSteps, setCheckedSteps] = useState({})
   const [showPlaybook, setShowPlaybook] = useState(false)
   const [watchlisting, setWatchlisting] = useState(false)
+  const [threatIntel, setThreatIntel]   = useState(null)
+  const [tiLoading, setTiLoading]       = useState(false)
   const me = token.user()
 
   useEffect(() => {
@@ -85,6 +87,14 @@ function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistCha
       setNotes(nts)
       setAnalysts(users)
       if (pb) setPlaybook(pb)
+      // Fetch threat intel for the source IP
+      if (i.source_ip) {
+        setTiLoading(true)
+        api.threatIntel(i.source_ip)
+          .then(d => setThreatIntel(d))
+          .catch(() => {})
+          .finally(() => setTiLoading(false))
+      }
     })
   }, [id])
 
@@ -205,6 +215,45 @@ function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistCha
               <ScoreBar score={inc.risk_score} />
             </div>
           </div>
+
+          {/* Threat Intelligence */}
+          {inc.source_ip && (
+            <div className="bg-[#1c2128] border rounded-lg p-4 border-[#30363d]" style={threatIntel?.abuse_score >= 25 ? {borderColor:'rgba(239,68,68,0.4)', background:'rgba(239,68,68,0.05)'} : {}}>
+              <div className="flex items-center gap-2 mb-3">
+                <Zap size={12} className={threatIntel?.abuse_score >= 75 ? 'text-red-400' : threatIntel?.abuse_score >= 25 ? 'text-orange-400' : 'text-slate-500'} />
+                <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">Threat Intelligence</span>
+                {tiLoading && <span className="text-xs text-slate-600">Checking AbuseIPDB…</span>}
+                {threatIntel?.abuse_score >= 75 && (
+                  <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30">🔴 KNOWN THREAT</span>
+                )}
+                {threatIntel?.abuse_score >= 25 && threatIntel?.abuse_score < 75 && (
+                  <span className="ml-auto text-xs font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30">⚠ SUSPICIOUS</span>
+                )}
+                {threatIntel && threatIntel.abuse_score < 25 && !tiLoading && (
+                  <span className="ml-auto text-xs px-2 py-0.5 rounded-full bg-green-500/10 text-green-500 border border-green-500/20">✓ Clean</span>
+                )}
+              </div>
+              {threatIntel && !threatIntel.error ? (
+                <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
+                  <div><span className="text-slate-500">Abuse Score: </span><span className={`font-bold ${ threatIntel.abuse_score >= 75 ? 'text-red-400' : threatIntel.abuse_score >= 25 ? 'text-orange-400' : 'text-green-400'}`}>{threatIntel.abuse_score}%</span></div>
+                  <div><span className="text-slate-500">Reports: </span><span className="text-slate-200">{threatIntel.total_reports}</span></div>
+                  <div><span className="text-slate-500">ISP: </span><span className="text-slate-200">{threatIntel.isp || '—'}</span></div>
+                  <div><span className="text-slate-500">TOR Exit: </span><span className={threatIntel.is_tor ? 'text-red-400 font-semibold' : 'text-slate-200'}>{threatIntel.is_tor ? 'YES' : 'No'}</span></div>
+                  {threatIntel.categories?.length > 0 && (
+                    <div className="col-span-2">
+                      <span className="text-slate-500">Reported for: </span>
+                      <span className="text-slate-200">{threatIntel.categories.join(', ')}</span>
+                    </div>
+                  )}
+                  {threatIntel.last_reported_at && (
+                    <div className="col-span-2"><span className="text-slate-500">Last reported: </span><span className="text-slate-400">{threatIntel.last_reported_at?.slice(0,10)}</span></div>
+                  )}
+                </div>
+              ) : !tiLoading && (
+                <p className="text-xs text-slate-600">No threat data available for {inc.source_ip}</p>
+              )}
+            </div>
+          )}
 
           {/* Description */}
           <div>
@@ -407,6 +456,7 @@ export function Incidents() {
   const [loading, setLoading]         = useState(true)
   const [geoMap, setGeoMap]           = useState({})
   const [watchlistedIps, setWatchlistedIps] = useState(new Set())
+  const [tiMap, setTiMap]             = useState({})
 
   async function loadWatchlist() {
     try {
@@ -424,6 +474,7 @@ export function Incidents() {
       const ips = [...new Set(data.map(i => i.source_ip).filter(Boolean))]
       if (ips.length > 0) {
         try { const geo = await api.geoBulk(ips); setGeoMap(geo) } catch (_) {}
+        try { const ti = await api.threatIntelBulk(ips); setTiMap(ti) } catch (_) {}
       }
     } finally { setLoading(false) }
   }
@@ -536,6 +587,12 @@ export function Incidents() {
                         <code className="text-[11px] font-mono text-slate-300">{i.source_ip}</code>
                         {watchlistedIps.has(i.source_ip) && (
                           <span title="Watchlisted IP" className="text-red-400 text-xs">🚫</span>
+                        )}
+                        {tiMap[i.source_ip]?.abuse_score >= 75 && (
+                          <span title={`AbuseIPDB: ${tiMap[i.source_ip].abuse_score}% confidence`} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 border border-red-500/30 whitespace-nowrap">🔴 Threat</span>
+                        )}
+                        {tiMap[i.source_ip]?.abuse_score >= 25 && tiMap[i.source_ip]?.abuse_score < 75 && (
+                          <span title={`AbuseIPDB: ${tiMap[i.source_ip].abuse_score}% confidence`} className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30 whitespace-nowrap">⚠ Suspicious</span>
                         )}
                         <CopyIpButton ip={i.source_ip} />
                       </div>
