@@ -1,6 +1,6 @@
 # SentinelAI
 
-A full-stack AI-assisted SIEM (Security Information and Event Management) prototype built as a university cybersecurity project. SentinelAI ingests real Linux logs from a virtual machine, detects attacks using a 14-rule detection engine, correlates alerts into incidents, scores anomalies with ML, and presents everything in a live SOC dashboard with GeoIP-enriched attack mapping.
+A full-stack AI-assisted SIEM (Security Information and Event Management) prototype built as a university cybersecurity project. SentinelAI ingests real Linux logs from a virtual machine, detects attacks using a 14-rule detection engine, correlates alerts into incidents, scores anomalies with ML, and presents everything in a live SOC dashboard with GeoIP enrichment, threat intelligence, SOAR remediation, and team activity analytics.
 
 ---
 
@@ -17,6 +17,37 @@ A full-stack AI-assisted SIEM (Security Information and Event Management) protot
 - **Risk scoring** — final 0–100 score per alert and incident combining base score + anomaly bonus + correlation bonus
 - **Duplicate event suppression** — within-batch deduplication prevents the same log line from being processed multiple times
 
+### Threat Intelligence (AbuseIPDB)
+- **AbuseIPDB integration** — every incident's source IP is automatically checked against AbuseIPDB for reputation data
+- **Threat Intelligence panel** — incident modal shows abuse confidence score, total reports, ISP, TOR exit node status, abuse categories (e.g. SSH Brute-Force, Port Scan), and last reported date
+- **Known Threat badge** — 🔴 Threat badge shown next to source IPs scoring ≥ 75% confidence in Alerts and Incidents tables
+- **Suspicious badge** — ⚠ Suspicious badge shown for IPs scoring 25–74% confidence
+- **24-hour result cache** — AbuseIPDB results cached in the database to minimise API quota usage
+- **Smart auto-watchlisting** — IPs scoring ≥ 75% are automatically added to the watchlist on first discovery; manual removals are respected and not overridden by threat intel re-checks; new live attacks from removed IPs re-trigger watchlisting
+
+### SOAR (Security Orchestration, Automation and Response)
+- **Auto-generated remediation commands** — each incident modal shows a set of ready-to-run Ubuntu shell commands tailored to the specific attack type (brute force, port scan, reverse shell, privilege escalation, etc.)
+- **Real IP and username filled in** — commands are pre-populated with the actual attacker IP and targeted username from the incident
+- **Copy per command** — one-click copy button for each individual command
+- **Copy All** — copies the full command block at once
+- **Mark as Executed** — analysts can mark commands as executed; logged to the audit trail with username and timestamp
+- **MTTD (Mean Time to Detect)** — Overview page shows average minutes between first alert and incident creation
+- **MTTR (Mean Time to Respond)** — Overview page shows average minutes between incident creation and close
+
+### Team Activity Metrics
+- **Team Activity panel** — Overview page shows a per-analyst performance table
+- **Incidents closed** — count of incidents each analyst has closed
+- **Incidents assigned** — count of incidents assigned to each analyst
+- **Notes added** — count of investigation notes written by each analyst
+- **SOAR executed** — count of remediation commands marked as executed per analyst
+- **Avg resolution time** — average time each analyst takes to close an incident (minutes or hours)
+- **TOP analyst badge** — highlights the most active analyst on the leaderboard
+
+### MITRE ATT&CK Mapping
+- **Technique tagging** — every detection rule is mapped to its corresponding MITRE ATT&CK technique ID and name (e.g. T1110 — Brute Force, T1053 — Scheduled Task/Job)
+- **Clickable badges** — technique badges in the Alerts table link directly to the official MITRE ATT&CK page for that technique
+- **Stored in DB** — MITRE technique IDs stored as JSON in the alerts table for querying and export
+
 ### Dashboard & Visualisation
 - **GeoIP enrichment** — every source IP resolved to country + city via `ip-api.com` with in-memory caching; flag emoji and city shown in Alerts and Incidents tables
 - **Attack Map** — live world map showing attacker source IPs as colour-coded dots (Critical = red, High = orange, Medium = yellow, Low = green) with a summary table below
@@ -26,7 +57,8 @@ A full-stack AI-assisted SIEM (Security Information and Event Management) protot
 
 ### Incident Management
 - **Incident response playbook** — each incident shows a tailored checklist of response steps derived from its specific alert rules (contain, block, investigate, remediate, monitor, escalate)
-- **Investigation notes** — add timestamped notes per incident; note count badge shown live in the incidents table and updates in real time when a note is added
+- **SOAR remediation commands** — pre-built Ubuntu shell commands per incident type with real IP/username filled in
+- **Investigation notes** — add timestamped notes per incident; note count badge shown live in the incidents table
 - **Status workflow** — Open → Investigating → Closed with audit-logged status changes
 - **Incident assignment** — assign incidents to analysts; recorded in audit log
 - **SLA timer** — each open incident shows how long it has been open; turns red after 24 hours
@@ -34,19 +66,21 @@ A full-stack AI-assisted SIEM (Security Information and Event Management) protot
 
 ### IP Watchlist
 - **Dedicated Watchlist page** — `/watchlist` route with IP table, reason, added date, added-by, and remove button
-- **Manual watchlist management** — admins can add IPs with a preset reason dropdown (brute force, port scan, enumeration, etc.) or a custom reason; removals also supported
-- **Auto-watchlisting** — IPs that trigger Critical alerts are automatically added to the watchlist
+- **Manual watchlist management** — admins can add IPs with a preset reason dropdown or custom reason; removals also supported
+- **Auto-watchlisting** — IPs that trigger Critical/High alerts are automatically added to the watchlist
+- **Threat intel auto-watchlisting** — IPs with AbuseIPDB confidence ≥ 75% are auto-added on first discovery
+- **Smart removal tracking** — manually removed IPs are tracked; threat intel won't re-add them, but new live attacks will
 - **Watchlist badge** — 🚫 icon shown next to watchlisted IPs in the Alerts and Incidents tables
-- **Audit logging** — manual watchlist additions and removals are recorded in the audit log with username, IP, and reason
+- **Audit logging** — all watchlist additions and removals recorded in audit log
 
 ### User & Admin Features
-- **FastAPI REST backend** — full CRUD endpoints for events, alerts, incidents, dashboard stats, and GeoIP
+- **FastAPI REST backend** — full CRUD endpoints for events, alerts, incidents, dashboard stats, GeoIP, threat intel, and SOAR
 - **JWT authentication** — register/login with bcrypt password hashing; first user auto-assigned admin role
 - **Role-based access** — `admin` (full access) and `analyst` (read + update incidents)
 - **Rule suppression** — admins can suppress noisy rules directly from the Alerts page
-- **Audit log** — tracks all admin actions: status changes, assignments, role changes, note additions, watchlist add/remove — filterable by action type with CSV export
+- **Audit log** — tracks all actions: status changes, assignments, role changes, note additions, watchlist add/remove, SOAR executed — filterable by action type with CSV export
 - **Email alerting** — High and Critical incidents trigger email notifications via SMTP
-- **Browser notifications** — Critical and High alerts fire desktop notifications when the tab is in the background; unread count shown in the browser tab title
+- **Browser notifications** — Critical and High alerts fire desktop notifications when the tab is in the background
 - **Copy IP button** — one-click clipboard copy next to every source IP in Alerts and Incidents tables
 - **React SOC dashboard** — Overview, Incidents, Alerts, Events, Attack Map, Watchlist, Audit Log pages with live filtering and CSV export
 - **137 unit tests** — covering correlation, risk scoring, and anomaly scoring modules
@@ -67,23 +101,25 @@ sentinelai/
 │   ├── parser_custom.py         # Parses custom_security.log (JSON)
 │   ├── normalizer.py            # build_event() — common event schema
 │   ├── aggregator.py            # Groups events into sessions by IP/user/time
-│   ├── detection.py             # 14-rule detection engine
+│   ├── detection.py             # 14-rule detection engine with MITRE ATT&CK mapping
 │   ├── correlation.py           # Links alerts into incidents (7 patterns)
 │   ├── anomaly_scoring.py       # Isolation Forest ML scoring
 │   ├── risk_scoring.py          # Final 0–100 risk score + severity + ceilings
 │   ├── geoip.py                 # GeoIP lookup via ip-api.com with cache
 │   ├── emailer.py               # SMTP email alerts for High/Critical incidents
-│   ├── storage.py               # SQLite database layer
+│   ├── storage.py               # SQLite database layer (10 tables)
 │   ├── schemas.py               # Pydantic API models
 │   ├── utils.py                 # Shared utilities
 │   └── routers/
 │       ├── auth.py              # /api/auth — register, login, me, users
-│       ├── dashboard.py         # /api/dashboard — summary, charts
+│       ├── dashboard.py         # /api/dashboard — summary, charts, MTTD/MTTR, team activity
 │       ├── events.py            # /api/events
 │       ├── alerts.py            # /api/alerts + rule suppression
 │       ├── incidents.py         # /api/incidents + notes + assignment
 │       ├── geoip.py             # /api/geoip — lookup, bulk, attack map IPs
-│       ├── watchlist.py         # /api/watchlist + /api/incidents/{id}/playbook
+│       ├── audit.py             # /api/audit — audit log + CSV export + POST logging
+│       ├── watchlist.py         # /api/watchlist + playbook + SOAR commands
+│       ├── threatintel.py       # /api/threatintel — AbuseIPDB lookup + cache
 │       └── live.py              # /api/live/ingest (POST) + /api/live/ws (WS)
 ├── frontend/
 │   └── dashboard/               # Vite + React + Tailwind CSS
@@ -99,9 +135,9 @@ sentinelai/
 │           └── pages/
 │               ├── Login.jsx
 │               ├── Register.jsx
-│               ├── Overview.jsx         # Risk trend sparkline + auto-refresh
-│               ├── Incidents.jsx        # Notes badge, copy IP, playbook modal
-│               ├── Alerts.jsx           # GeoIP flag, rule suppression, copy IP
+│               ├── Overview.jsx         # MTTD/MTTR cards, team activity, risk trend
+│               ├── Incidents.jsx        # Threat intel panel, SOAR commands, playbook
+│               ├── Alerts.jsx           # Threat badges, MITRE tags, GeoIP, copy IP
 │               ├── Events.jsx
 │               ├── AttackMap.jsx        # Live world map + attacker table
 │               ├── Watchlist.jsx        # IP watchlist management page
