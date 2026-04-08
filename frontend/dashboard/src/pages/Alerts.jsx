@@ -35,6 +35,7 @@ function CopyIpButton({ ip }) {
 export function Alerts() {
   const [alerts, setAlerts]         = useState([])
   const [filter, setFilter]         = useState('')
+  const [ruleFilter, setRuleFilter] = useState('')
   const [search, setSearch]         = useState('')
   const [loading, setLoading]       = useState(true)
   const [suppressed, setSuppressed] = useState(new Set())
@@ -84,14 +85,18 @@ export function Alerts() {
     } finally { setSuppressing('') }
   }
 
+  const ruleNames = useMemo(() => [...new Set(alerts.map(a => a.rule_name).filter(Boolean))].sort(), [alerts])
+
   const filtered = useMemo(() => {
+    let result = alerts
+    if (ruleFilter) result = result.filter(a => a.rule_name === ruleFilter)
     const q = search.trim().toLowerCase()
-    if (!q) return alerts
-    return alerts.filter(a =>
+    if (q) result = result.filter(a =>
       (a.rule_name   || '').toLowerCase().includes(q) ||
       (a.description || '').toLowerCase().includes(q)
     )
-  }, [alerts, search])
+    return result
+  }, [alerts, search, ruleFilter])
 
   return (
     <div className="space-y-5">
@@ -114,6 +119,19 @@ export function Alerts() {
               <option value="high">High</option>
               <option value="medium">Medium</option>
               <option value="low">Low</option>
+            </select>
+            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+          </div>
+          <div className="relative">
+            <select
+              value={ruleFilter}
+              onChange={e => setRuleFilter(e.target.value)}
+              className="appearance-none bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 pr-8 outline-none focus:border-blue-500 cursor-pointer"
+            >
+              <option value="">All rules</option>
+              {ruleNames.map(r => (
+                <option key={r} value={r}>{r.replace(/_/g, ' ')}</option>
+              ))}
             </select>
             <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
           </div>

@@ -14,11 +14,13 @@ import { Register } from './pages/Register'
 import { token } from './api'
 import { LogOut, User } from 'lucide-react'
 import { NotificationBell } from './components/NotificationBell'
+import { OnboardingModal } from './components/OnboardingModal'
 
 function App() {
   const [page, setPage]   = useState('overview')
   const [view, setView]   = useState(() => token.get() ? 'app' : 'login')
   const [user, setUser]   = useState(() => token.user())
+  const [showOnboarding, setShowOnboarding] = useState(false)
   // Verify stored token is still valid against the backend on first load
   useEffect(() => {
     if (!token.get()) return
@@ -41,6 +43,15 @@ function App() {
   function handleLogin(userData) {
     setUser(userData)
     setView('app')
+    const key = `onboarding_done_${userData.username}`
+    if (!localStorage.getItem(key)) {
+      setShowOnboarding(true)
+    }
+  }
+
+  function closeOnboarding() {
+    if (user) localStorage.setItem(`onboarding_done_${user.username}`, '1')
+    setShowOnboarding(false)
   }
 
   function handleLogout() {
@@ -71,6 +82,7 @@ function App() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#0d1117]">
+      {showOnboarding && <OnboardingModal onClose={closeOnboarding} />}
       <Sidebar page={page} setPage={setPage} userRole={user?.role} />
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top header bar */}

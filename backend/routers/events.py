@@ -36,6 +36,16 @@ def event_count():
     return {"count": count_events()}
 
 
+@router.get("/types")
+def event_types():
+    from storage import get_connection
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT DISTINCT event_type FROM events WHERE event_type IS NOT NULL ORDER BY event_type"
+        ).fetchall()
+    return [r["event_type"] for r in rows]
+
+
 @router.get("/{event_id}", response_model=EventSchema)
 def get_event(event_id: int):
     rows = get_events(limit=1, offset=0)

@@ -49,6 +49,7 @@ export const api = {
     const q = new URLSearchParams({ limit: 300, ...params }).toString()
     return get(`/events?${q}`)
   },
+  eventsDistinctTypes: () => get(`/events/types`),
   eventCount: () => get('/events/count'),
 
   // Alerts

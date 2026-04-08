@@ -9,14 +9,6 @@ function fmtTs(ts) {
   return ts.replace('T', ' ').slice(0, 16)
 }
 
-const EVENT_TYPES = [
-  'login_failure', 'login_success', 'login_invalid_user',
-  'sudo_success', 'sudo_failure', 'service_started', 'service_failed',
-  'file_access', 'file_modified', 'sensitive_command',
-  'network_anomaly', 'system_error', 'session_opened', 'session_closed',
-  'cron_job', 'kernel_event',
-]
-
 export function Events() {
   const [events, setEvents]       = useState([])
   const [loading, setLoading]     = useState(true)
@@ -24,6 +16,7 @@ export function Events() {
   const [evtType, setEvtType]     = useState('')
   const [ipFilter, setIpFilter]   = useState('')
   const [ipInput, setIpInput]     = useState('')
+  const [eventTypes, setEventTypes] = useState([])
 
   async function load() {
     setLoading(true)
@@ -35,6 +28,10 @@ export function Events() {
       setEvents(await api.events(params))
     } finally { setLoading(false) }
   }
+
+  useEffect(() => {
+    api.eventsDistinctTypes().then(types => setEventTypes(types)).catch(() => {})
+  }, [])
 
   useEffect(() => { load() }, [source, evtType, ipFilter])
 
@@ -79,7 +76,7 @@ export function Events() {
               className="appearance-none bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 pr-8 outline-none focus:border-blue-500 cursor-pointer"
             >
               <option value="">All types</option>
-              {EVENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+              {eventTypes.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
             <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
           </div>
