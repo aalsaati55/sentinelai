@@ -83,6 +83,9 @@ A full-stack AI-assisted SIEM (Security Information and Event Management) protot
 - **Browser notifications** — Critical and High alerts fire desktop notifications when the tab is in the background
 - **Copy IP button** — one-click clipboard copy next to every source IP in Alerts and Incidents tables
 - **React SOC dashboard** — Overview, Incidents, Alerts, Events, Attack Map, Watchlist, Audit Log pages with live filtering and CSV export
+- **Onboarding modal** — 8-step welcome tour shown automatically on first login; covers every page with description and practical tips; per-user dismissal stored in `localStorage`
+- **Alerts rule filter** — dropdown to filter alerts by specific detection rule name, dynamically populated from loaded alerts; stacks with severity filter and search
+- **Events dynamic type filter** — event type dropdown populated live from the database so all types (including `sudo_session_opened`, `sudo_session_closed`, etc.) always appear
 - **137 unit tests** — covering correlation, risk scoring, and anomaly scoring modules
 
 ---
@@ -121,6 +124,7 @@ sentinelai/
 │       ├── watchlist.py         # /api/watchlist + playbook + SOAR commands
 │       ├── threatintel.py       # /api/threatintel — AbuseIPDB lookup + cache
 │       └── live.py              # /api/live/ingest (POST) + /api/live/ws (WS)
+│                                # /api/events/types — distinct event types from DB
 ├── frontend/
 │   └── dashboard/               # Vite + React + Tailwind CSS
 │       └── src/
@@ -131,13 +135,15 @@ sentinelai/
 │           │   ├── Sidebar.jsx          # Navigation sidebar
 │           │   ├── Panel.jsx            # Reusable card panel
 │           │   ├── Badge.jsx            # Severity/status badges
-│           │   └── ScoreBar.jsx         # Risk score bar
+│           │   ├── ScoreBar.jsx         # Risk score bar
+│           │   ├── NotificationBell.jsx # Browser notification bell
+│           │   └── OnboardingModal.jsx  # First-login 8-step platform tour
 │           └── pages/
 │               ├── Login.jsx
 │               ├── Register.jsx
 │               ├── Overview.jsx         # MTTD/MTTR cards, team activity, risk trend
 │               ├── Incidents.jsx        # Threat intel panel, SOAR commands, playbook
-│               ├── Alerts.jsx           # Threat badges, MITRE tags, GeoIP, copy IP
+│               ├── Alerts.jsx           # Threat badges, MITRE tags, rule filter, GeoIP
 │               ├── Events.jsx
 │               ├── AttackMap.jsx        # Live world map + attacker table
 │               ├── Watchlist.jsx        # IP watchlist management page
