@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
 import { RefreshCw, ChevronDown, Download, Search, VolumeX, Volume2, Copy, Check } from 'lucide-react'
 import { api, token } from '../api'
 
@@ -52,6 +52,8 @@ export function Alerts() {
     } catch (_) {}
   }, [])
 
+  const loadRef = useRef(null)
+
   async function load() {
     setLoading(true)
     const params = filter ? { severity: filter } : {}
@@ -67,10 +69,51 @@ export function Alerts() {
     } finally { setLoading(false) }
   }
 
+  loadRef.current = load
+
   useEffect(() => { load() }, [filter])
   useEffect(() => {
     loadSuppressed()
     api.watchlist().then(wl => setWatchlistedIps(new Set(wl.map(w => w.source_ip)))).catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    let ws
+    let dead = false
+    let pingTimer
+
+    function connect() {
+      if (dead) return
+      const proto = window.location.protocol === 'https:' ? 'wss' : 'ws'
+      ws = new WebSocket(`${proto}://${window.location.hostname}:8000/api/live/ws`)
+      ws.onopen = () => {
+        pingTimer = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) ws.send('ping')
+        }, 20000)
+      }
+      let debounceTimer = null
+      ws.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data)
+          if (msg.type === 'alert') {
+            clearTimeout(debounceTimer)
+            debounceTimer = setTimeout(() => loadRef.current?.(), 2000)
+          }
+        } catch (_) {}
+      }
+      ws.onclose = () => {
+        clearInterval(pingTimer)
+        if (!dead) setTimeout(connect, 3000)
+      }
+      ws.onerror = () => ws.close()
+    }
+
+    connect()
+    return () => {
+      dead = true
+      clearInterval(pingTimer)
+      ws?.close()
+    }
   }, [])
 
   async function toggleSuppress(ruleName) {

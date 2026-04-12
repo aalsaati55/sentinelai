@@ -651,10 +651,14 @@ export function Incidents() {
           if (ws.readyState === WebSocket.OPEN) ws.send('ping')
         }, 20000)
       }
+      let debounceTimer = null
       ws.onmessage = (e) => {
         try {
           const msg = JSON.parse(e.data)
-          if (msg.type === 'incident') loadRef.current?.()
+          if (msg.type === 'incident') {
+            clearTimeout(debounceTimer)
+            debounceTimer = setTimeout(() => loadRef.current?.(), 2000)
+          }
         } catch (_) {}
       }
       ws.onclose = () => {
