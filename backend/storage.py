@@ -146,6 +146,15 @@ CREATE TABLE IF NOT EXISTS threat_intel_cache (
     last_reported_at TEXT,
     cached_at        TEXT    NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS ssh_config (
+    id         INTEGER PRIMARY KEY DEFAULT 1,
+    host       TEXT    NOT NULL DEFAULT '',
+    port       INTEGER NOT NULL DEFAULT 22,
+    username   TEXT    NOT NULL DEFAULT '',
+    key_path   TEXT    NOT NULL DEFAULT '',
+    updated_at TEXT    NOT NULL DEFAULT ''
+);
 """
 
 
@@ -671,6 +680,32 @@ def get_incident_notes(incident_id: int) -> List[Dict[str, Any]]:
             (incident_id,)
         ).fetchall()
     return [dict(r) for r in rows]
+
+
+# ──────────────────────────────────────────────
+# SSH Config
+# ──────────────────────────────────────────────
+
+def get_ssh_config() -> Dict[str, Any]:
+    with get_connection() as conn:
+        row = conn.execute("SELECT * FROM ssh_config WHERE id = 1").fetchone()
+    if row:
+        return dict(row)
+    return {"id": 1, "host": "", "port": 22, "username": "", "key_path": "", "updated_at": ""}
+
+
+def save_ssh_config(host: str, port: int, username: str, key_path: str) -> Dict[str, Any]:
+    with get_connection() as conn:
+        conn.execute(
+            """INSERT INTO ssh_config (id, host, port, username, key_path, updated_at)
+               VALUES (1, ?, ?, ?, ?, ?)
+               ON CONFLICT(id) DO UPDATE SET
+                   host=excluded.host, port=excluded.port,
+                   username=excluded.username, key_path=excluded.key_path,
+                   updated_at=excluded.updated_at""",
+            (host, port, username, key_path, now_iso()),
+        )
+    return get_ssh_config()
 
 
 def clear_all_data() -> None:

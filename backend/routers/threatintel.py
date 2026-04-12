@@ -5,15 +5,17 @@ GET /api/threatintel/{ip}  — query AbuseIPDB for IP reputation, cache result i
 GET /api/threatintel/bulk  — batch lookup for multiple IPs
 """
 
+import asyncio
 import logging
 import requests
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import List
 
-from storage import get_connection, add_to_watchlist, is_ip_watchlisted, was_watchlist_manually_removed
+from storage import get_connection, add_to_watchlist, is_ip_watchlisted, was_watchlist_manually_removed, clear_watchlist_removed
 from auth import get_current_user
 from utils import now_iso
+from ws_manager import manager as ws_manager
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/threatintel", tags=["threatintel"])
@@ -100,6 +102,56 @@ def _fetch_from_abuseipdb(ip: str) -> dict:
         return {}
 
 
+async def _broadcast_watchlist(ip: str) -> None:
+    """Fire a WebSocket 'watchlist' event so connected clients update in real-time."""
+    try:
+        await ws_manager.broadcast({"type": "watchlist", "data": {"ip": ip}})
+    except Exception:
+        pass
+
+
+def _ensure_ti_incident(ip: str, score: int, data: dict) -> None:
+    """Create a Threat Intelligence incident for this IP if one doesn't already exist."""
+    with get_connection() as conn:
+        existing = conn.execute(
+            """SELECT id FROM incidents
+               WHERE source_ip = ? AND title LIKE 'Threat Intelligence:%'
+               AND status IN ('open','investigating')""",
+            (ip,),
+        ).fetchone()
+        if existing:
+            return
+
+        isp      = data.get("isp", "Unknown ISP")
+        country  = data.get("countryCode", "??")
+        reports  = data.get("totalReports", 0)
+        tor_note = " (Tor exit node)" if data.get("isTor", False) else ""
+
+        title = f"Threat Intelligence: {ip} flagged by AbuseIPDB"
+        description = (
+            f"IP {ip}{tor_note} scored {score}% abuse confidence on AbuseIPDB "
+            f"with {reports} total reports. ISP: {isp}, Country: {country}. "
+            f"Automatically created by the Threat Intelligence engine."
+        )
+        conn.execute(
+            """INSERT INTO incidents
+               (title, description, source_ip, username, risk_score, anomaly_level, status, created_at)
+               VALUES (?, ?, ?, NULL, ?, 'high', 'open', ?)""",
+            (title, description, ip, min(score, 100), now_iso()),
+        )
+    logger.info(f"Auto-created TI incident for {ip} (score={score}%)")
+    # Broadcast to all connected dashboard clients so Incidents page updates in real-time
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_running():
+            asyncio.ensure_future(ws_manager.broadcast({
+                "type": "incident",
+                "data": {"source_ip": ip, "title": title, "risk_score": min(score, 100), "status": "open"},
+            }))
+    except Exception:
+        pass
+
+
 def lookup_ip(ip: str) -> dict:
     """Lookup IP — returns cached result or fetches fresh from AbuseIPDB."""
     cached = _get_cached(ip)
@@ -110,6 +162,15 @@ def lookup_ip(ip: str) -> dict:
             for c in (cached.get("categories") or "").split(",")
             if c
         ]
+        # Still enforce watchlist even on cache hits (handles re-adds after manual removal)
+        score = cached.get("abuse_score", 0)
+        if score >= 75 and not is_ip_watchlisted(ip):
+            try:
+                if was_watchlist_manually_removed(ip):
+                    clear_watchlist_removed(ip)
+                add_to_watchlist(ip, f"AbuseIPDB confidence {score}% — auto-flagged threat", added_by="threatintel")
+            except Exception:
+                pass
         return cached
 
     data = _fetch_from_abuseipdb(ip)
@@ -120,12 +181,22 @@ def lookup_ip(ip: str) -> dict:
 
     score = data.get("abuseConfidenceScore", 0)
 
-    # Auto-add to watchlist if confidence >= 75%, but respect manual removals
-    if score >= 75 and not is_ip_watchlisted(ip) and not was_watchlist_manually_removed(ip):
+    # Auto-add to watchlist if confidence >= 75%
+    # For high-confidence threats we override manual removals — the IP is dangerous
+    if score >= 75 and not is_ip_watchlisted(ip):
         try:
+            if was_watchlist_manually_removed(ip):
+                clear_watchlist_removed(ip)
             add_to_watchlist(ip, f"AbuseIPDB confidence {score}% — auto-flagged threat", added_by="threatintel")
         except Exception:
             pass
+
+    # Auto-create a Threat Intelligence incident if score >= 75
+    if score >= 75:
+        try:
+            _ensure_ti_incident(ip, score, data)
+        except Exception as e:
+            logger.warning(f"Failed to create TI incident for {ip}: {e}")
 
     # Build category list from verbose reports
     cat_ids = list({
@@ -150,8 +221,12 @@ def lookup_ip(ip: str) -> dict:
 
 
 @router.get("/{ip}")
-def get_threat_intel(ip: str, current_user: dict = Depends(get_current_user)):
-    return lookup_ip(ip)
+async def get_threat_intel(ip: str, current_user: dict = Depends(get_current_user)):
+    result = lookup_ip(ip)
+    score = result.get("abuse_score", 0)
+    if score >= 75:
+        await _broadcast_watchlist(ip)
+    return result
 
 
 class BulkRequest(BaseModel):
@@ -159,9 +234,15 @@ class BulkRequest(BaseModel):
 
 
 @router.post("/bulk")
-def bulk_threat_intel(body: BulkRequest, current_user: dict = Depends(get_current_user)):
+async def bulk_threat_intel(body: BulkRequest, current_user: dict = Depends(get_current_user)):
     results = {}
+    broadcast_ips = []
     for ip in body.ips[:20]:  # cap at 20 to protect quota
         if ip:
-            results[ip] = lookup_ip(ip)
+            r = lookup_ip(ip)
+            results[ip] = r
+            if r.get("abuse_score", 0) >= 75:
+                broadcast_ips.append(ip)
+    for ip in broadcast_ips:
+        await _broadcast_watchlist(ip)
     return results

@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo, useCallback } from 'react'
-import { RefreshCw, X, ChevronDown, MessageSquare, Send, Download, Search, FileText, ShieldAlert, ShieldCheck, ShieldOff, CheckSquare, Square, Copy, Check, Zap, AlertTriangle } from 'lucide-react'
+import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
+import { RefreshCw, X, ChevronDown, MessageSquare, Send, Download, Search, FileText, ShieldAlert, ShieldCheck, ShieldOff, CheckSquare, Square, Copy, Check, Zap, AlertTriangle, Play, Loader2 } from 'lucide-react'
 import { api, token } from '../api'
 import { Panel } from '../components/Panel'
 import { Badge, severityFromScore } from '../components/Badge'
@@ -73,6 +73,8 @@ function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistCha
   const [showSoar, setShowSoar]         = useState(false)
   const [copiedCmd, setCopiedCmd]       = useState(null)
   const [loggedCmds, setLoggedCmds]     = useState(new Set())
+  const [runningCmd, setRunningCmd]     = useState(null)
+  const [runResult, setRunResult]       = useState(null)
   const me = token.user()
 
   useEffect(() => {
@@ -119,6 +121,21 @@ function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistCha
   async function logExecuted(label, idx) {
     await api.logSoarExecuted(id, label)
     setLoggedCmds(prev => new Set([...prev, idx]))
+  }
+
+  async function runCmd(cmd, label, idx) {
+    setRunningCmd(idx)
+    try {
+      const result = await api.soarExecute(cmd, id, label)
+      setRunResult({ label, ...result })
+      if (result.exit_code === 0) {
+        setLoggedCmds(prev => new Set([...prev, idx]))
+      }
+    } catch (err) {
+      setRunResult({ label, stdout: '', stderr: err.message || 'Execution failed', exit_code: -1, success: false })
+    } finally {
+      setRunningCmd(null)
+    }
   }
 
   async function toggleWatchlist() {
@@ -406,6 +423,15 @@ function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistCha
                             {copiedCmd === i ? <Check size={9} className="text-green-400" /> : <Copy size={9} />}
                             {copiedCmd === i ? 'Copied' : 'Copy'}
                           </button>
+                          <button
+                            onClick={() => runCmd(c.cmd, c.label, i)}
+                            disabled={runningCmd !== null}
+                            title="Auto-execute via SSH"
+                            className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded border border-blue-500/30 text-blue-400 hover:bg-blue-500/10 hover:border-blue-400 disabled:opacity-40 transition-colors"
+                          >
+                            {runningCmd === i ? <Loader2 size={9} className="animate-spin" /> : <Play size={9} />}
+                            {runningCmd === i ? 'Running…' : 'Run'}
+                          </button>
                           {!loggedCmds.has(i) && (
                             <button
                               onClick={() => logExecuted(c.label, i)}
@@ -422,6 +448,49 @@ function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistCha
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* SOAR Run Result Modal */}
+          {runResult && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4" onClick={() => setRunResult(null)}>
+              <div className="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-lg shadow-2xl" onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between px-5 py-3 border-b border-[#30363d]">
+                  <div className="flex items-center gap-2">
+                    {runResult.success
+                      ? <Check size={14} className="text-green-400" />
+                      : <X size={14} className="text-red-400" />}
+                    <span className="text-sm font-semibold text-white">Command Result</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full border font-mono ${
+                      runResult.exit_code === 0
+                        ? 'bg-green-500/10 border-green-500/20 text-green-400'
+                        : 'bg-red-500/10 border-red-500/20 text-red-400'
+                    }`}>exit {runResult.exit_code}</span>
+                  </div>
+                  <button onClick={() => setRunResult(null)} className="text-slate-500 hover:text-slate-300"><X size={14} /></button>
+                </div>
+                <div className="px-5 py-3">
+                  <p className="text-xs text-slate-500 mb-2 font-mono">{runResult.label}</p>
+                  {runResult.stdout && (
+                    <div className="mb-3">
+                      <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">stdout</p>
+                      <pre className="bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-xs font-mono text-green-300 overflow-x-auto whitespace-pre-wrap max-h-48 overflow-y-auto">{runResult.stdout}</pre>
+                    </div>
+                  )}
+                  {runResult.stderr && (
+                    <div>
+                      <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">stderr</p>
+                      <pre className="bg-[#0d1117] border border-[#30363d] rounded-lg px-3 py-2 text-xs font-mono text-red-300 overflow-x-auto whitespace-pre-wrap max-h-32 overflow-y-auto">{runResult.stderr}</pre>
+                    </div>
+                  )}
+                  {!runResult.stdout && !runResult.stderr && (
+                    <p className="text-xs text-slate-500 italic">No output</p>
+                  )}
+                </div>
+                <div className="px-5 py-3 border-t border-[#30363d] flex justify-end">
+                  <button onClick={() => setRunResult(null)} className="text-sm text-slate-400 hover:text-slate-200 transition-colors">Close</button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -548,6 +617,8 @@ export function Incidents() {
     } catch (_) {}
   }
 
+  const loadRef = useRef(null)
+
   async function load() {
     setLoading(true)
     const params = filter ? { status: filter } : {}
@@ -562,7 +633,44 @@ export function Incidents() {
     } finally { setLoading(false) }
   }
 
+  loadRef.current = load
+
   useEffect(() => { load(); loadWatchlist() }, [filter])
+
+  useEffect(() => {
+    let ws
+    let dead = false
+    let pingTimer
+
+    function connect() {
+      if (dead) return
+      const proto = window.location.protocol === 'https:' ? 'wss' : 'ws'
+      ws = new WebSocket(`${proto}://${window.location.hostname}:8000/api/live/ws`)
+      ws.onopen = () => {
+        pingTimer = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) ws.send('ping')
+        }, 20000)
+      }
+      ws.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data)
+          if (msg.type === 'incident') loadRef.current?.()
+        } catch (_) {}
+      }
+      ws.onclose = () => {
+        clearInterval(pingTimer)
+        if (!dead) setTimeout(connect, 3000)
+      }
+      ws.onerror = () => ws.close()
+    }
+
+    connect()
+    return () => {
+      dead = true
+      clearInterval(pingTimer)
+      ws?.close()
+    }
+  }, [])
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase()

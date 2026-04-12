@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { ShieldOff, Trash2, RefreshCw, Plus, X } from 'lucide-react'
 import { api, token } from '../api'
 import { Panel } from '../components/Panel'
@@ -20,6 +20,8 @@ export function Watchlist() {
   const [error, setError]       = useState('')
   const me = token.user()
 
+  const loadRef = useRef(null)
+
   async function load() {
     setLoading(true)
     try {
@@ -28,7 +30,44 @@ export function Watchlist() {
     } finally { setLoading(false) }
   }
 
+  loadRef.current = load
+
   useEffect(() => { load() }, [])
+
+  useEffect(() => {
+    let ws
+    let dead = false
+    let pingTimer
+
+    function connect() {
+      if (dead) return
+      const proto = window.location.protocol === 'https:' ? 'wss' : 'ws'
+      ws = new WebSocket(`${proto}://${window.location.hostname}:8000/api/live/ws`)
+      ws.onopen = () => {
+        pingTimer = setInterval(() => {
+          if (ws.readyState === WebSocket.OPEN) ws.send('ping')
+        }, 20000)
+      }
+      ws.onmessage = (e) => {
+        try {
+          const msg = JSON.parse(e.data)
+          if (msg.type === 'watchlist') loadRef.current?.()
+        } catch (_) {}
+      }
+      ws.onclose = () => {
+        clearInterval(pingTimer)
+        if (!dead) setTimeout(connect, 3000)
+      }
+      ws.onerror = () => ws.close()
+    }
+
+    connect()
+    return () => {
+      dead = true
+      clearInterval(pingTimer)
+      ws?.close()
+    }
+  }, [])
 
   async function remove(ip) {
     setRemoving(ip)

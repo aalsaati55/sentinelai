@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Mail, Save, Send, CheckCircle, XCircle, Settings as SettingsIcon } from 'lucide-react'
+import { Mail, Save, Send, CheckCircle, XCircle, Settings as SettingsIcon, Terminal, Wifi, WifiOff } from 'lucide-react'
 import { Panel } from '../components/Panel'
+import { api, token } from '../api'
 
 const BASE = '/api'
 
@@ -33,6 +34,15 @@ export function Settings() {
   const [msg, setMsg]           = useState(null)   // { type: 'success'|'error', text }
   const [configured, setConfigured] = useState(false)
 
+  const me = token.user()
+  const isAdmin = me?.role === 'admin'
+
+  const [ssh, setSsh]               = useState({ host: '', port: 22, username: '', key_path: '' })
+  const [sshSaving, setSshSaving]   = useState(false)
+  const [sshTesting, setSshTesting] = useState(false)
+  const [sshMsg, setSshMsg]         = useState(null)
+  const [sshConfigured, setSshConfigured] = useState(false)
+
   useEffect(() => {
     apiFetch('/settings/email')
       .then(data => {
@@ -41,6 +51,15 @@ export function Settings() {
       })
       .catch(() => {})
       .finally(() => setLoading(false))
+
+    if (isAdmin) {
+      api.sshConfigGet()
+        .then(data => {
+          setSsh(s => ({ ...s, ...data }))
+          setSshConfigured(!!(data.host && data.username))
+        })
+        .catch(() => {})
+    }
   }, [])
 
   async function handleSave(e) {
@@ -70,6 +89,30 @@ export function Settings() {
     } finally { setTesting(false) }
   }
 
+  async function handleSshSave(e) {
+    e.preventDefault()
+    setSshSaving(true)
+    setSshMsg(null)
+    try {
+      await api.sshConfigSave(ssh)
+      setSshMsg({ type: 'success', text: 'SSH config saved.' })
+      setSshConfigured(!!(ssh.host && ssh.username))
+    } catch (err) {
+      setSshMsg({ type: 'error', text: err.message })
+    } finally { setSshSaving(false) }
+  }
+
+  async function handleSshTest() {
+    setSshTesting(true)
+    setSshMsg(null)
+    try {
+      const res = await api.sshConfigTest()
+      setSshMsg({ type: 'success', text: `Connected! ${res.output ? res.output : 'SSH OK'}` })
+    } catch (err) {
+      setSshMsg({ type: 'error', text: err.message || 'Connection failed' })
+    } finally { setSshTesting(false) }
+  }
+
   function field(label, key, type = 'text', placeholder = '') {
     return (
       <div key={key}>
@@ -97,6 +140,72 @@ export function Settings() {
         <h2 className="text-xl font-bold text-white mb-1">Settings</h2>
         <p className="text-sm text-slate-500">Configure email alerts and system preferences — admin only</p>
       </div>
+
+      {isAdmin && (
+        <Panel title="SOAR Auto-Execute — SSH Config">
+          <div className="flex items-center gap-2 mb-5">
+            {sshConfigured
+              ? <><Wifi size={14} className="text-green-400" /><span className="text-xs text-green-400 font-medium">SSH configured — SOAR auto-execute enabled</span></>
+              : <><WifiOff size={14} className="text-slate-600" /><span className="text-xs text-slate-600">Not configured — fill in SSH details to enable auto-execute</span></>
+            }
+          </div>
+          <form onSubmit={handleSshSave} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1.5">Target Host (Ubuntu IP)</label>
+                <input type="text" value={ssh.host} onChange={e => setSsh(s => ({ ...s, host: e.target.value }))} placeholder="192.168.56.130"
+                  className="w-full bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-blue-500 placeholder-slate-600" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1.5">SSH Port</label>
+                <input type="number" value={ssh.port} onChange={e => setSsh(s => ({ ...s, port: Number(e.target.value) }))} placeholder="22"
+                  className="w-full bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-blue-500 placeholder-slate-600" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1.5">Username</label>
+                <input type="text" value={ssh.username} onChange={e => setSsh(s => ({ ...s, username: e.target.value }))} placeholder="majeed"
+                  className="w-full bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-blue-500 placeholder-slate-600" />
+              </div>
+              <div>
+                <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1.5">SSH Private Key Path (on SIEM server)</label>
+                <input type="text" value={ssh.key_path} onChange={e => setSsh(s => ({ ...s, key_path: e.target.value }))} placeholder="~/.ssh/id_rsa (leave blank to use SSH agent)"
+                  className="w-full bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-blue-500 placeholder-slate-600" />
+              </div>
+            </div>
+
+            {sshMsg && (
+              <div className={`flex items-start gap-2 rounded-lg px-4 py-3 text-sm ${
+                sshMsg.type === 'success'
+                  ? 'bg-green-500/10 border border-green-500/20 text-green-400'
+                  : 'bg-red-500/10 border border-red-500/20 text-red-400'
+              }`}>
+                {sshMsg.type === 'success' ? <CheckCircle size={14} className="mt-0.5 shrink-0" /> : <XCircle size={14} className="mt-0.5 shrink-0" />}
+                <span className="break-all">{sshMsg.text}</span>
+              </div>
+            )}
+
+            <div className="flex gap-3 pt-2">
+              <button type="submit" disabled={sshSaving}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
+                <Save size={14} />{sshSaving ? 'Saving…' : 'Save SSH Config'}
+              </button>
+              <button type="button" onClick={handleSshTest} disabled={sshTesting || !sshConfigured}
+                className="flex items-center gap-2 bg-[#1c2128] border border-[#30363d] hover:border-green-500 disabled:opacity-40 text-slate-300 text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
+                <Terminal size={14} />{sshTesting ? 'Testing…' : 'Test Connection'}
+              </button>
+            </div>
+          </form>
+          <div className="mt-5 border-t border-[#30363d] pt-4">
+            <p className="text-xs text-slate-600 mb-2">Setup passwordless SSH from the SIEM server to Ubuntu:</p>
+            <ol className="text-xs text-slate-600 space-y-1 list-decimal list-inside">
+              <li>On Windows SIEM: <code className="text-slate-400">ssh-keygen -t rsa -b 4096</code></li>
+              <li>Copy key to Ubuntu: <code className="text-slate-400">ssh-copy-id majeed@192.168.56.130</code></li>
+              <li>Set key path above to <code className="text-slate-400">~/.ssh/id_rsa</code> (or full Windows path)</li>
+              <li>Click Test Connection to verify</li>
+            </ol>
+          </div>
+        </Panel>
+      )}
 
       <Panel title="Email Alert Settings">
         <div className="flex items-center gap-2 mb-5">

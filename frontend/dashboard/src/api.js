@@ -154,6 +154,27 @@ export const api = {
   mttdMttr:           () => get(`/dashboard/mttd-mttr`),
   teamActivity:       () => get(`/dashboard/team-activity`),
 
+  // SOAR auto-execute
+  soarExecute: (command, incidentId, label) => fetch(`${BASE}/soar/execute`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ command, incident_id: incidentId, label }),
+  }).then(r => r.json()),
+  sshConfigGet: () => get('/soar/ssh-config'),
+  sshConfigSave: (cfg) => fetch(`${BASE}/soar/ssh-config`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(cfg),
+  }).then(r => r.json()),
+  sshConfigTest: () => fetch(`${BASE}/soar/ssh-test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
+  }).then(async r => {
+    const data = await r.json()
+    if (!r.ok) throw new Error(data.detail || 'Connection failed')
+    return data
+  }),
+
   // SOAR audit log
   logSoarExecuted: (incidentId, label) => fetch(`${BASE}/audit`, {
     method: 'POST',

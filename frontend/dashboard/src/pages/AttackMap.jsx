@@ -42,13 +42,18 @@ function Tooltip({ point, pos }) {
         </div>
       </div>
       <div className="space-y-1 text-[11px]">
+        {point.from_ti && (
+          <div className="flex items-center gap-1 mb-1.5 px-2 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 w-fit">
+            <span className="text-purple-400 font-semibold">⚠ Threat Intelligence</span>
+          </div>
+        )}
         <div className="flex justify-between">
           <span className="text-slate-500">IP</span>
           <code className="text-slate-300 font-mono">{point.ip}</code>
         </div>
         <div className="flex justify-between">
           <span className="text-slate-500">Alerts</span>
-          <span className="text-white font-semibold">{point.alert_count}</span>
+          <span className="text-white font-semibold">{point.alert_count || '—'}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-slate-500">Severity</span>
@@ -160,6 +165,10 @@ export function AttackMap() {
                 <span className="capitalize">{sev}</span>
               </div>
             ))}
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#a855f7' }} />
+              <span>Threat Intel</span>
+            </div>
           </div>
         </div>
 
@@ -203,15 +212,15 @@ export function AttackMap() {
             {/* Attack dots */}
             {points.map((point, i) => {
               const { x, y } = latLonToXY(point.lat, point.lon)
-              const color = SEV_COLOR[point.severity] || '#6366f1'
+              const color = point.from_ti ? '#a855f7' : (SEV_COLOR[point.severity] || '#6366f1')
               const r = point.severity === 'critical' ? 6 :
                         point.severity === 'high'     ? 5 :
                         point.severity === 'medium'   ? 4 : 3
               const isHovered = hovered === i
               return (
                 <g key={i}>
-                  {/* Pulse ring for critical/high */}
-                  {(point.severity === 'critical' || point.severity === 'high') && (
+                  {/* Pulse ring for critical/high/TI */}
+                  {(point.severity === 'critical' || point.severity === 'high' || point.from_ti) && (
                     <circle
                       cx={x} cy={y}
                       r={isHovered ? r + 8 : r + 5}
@@ -226,7 +235,7 @@ export function AttackMap() {
                     r={isHovered ? r + 2 : r}
                     fill={color}
                     opacity={isHovered ? 1 : 0.85}
-                    style={{ cursor: 'pointer', filter: isHovered ? `drop-shadow(${SEV_GLOW[point.severity]})` : undefined }}
+                    style={{ cursor: 'pointer', filter: isHovered ? `drop-shadow(0 0 8px ${color}aa)` : undefined }}
                     onMouseEnter={() => setHovered(i)}
                     onMouseLeave={() => setHovered(null)}
                   />
@@ -257,7 +266,7 @@ export function AttackMap() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left">
-                    {['Flag', 'IP', 'Country', 'City', 'ISP', 'Alerts', 'Severity'].map(h => (
+                    {['Flag', 'IP', 'Country', 'City', 'ISP', 'Alerts', 'Severity', 'Source'].map(h => (
                       <th key={h} className="pb-2 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">{h}</th>
                     ))}
                   </tr>
@@ -284,9 +293,15 @@ export function AttackMap() {
                         <td className="py-2.5 pr-4 text-slate-400 text-xs">{p.city || '—'}</td>
                         <td className="py-2.5 pr-4 text-slate-500 text-xs max-w-[180px] truncate">{p.isp || '—'}</td>
                         <td className="py-2.5 pr-4">
-                          <span className="text-xs font-semibold text-white bg-white/10 px-2 py-0.5 rounded-full">{p.alert_count}</span>
+                          <span className="text-xs font-semibold text-white bg-white/10 px-2 py-0.5 rounded-full">{p.alert_count || '—'}</span>
                         </td>
-                        <td className="py-2.5"><Badge value={p.severity} /></td>
+                        <td className="py-2.5 pr-4"><Badge value={p.severity} /></td>
+                        <td className="py-2.5">
+                          {p.from_ti
+                            ? <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 font-semibold">Threat Intel</span>
+                            : <span className="text-[10px] text-slate-600">Alerts</span>
+                          }
+                        </td>
                       </tr>
                     ))}
                 </tbody>
