@@ -63,6 +63,9 @@ function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistCha
   const [assignedTo, setAssignedTo] = useState('')
   const [assigning, setAssigning] = useState(false)
   const [showReport, setShowReport] = useState(false)
+  const noteInputRef = useRef(null)
+  const [mentionQuery, setMentionQuery] = useState(null) // null = closed, string = filter text
+  const [mentionStart, setMentionStart] = useState(-1)  // caret position of the '@'
   const [playbook, setPlaybook]   = useState(null)
   const [checkedSteps, setCheckedSteps] = useState({})
   const [showPlaybook, setShowPlaybook] = useState(false)
@@ -169,9 +172,56 @@ function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistCha
       const note = await api.addNote(id, newNote.trim())
       setNotes(prev => [...prev, note])
       setNewNote('')
+      setMentionQuery(null)
       onNoteAdded?.(id)
     } finally { setAddingNote(false) }
   }
+
+  function handleNoteChange(e) {
+    const val = e.target.value
+    setNewNote(val)
+    const pos = e.target.selectionStart
+    // Find the start of the current @word
+    const textBefore = val.slice(0, pos)
+    const match = textBefore.match(/@([a-zA-Z0-9_\-]*)$/)
+    if (match) {
+      setMentionQuery(match[1].toLowerCase())
+      setMentionStart(pos - match[0].length)
+    } else {
+      setMentionQuery(null)
+    }
+  }
+
+  function handleNoteKeyDown(e) {
+    if (mentionQuery !== null && e.key === 'Escape') {
+      setMentionQuery(null)
+      e.preventDefault()
+    }
+  }
+
+  function insertMention(username) {
+    const input = noteInputRef.current
+    const pos = input.selectionStart
+    const before = newNote.slice(0, mentionStart)
+    const after = newNote.slice(pos)
+    const inserted = `@${username} `
+    const next = before + inserted + after
+    setNewNote(next)
+    setMentionQuery(null)
+    // Restore focus + move caret after inserted text
+    setTimeout(() => {
+      input.focus()
+      const newPos = mentionStart + inserted.length
+      input.setSelectionRange(newPos, newPos)
+    }, 0)
+  }
+
+  const mentionSuggestions = mentionQuery !== null
+    ? analysts.filter(u =>
+        u.username !== me?.username &&
+        u.username.toLowerCase().startsWith(mentionQuery)
+      ).slice(0, 6)
+    : []
 
   async function save() {
     setSaving(true)
@@ -516,14 +566,36 @@ function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistCha
             )}
 
             {/* Add note form */}
-            <form onSubmit={submitNote} className="flex gap-2">
-              <input
-                type="text"
-                value={newNote}
-                onChange={e => setNewNote(e.target.value)}
-                placeholder="Add investigation note…"
-                className="flex-1 bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 outline-none focus:border-blue-500 placeholder-slate-600"
-              />
+            <form onSubmit={submitNote} className="flex gap-2 relative">
+              <div className="flex-1 relative">
+                <input
+                  ref={noteInputRef}
+                  type="text"
+                  value={newNote}
+                  onChange={handleNoteChange}
+                  onKeyDown={handleNoteKeyDown}
+                  placeholder="Add investigation note… (type @ to mention)"
+                  className="w-full bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 outline-none focus:border-blue-500 placeholder-slate-600"
+                />
+                {mentionSuggestions.length > 0 && (
+                  <div className="absolute bottom-full mb-1 left-0 w-56 bg-[#1c2128] border border-[#30363d] rounded-lg shadow-2xl z-50 overflow-hidden">
+                    {mentionSuggestions.map(u => (
+                      <button
+                        key={u.id}
+                        type="button"
+                        onMouseDown={e => { e.preventDefault(); insertMention(u.username) }}
+                        className="w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-white/5 transition-colors"
+                      >
+                        <span className="w-6 h-6 rounded-full bg-blue-600/30 flex items-center justify-center text-[10px] font-bold text-blue-400 shrink-0">
+                          {u.username[0].toUpperCase()}
+                        </span>
+                        <span className="text-sm text-slate-200 font-medium">@{u.username}</span>
+                        <span className="ml-auto text-[10px] text-slate-500 capitalize">{u.role}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <button
                 type="submit"
                 disabled={addingNote || !newNote.trim()}
