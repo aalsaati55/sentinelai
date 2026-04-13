@@ -64,6 +64,8 @@ A full-stack AI-assisted SIEM (Security Information and Event Management) protot
 ### Dashboard & Visualisation
 - **GeoIP enrichment** — every source IP resolved to country + city via `ip-api.com` with in-memory caching; flag emoji and city shown in Alerts and Incidents tables
 - **Attack Map** — live world map showing attacker source IPs as colour-coded dots (Critical = red, High = orange, Medium = yellow, Low = green); Threat Intelligence IPs shown as **purple** markers with a ⚠ badge
+- **Attack Map zoom & pan** — scroll to zoom up to 12×; drag to pan; "Reset Zoom" button appears in the toolbar when zoomed in; hint text shown at default zoom; all gestures are crash-proof (DOM-based transform with zero React re-renders during interaction)
+- **Attack Map local GeoJSON rendering** — world landmasses rendered from a local `world.geojson` file as SVG paths; no external image dependency; equirectangular projection perfectly aligned with the GeoIP coordinate system
 - **Attack Map TI integration** — high-abuse IPs from the threat intel cache appear on the map alongside alert IPs, with a Source column distinguishing `Threat Intel` from `Alerts`
 - **Attack Map legend** — purple Threat Intel entry added to the map legend
 - **Risk trend sparkline** — Overview page shows average and peak risk scores over the last 7 days
@@ -88,12 +90,23 @@ A full-stack AI-assisted SIEM (Security Information and Event Management) protot
 - **Watchlist badge** — 🚫 icon shown next to watchlisted IPs in the Alerts and Incidents tables
 - **Audit logging** — all watchlist additions and removals recorded in audit log
 
+### Multi-Factor Authentication (MFA)
+- **TOTP-based MFA** — industry-standard RFC 6238 Time-based One-Time Passwords; compatible with Google Authenticator, Authy, and any TOTP app
+- **QR code setup** — Settings page generates a scannable QR code; manual base32 secret key also shown for manual entry
+- **Activation confirmation** — MFA is only activated after the user enters a valid TOTP code from their authenticator app, ensuring the setup succeeded
+- **Two-step login flow** — when MFA is enabled, the login endpoint returns a short-lived 5-minute challenge token; the dashboard shows a dedicated TOTP screen; the full session JWT is only issued after a correct code is submitted
+- **Disable requires verification** — disabling MFA requires entering a valid current code, preventing accidental or unauthorised lockout
+- **Per-user** — any user (admin or analyst) can independently enable/disable MFA on their own account from the Settings page
+- **Audit logged** — MFA enable and disable events are recorded in the audit log with username and timestamp
+- **Zero external dependencies** — powered by `pyotp`; no third-party auth service required
+
 ### User & Admin Features
 - **FastAPI REST backend** — full CRUD endpoints for events, alerts, incidents, dashboard stats, GeoIP, threat intel, and SOAR
 - **JWT authentication** — register/login with bcrypt password hashing; first user auto-assigned admin role
+- **Multi-factor authentication** — TOTP MFA available to all users (see MFA section above)
 - **Role-based access** — `admin` (full access) and `analyst` (read + update incidents)
 - **Rule suppression** — admins can suppress noisy rules directly from the Alerts page
-- **Audit log** — tracks all actions: status changes, assignments, role changes, note additions, watchlist add/remove, SOAR executed — filterable by action type with CSV export
+- **Audit log** — tracks all actions: status changes, assignments, role changes, note additions, watchlist add/remove, SOAR executed, MFA changes — filterable by action type with CSV export
 - **Email alerting** — High and Critical incidents trigger email notifications via SMTP
 - **Browser notifications** — Critical and High alerts fire desktop notifications when the tab is in the background
 - **Copy IP button** — one-click clipboard copy next to every source IP in Alerts and Incidents tables
@@ -112,7 +125,7 @@ sentinelai/
 ├── backend/
 │   ├── main.py                  # FastAPI entry point + startup
 │   ├── config.py                # Constants: paths, thresholds, severity bands
-│   ├── auth.py                  # JWT + bcrypt auth, user CRUD
+│   ├── auth.py                  # JWT + bcrypt auth, user CRUD, TOTP MFA helpers
 │   ├── collector.py             # Reads log files, dispatches to parsers
 │   ├── parser_auth.py           # Parses /var/log/auth.log
 │   ├── parser_syslog.py         # Parses /var/log/syslog (UFW, cron, syslog)
@@ -129,7 +142,7 @@ sentinelai/
 │   ├── schemas.py               # Pydantic API models
 │   ├── utils.py                 # Shared utilities
 │   └── routers/
-│       ├── auth.py              # /api/auth — register, login, me, users
+│       ├── auth.py              # /api/auth — register, login, me, users, MFA endpoints
 │       ├── dashboard.py         # /api/dashboard — summary, charts, MTTD/MTTR, team activity
 │       ├── events.py            # /api/events
 │       ├── alerts.py            # /api/alerts + rule suppression
@@ -363,8 +376,10 @@ ALERT_EMAILS=soc@yourorg.com,analyst@yourorg.com
 | Export incident PDF report | ✅ | ✅ |
 | View watchlist | ✅ | ✅ |
 | View audit log | ✅ | ✅ |
+| Enable / disable MFA on own account | ✅ | ✅ |
 | Add / remove watchlist entries | ❌ | ✅ |
 | Suppress detection rules | ❌ | ✅ |
+| Configure SSH auto-execute | ❌ | ✅ |
 | View all users | ❌ | ✅ |
 | Manage user accounts | ❌ | ✅ |
 
@@ -375,11 +390,12 @@ ALERT_EMAILS=soc@yourorg.com,analyst@yourorg.com
 | Layer | Technology |
 |-------|-----------|
 | Backend | Python 3.10+, FastAPI, SQLite |
-| Auth | JWT (python-jose), bcrypt (passlib) |
+| Auth | JWT (python-jose), bcrypt (passlib), TOTP MFA (pyotp) |
 | ML | Isolation Forest (scikit-learn), StandardScaler |
 | GeoIP | ip-api.com (HTTP, in-memory cache) |
 | Frontend | React 18, Vite, Tailwind CSS, Recharts, Lucide Icons |
 | Real-time | WebSocket (FastAPI), log agent (`tail -F` + HTTP POST), debounced reload |
 | Notifications | Browser Notifications API (desktop alerts for Critical/High) |
 | SSH Automation | paramiko (SOAR auto-execute) |
+| MFA | pyotp (RFC 6238 TOTP) |
 | Testing | pytest (137 tests) |

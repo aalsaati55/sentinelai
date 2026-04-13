@@ -15,6 +15,10 @@ const ADMIN_NAV = [
   { id: 'settings', label: 'Settings',  Icon: Settings },
 ]
 
+const ALL_USERS_NAV = [
+  { id: 'settings', label: 'Settings',  Icon: Settings },
+]
+
 export function Sidebar({ page, setPage, userRole }) {
   return (
     <aside className="w-56 shrink-0 bg-[#161b22] border-r border-[#30363d] flex flex-col">
@@ -49,6 +53,29 @@ export function Sidebar({ page, setPage, userRole }) {
           <>
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-700 px-3 pt-4 pb-1">Admin</p>
             {ADMIN_NAV.map(({ id, label, Icon }) => {
+              const active = page === id
+              return (
+                <button
+                  key={id}
+                  onClick={() => setPage(id)}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all
+                    ${active
+                      ? 'bg-purple-500/15 text-purple-400 border border-purple-500/20'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
+                    }`}
+                >
+                  <Icon size={16} />
+                  {label}
+                </button>
+              )
+            })}
+          </>
+        )}
+
+        {userRole !== 'admin' && (
+          <>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-700 px-3 pt-4 pb-1">Account</p>
+            {ALL_USERS_NAV.map(({ id, label, Icon }) => {
               const active = page === id
               return (
                 <button
