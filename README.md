@@ -106,7 +106,10 @@ A full-stack AI-assisted SIEM (Security Information and Event Management) protot
 - **Multi-factor authentication** — TOTP MFA available to all users (see MFA section above)
 - **Role-based access** — `admin` (full access) and `analyst` (read + update incidents)
 - **Rule suppression** — admins can suppress noisy rules directly from the Alerts page
-- **Audit log** — tracks all actions: status changes, assignments, role changes, note additions, watchlist add/remove, SOAR executed, MFA changes — filterable by action type with CSV export
+- **Alert Tuning page** — dedicated `/alert-tuning` page (admin only) to adjust detection thresholds and suppress rules without touching code; changes persist in the database across restarts
+- **False positive marking** — analysts can mark any alert or incident as a false positive with a reason (e.g. "Test / lab traffic", "Known scanner"); FP records are dimmed with a yellow **FP** badge; FP status survives page navigation and restarts
+- **FP filtering** — Alerts and Incidents pages both have an "All / Real attacks only / False positives" dropdown filter so analysts can focus their queue
+- **Audit log** — tracks all actions: status changes, assignments, role changes, note additions, watchlist add/remove, SOAR executed, MFA changes, FP marked/cleared — filterable by action type with CSV export
 - **Email alerting** — High and Critical incidents trigger email notifications via SMTP
 - **Browser notifications** — Critical and High alerts fire desktop notifications when the tab is in the background
 - **Copy IP button** — one-click clipboard copy next to every source IP in Alerts and Incidents tables
@@ -145,7 +148,8 @@ sentinelai/
 │       ├── auth.py              # /api/auth — register, login, me, users, MFA endpoints
 │       ├── dashboard.py         # /api/dashboard — summary, charts, MTTD/MTTR, team activity
 │       ├── events.py            # /api/events
-│       ├── alerts.py            # /api/alerts + rule suppression
+│       ├── alerts.py            # /api/alerts + rule suppression + false positive marking
+│       ├── tuning.py            # /api/tuning — threshold overrides + suppress per rule
 │       ├── incidents.py         # /api/incidents + notes + assignment
 │       ├── geoip.py             # /api/geoip — lookup, bulk, attack map IPs
 │       ├── audit.py             # /api/audit — audit log + CSV export + POST logging
@@ -172,7 +176,8 @@ sentinelai/
 │               ├── Register.jsx
 │               ├── Overview.jsx         # MTTD/MTTR cards, team activity, risk trend
 │               ├── Incidents.jsx        # Threat intel panel, SOAR commands, playbook
-│               ├── Alerts.jsx           # Threat badges, MITRE tags, rule filter, GeoIP
+│               ├── Alerts.jsx           # Threat badges, MITRE tags, rule filter, GeoIP, FP marking
+│               ├── AlertTuning.jsx      # Alert tuning UI (thresholds + suppress)
 │               ├── Events.jsx
 │               ├── AttackMap.jsx        # Live world map + attacker table
 │               ├── Watchlist.jsx        # IP watchlist management page
@@ -276,6 +281,33 @@ python -m pytest tests/ -v
 
 ---
 
+## Alert Tuning & False Positive Triage
+
+SentinelAI separates three analyst tools for managing alert quality:
+
+| Tool | Purpose | Effect on future alerts |
+|------|---------|------------------------|
+| **False Positive** | Label a specific alert/incident as not a real threat | None — new alerts still generate |
+| **Suppress rule** | Silence a rule entirely | Alerts from that rule are hidden |
+| **Threshold tuning** | Raise/lower the count needed to fire a rule | Changes when the rule fires |
+
+### False Positive workflow
+1. Click the **ShieldOff** icon on any alert/incident row
+2. Pick a reason from the modal (e.g. "Test / lab traffic")
+3. Click **Confirm** — the row immediately dims with a yellow **FP** badge
+4. Use the **False positives** dropdown filter to review all FP records
+5. Click the yellow icon again to clear the FP label
+
+> Marking an alert as FP does **not** prevent the same rule from firing again. Use rule suppression or threshold tuning to prevent future alerts.
+
+### Alert Tuning page (`/alert-tuning`)
+- **Threshold-tunable rules** — adjust the count/hour threshold for brute force, enumeration, sudo failures, port scans, and suspicious login time
+- **Event-based rules** — suppress-only controls for rules that fire on a single event (success after failures, privilege escalation, reverse shell, etc.)
+- All changes persist in the database; displayed with an **Overridden** badge when non-default
+- Reset any rule back to its default with one click
+
+---
+
 ## Detection Rules
 
 | Rule | Severity | Trigger condition |
@@ -374,11 +406,14 @@ ALERT_EMAILS=soc@yourorg.com,analyst@yourorg.com
 | Update incident status, add notes | ✅ | ✅ |
 | Assign incidents | ✅ | ✅ |
 | Export incident PDF report | ✅ | ✅ |
+| Mark alerts / incidents as false positive | ✅ | ✅ |
+| Filter alerts / incidents by FP status | ✅ | ✅ |
 | View watchlist | ✅ | ✅ |
 | View audit log | ✅ | ✅ |
 | Enable / disable MFA on own account | ✅ | ✅ |
 | Add / remove watchlist entries | ❌ | ✅ |
 | Suppress detection rules | ❌ | ✅ |
+| Tune alert thresholds (Alert Tuning page) | ❌ | ✅ |
 | Configure SSH auto-execute | ❌ | ✅ |
 | View all users | ❌ | ✅ |
 | Manage user accounts | ❌ | ✅ |
