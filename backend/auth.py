@@ -21,6 +21,12 @@ from fastapi.security import OAuth2PasswordBearer
 from storage import get_connection
 from utils import now_iso
 
+try:
+    import pyotp
+    _PYOTP_AVAILABLE = True
+except ImportError:
+    _PYOTP_AVAILABLE = False
+
 logger = logging.getLogger(__name__)
 
 # ── Config ────────────────────────────────────────────────────
@@ -43,9 +49,19 @@ CREATE TABLE IF NOT EXISTS users (
 );
 """
 
+MFA_MIGRATIONS = [
+    "ALTER TABLE users ADD COLUMN totp_secret TEXT",
+    "ALTER TABLE users ADD COLUMN mfa_enabled INTEGER NOT NULL DEFAULT 0",
+]
+
 def init_users_table() -> None:
     with get_connection() as conn:
         conn.executescript(USERS_SCHEMA)
+        for sql in MFA_MIGRATIONS:
+            try:
+                conn.execute(sql)
+            except Exception:
+                pass
     logger.info("Users table ready.")
 
 
@@ -119,6 +135,42 @@ def authenticate_user(username: str, password: str) -> Optional[dict]:
     if not verify_password(password, user["hashed_pw"]):
         return None
     return user
+
+
+# ── MFA helpers ───────────────────────────────────────────────
+
+def generate_totp_secret() -> str:
+    if not _PYOTP_AVAILABLE:
+        raise HTTPException(status_code=500, detail="pyotp not installed — run: pip install pyotp")
+    return pyotp.random_base32()
+
+
+def get_totp_uri(secret: str, username: str) -> str:
+    if not _PYOTP_AVAILABLE:
+        raise HTTPException(status_code=500, detail="pyotp not installed")
+    return pyotp.totp.TOTP(secret).provisioning_uri(name=username, issuer_name="SentinelAI")
+
+
+def verify_totp(secret: str, code: str) -> bool:
+    if not _PYOTP_AVAILABLE:
+        return False
+    totp = pyotp.TOTP(secret)
+    return totp.verify(code, valid_window=1)
+
+
+def save_totp_secret(user_id: int, secret: str) -> None:
+    with get_connection() as conn:
+        conn.execute("UPDATE users SET totp_secret = ? WHERE id = ?", (secret, user_id))
+
+
+def enable_mfa(user_id: int) -> None:
+    with get_connection() as conn:
+        conn.execute("UPDATE users SET mfa_enabled = 1 WHERE id = ?", (user_id,))
+
+
+def disable_mfa(user_id: int) -> None:
+    with get_connection() as conn:
+        conn.execute("UPDATE users SET mfa_enabled = 0, totp_secret = NULL WHERE id = ?", (user_id,))
 
 
 # ── JWT ───────────────────────────────────────────────────────

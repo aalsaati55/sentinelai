@@ -18,6 +18,8 @@ from auth import (
     create_user, authenticate_user, create_access_token,
     get_current_user, get_all_users, get_user_by_id,
     get_user_by_username, update_user_role, delete_user, count_users,
+    generate_totp_secret, get_totp_uri, verify_totp,
+    save_totp_secret, enable_mfa, disable_mfa,
 )
 from storage import add_audit_log
 
@@ -79,6 +81,18 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     username: str
     role: str
+    mfa_required: bool = False
+    mfa_token: Optional[str] = None
+
+class MfaConfirmRequest(BaseModel):
+    mfa_token: str
+    code: str
+
+class MfaVerifyRequest(BaseModel):
+    code: str
+
+class MfaDisableRequest(BaseModel):
+    code: str
 
 class UserOut(BaseModel):
     id: int
@@ -129,6 +143,23 @@ def login(form: OAuth2PasswordRequestForm = Depends()):
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    # If MFA is enabled, return a short-lived MFA challenge token instead of a full session token
+    if user.get("mfa_enabled"):
+        mfa_token = create_access_token(
+            {"sub": user["username"], "role": user["role"], "mfa_pending": True},
+            expires_delta=__import__('datetime').timedelta(minutes=5),
+        )
+        logger.info(f"MFA challenge issued for: {user['username']}")
+        return {
+            "access_token": "",
+            "token_type":   "bearer",
+            "username":     user["username"],
+            "role":         user["role"],
+            "mfa_required": True,
+            "mfa_token":    mfa_token,
+        }
+
     token = create_access_token({"sub": user["username"], "role": user["role"]})
     logger.info(f"User logged in: {user['username']}")
     return {
@@ -170,6 +201,82 @@ def change_role(user_id: int, body: UpdateRoleRequest, current_user: dict = Depe
     add_audit_log(current_user["username"], "role_change", "user", user_id, f"{user['username']} role → {body.role}")
     logger.info(f"Admin {current_user['username']} changed user {user_id} role to {body.role}")
     return updated
+
+
+# ── MFA Endpoints ─────────────────────────────────────────────
+
+@router.post("/mfa/confirm", response_model=TokenResponse)
+def mfa_confirm(body: MfaConfirmRequest):
+    """Exchange MFA challenge token + TOTP code for a full session token."""
+    from auth import decode_token
+    try:
+        payload = decode_token(body.mfa_token)
+    except Exception:
+        raise HTTPException(status_code=401, detail="Invalid or expired MFA token")
+    if not payload.get("mfa_pending"):
+        raise HTTPException(status_code=400, detail="Not an MFA challenge token")
+    username = payload.get("sub")
+    user = get_user_by_username(username)
+    if not user or not user.get("totp_secret"):
+        raise HTTPException(status_code=401, detail="MFA not configured")
+    if not verify_totp(user["totp_secret"], body.code.strip()):
+        raise HTTPException(status_code=401, detail="Invalid authenticator code")
+    token = create_access_token({"sub": user["username"], "role": user["role"]})
+    logger.info(f"MFA verified, user logged in: {user['username']}")
+    return {
+        "access_token": token,
+        "token_type":   "bearer",
+        "username":     user["username"],
+        "role":         user["role"],
+    }
+
+
+@router.post("/mfa/setup")
+def mfa_setup(current_user: dict = Depends(get_current_user)):
+    """Generate a new TOTP secret and return the QR provisioning URI."""
+    if current_user.get("mfa_enabled"):
+        raise HTTPException(status_code=400, detail="MFA is already enabled")
+    secret = generate_totp_secret()
+    save_totp_secret(current_user["id"], secret)
+    uri = get_totp_uri(secret, current_user["username"])
+    return {"secret": secret, "uri": uri}
+
+
+@router.post("/mfa/enable")
+def mfa_enable(body: MfaVerifyRequest, current_user: dict = Depends(get_current_user)):
+    """Confirm TOTP code to activate MFA on the account."""
+    user = get_user_by_username(current_user["username"])
+    if not user or not user.get("totp_secret"):
+        raise HTTPException(status_code=400, detail="Run /mfa/setup first")
+    if user.get("mfa_enabled"):
+        raise HTTPException(status_code=400, detail="MFA already enabled")
+    if not verify_totp(user["totp_secret"], body.code.strip()):
+        raise HTTPException(status_code=401, detail="Invalid authenticator code")
+    enable_mfa(current_user["id"])
+    add_audit_log(current_user["username"], "mfa_enabled", "user", current_user["id"], "MFA enabled")
+    logger.info(f"MFA enabled for {current_user['username']}")
+    return {"detail": "MFA enabled successfully"}
+
+
+@router.post("/mfa/disable")
+def mfa_disable(body: MfaDisableRequest, current_user: dict = Depends(get_current_user)):
+    """Disable MFA — requires current TOTP code to confirm."""
+    user = get_user_by_username(current_user["username"])
+    if not user or not user.get("mfa_enabled"):
+        raise HTTPException(status_code=400, detail="MFA is not enabled")
+    if not verify_totp(user["totp_secret"], body.code.strip()):
+        raise HTTPException(status_code=401, detail="Invalid authenticator code")
+    disable_mfa(current_user["id"])
+    add_audit_log(current_user["username"], "mfa_disabled", "user", current_user["id"], "MFA disabled")
+    logger.info(f"MFA disabled for {current_user['username']}")
+    return {"detail": "MFA disabled"}
+
+
+@router.get("/mfa/status")
+def mfa_status(current_user: dict = Depends(get_current_user)):
+    """Return current MFA status for the logged-in user."""
+    user = get_user_by_username(current_user["username"])
+    return {"mfa_enabled": bool(user.get("mfa_enabled")), "username": user["username"]}
 
 
 @router.delete("/users/{user_id}", status_code=204)

@@ -223,6 +223,24 @@ export const api = {
   },
   me: () => get('/auth/me'),
 
+  // MFA
+  mfaStatus:  () => get('/auth/mfa/status'),
+  mfaSetup:   () => fetch(`${BASE}/auth/mfa/setup`, { method: 'POST', headers: authHeaders() }).then(async r => {
+    const d = await r.json(); if (!r.ok) throw new Error(d.detail || 'Failed'); return d
+  }),
+  mfaEnable:  (code) => fetch(`${BASE}/auth/mfa/enable`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ code }),
+  }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.detail || 'Failed'); return d }),
+  mfaDisable: (code) => fetch(`${BASE}/auth/mfa/disable`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ code }),
+  }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.detail || 'Failed'); return d }),
+  mfaConfirm: (mfa_token, code) => fetch(`${BASE}/auth/mfa/confirm`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ mfa_token, code }),
+  }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.detail || 'Failed'); return d }),
+
   // User management (admin only)
   users:          () => get('/auth/users'),
   changeRole:     (id, role) => patch(`/auth/users/${id}/role`, { role }),
