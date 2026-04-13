@@ -102,6 +102,27 @@ export const api = {
     const a = document.createElement('a'); a.href = url; a.download = 'audit_log.csv'; a.click(); URL.revokeObjectURL(url)
   },
 
+  // Alert Tuning
+  tuningRules:      () => get('/tuning/rules'),
+  tuningThresholds: () => get('/tuning/thresholds'),
+  tuningSetThreshold: (rule_name, threshold) => fetch(`${BASE}/tuning/thresholds`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ rule_name, threshold }),
+  }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.detail || 'Failed'); return d }),
+  tuningResetThreshold: (rule_name) => fetch(`${BASE}/tuning/thresholds/${encodeURIComponent(rule_name)}`, {
+    method: 'DELETE', headers: authHeaders(),
+  }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.detail || 'Failed'); return d }),
+
+  // False positive
+  markAlertFP: (id, false_positive, reason = '') => fetch(`${BASE}/alerts/${id}/false-positive`, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ false_positive, reason }),
+  }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.detail || 'Failed'); return d }),
+  markIncidentFP: (id, false_positive, reason = '') => fetch(`${BASE}/incidents/${id}/false-positive`, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ false_positive, reason }),
+  }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.detail || 'Failed'); return d }),
+
   // Suppression
   suppressedRules:  () => get('/suppression'),
   suppressRule:     (rule_name, reason = '') => {

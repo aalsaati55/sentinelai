@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
-import { RefreshCw, ChevronDown, Download, Search, VolumeX, Volume2, Copy, Check } from 'lucide-react'
+import { RefreshCw, ChevronDown, Download, Search, VolumeX, Volume2, Copy, Check, ShieldOff, ShieldCheck } from 'lucide-react'
 import { api, token } from '../api'
 
 import { Panel } from '../components/Panel'
@@ -43,6 +43,9 @@ export function Alerts() {
   const [geoMap, setGeoMap]         = useState({})
   const [watchlistedIps, setWatchlistedIps] = useState(new Set())
   const [tiMap, setTiMap]           = useState({})
+  const [fpFilter, setFpFilter]     = useState('all') // 'all' | 'real' | 'fp'
+  const [fpPending, setFpPending]   = useState(null)  // { id, current } — awaiting reason pick
+  const [fpReason, setFpReason]     = useState('')
   const me = token.user()
 
   const loadSuppressed = useCallback(async () => {
@@ -116,6 +119,15 @@ export function Alerts() {
     }
   }, [])
 
+  async function markFP(alertId, isFP, reason = '') {
+    try {
+      const updated = await api.markAlertFP(alertId, isFP, reason)
+      setAlerts(prev => prev.map(a => a.id === alertId ? { ...a, false_positive: updated.false_positive, fp_reason: updated.fp_reason } : a))
+    } catch (_) {}
+    setFpPending(null)
+    setFpReason('')
+  }
+
   async function toggleSuppress(ruleName) {
     setSuppressing(ruleName)
     try {
@@ -133,13 +145,15 @@ export function Alerts() {
   const filtered = useMemo(() => {
     let result = alerts
     if (ruleFilter) result = result.filter(a => a.rule_name === ruleFilter)
+    if (fpFilter === 'real') result = result.filter(a => !a.false_positive)
+    if (fpFilter === 'fp')   result = result.filter(a =>  a.false_positive)
     const q = search.trim().toLowerCase()
     if (q) result = result.filter(a =>
       (a.rule_name   || '').toLowerCase().includes(q) ||
       (a.description || '').toLowerCase().includes(q)
     )
     return result
-  }, [alerts, search, ruleFilter])
+  }, [alerts, search, ruleFilter, fpFilter])
 
   return (
     <div className="space-y-5">
@@ -202,6 +216,19 @@ export function Alerts() {
             <Download size={13} />
             Export CSV
           </button>
+          {/* FP filter */}
+          <div className="relative">
+            <select
+              value={fpFilter}
+              onChange={e => setFpFilter(e.target.value)}
+              className="appearance-none bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 pr-8 outline-none focus:border-blue-500 cursor-pointer"
+            >
+              <option value="all">All alerts</option>
+              <option value="real">Real attacks only</option>
+              <option value="fp">False positives</option>
+            </select>
+            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+          </div>
           <span className="text-xs text-slate-500">{filtered.length} alert{filtered.length !== 1 ? 's' : ''}</span>
         </div>
 
@@ -210,7 +237,7 @@ export function Alerts() {
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left">
-                {['#', 'Rule', 'MITRE ATT&CK', 'Severity', 'Risk Score', 'Anomaly Level', 'Source', 'Description', 'Created'].map(h => (
+                {['#', 'Rule', 'MITRE ATT&CK', 'Severity', 'Risk Score', 'Anomaly Level', 'Source', 'Description', 'Created', ''].map(h => (
                   <th key={h} className="pb-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">{h}</th>
                 ))}
               </tr>
@@ -228,15 +255,21 @@ export function Alerts() {
                 const geo = a.source_ip ? geoMap[a.source_ip] : null
                 const flag = geo?.country_code ? countryFlag(geo.country_code) : null
                 return (
-                  <tr key={a.id} className={`border-t border-[#30363d] transition-colors ${suppressed.has(a.rule_name) ? 'opacity-40' : 'hover:bg-white/[0.02]'}`}>
+                  <tr key={a.id} className={`border-t border-[#30363d] transition-colors ${
+                    !!a.false_positive ? 'opacity-50 bg-slate-500/5' :
+                    suppressed.has(a.rule_name) ? 'opacity-40' : 'hover:bg-white/[0.02]'
+                  }`}>
                     <td className="py-3 pr-4 text-slate-500 text-xs">{a.id}</td>
                     <td className="py-3 pr-4">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <code className="text-xs bg-[#1c2128] border border-[#30363d] px-2 py-0.5 rounded text-slate-300 font-mono">
                           {a.rule_name}
                         </code>
                         {suppressed.has(a.rule_name) && (
                           <span className="text-[10px] text-slate-500 border border-[#30363d] px-1.5 py-0.5 rounded">suppressed</span>
+                        )}
+                        {!!a.false_positive && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-yellow-500/10 border-yellow-500/30 text-yellow-400" title={a.fp_reason || 'False positive'}>FP</span>
                         )}
                       </div>
                     </td>
@@ -287,22 +320,40 @@ export function Alerts() {
                       <span className="truncate block" title={a.description}>{a.description}</span>
                     </td>
                     <td className="py-3 text-slate-500 text-xs whitespace-nowrap">{fmtTs(a.created_at)}</td>
-                    {me?.role === 'admin' && (
-                      <td className="py-3 pl-2">
+                    <td className="py-3 pl-2">
+                      <div className="flex items-center gap-1">
+                        {/* False positive toggle — all users */}
                         <button
-                          onClick={() => toggleSuppress(a.rule_name)}
-                          disabled={suppressing === a.rule_name}
-                          title={suppressed.has(a.rule_name) ? 'Unsuppress rule' : 'Suppress rule'}
+                          onClick={() => {
+                            if (a.false_positive) { markFP(a.id, false) }
+                            else { setFpPending({ id: a.id }); setFpReason('') }
+                          }}
+                          title={!!a.false_positive ? `FP: ${a.fp_reason || 'false positive'} — click to clear` : 'Mark as false positive'}
                           className={`p-1.5 rounded transition-colors ${
-                            suppressed.has(a.rule_name)
-                              ? 'text-slate-500 hover:text-green-400 hover:bg-green-500/10'
-                              : 'text-slate-500 hover:text-red-400 hover:bg-red-500/10'
+                            !!a.false_positive
+                              ? 'text-yellow-400 bg-yellow-500/10 hover:bg-yellow-500/20'
+                              : 'text-slate-500 hover:text-yellow-400 hover:bg-yellow-500/10'
                           }`}
                         >
-                          {suppressed.has(a.rule_name) ? <Volume2 size={13} /> : <VolumeX size={13} />}
+                          <ShieldOff size={13} />
                         </button>
-                      </td>
-                    )}
+                        {/* Suppress — admin only */}
+                        {me?.role === 'admin' && (
+                          <button
+                            onClick={() => toggleSuppress(a.rule_name)}
+                            disabled={suppressing === a.rule_name}
+                            title={suppressed.has(a.rule_name) ? 'Unsuppress rule' : 'Suppress rule'}
+                            className={`p-1.5 rounded transition-colors ${
+                              suppressed.has(a.rule_name)
+                                ? 'text-slate-500 hover:text-green-400 hover:bg-green-500/10'
+                                : 'text-slate-500 hover:text-red-400 hover:bg-red-500/10'
+                            }`}
+                          >
+                            {suppressed.has(a.rule_name) ? <Volume2 size={13} /> : <VolumeX size={13} />}
+                          </button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 )
               })}
@@ -310,6 +361,53 @@ export function Alerts() {
           </table>
         </div>
       </Panel>
+
+      {/* FP Reason Modal */}
+      {fpPending && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-sm p-5 space-y-4">
+            <h3 className="text-white font-semibold text-sm">Mark as False Positive</h3>
+            <p className="text-slate-500 text-xs">Select the reason this alert is not a real threat:</p>
+            <div className="space-y-2">
+              {[
+                'Known scanner / security tool',
+                'Internal service activity',
+                'Misconfigured rule',
+                'Test / lab traffic',
+                'Authorized admin activity',
+                'Other',
+              ].map(r => (
+                <button
+                  key={r}
+                  onClick={() => setFpReason(r)}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm border transition-colors ${
+                    fpReason === r
+                      ? 'bg-yellow-500/15 border-yellow-500/40 text-yellow-300'
+                      : 'bg-[#1c2128] border-[#30363d] text-slate-300 hover:border-yellow-500/30'
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => markFP(fpPending.id, true, fpReason)}
+                disabled={!fpReason}
+                className="flex-1 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-white text-sm font-semibold py-2 rounded-lg transition-colors"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => { setFpPending(null); setFpReason('') }}
+                className="flex-1 bg-[#1c2128] border border-[#30363d] text-slate-300 text-sm py-2 rounded-lg hover:border-slate-500 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

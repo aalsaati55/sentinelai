@@ -48,6 +48,15 @@ from config import (
     PORT_SCAN_THRESHOLD,
 )
 
+def _get_threshold(rule_name: str, default: int) -> int:
+    """Return the DB-overridden threshold for rule_name, or the config default."""
+    try:
+        from storage import get_rule_thresholds
+        overrides = {r["rule_name"]: r["threshold"] for r in get_rule_thresholds()}
+        return overrides.get(rule_name, default)
+    except Exception:
+        return default
+
 # Patterns in cron command strings that indicate a reverse shell / C2 callback
 _REVERSE_SHELL_INDICATORS = (
     "/dev/tcp", "/dev/udp",
@@ -165,7 +174,7 @@ def rule_brute_force_ssh(session: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     Base risk: 30
     """
     count = session.get("failed_login_count", 0)
-    if count < BRUTE_FORCE_THRESHOLD:
+    if count < _get_threshold("brute_force_ssh", BRUTE_FORCE_THRESHOLD):
         return None
 
     description = (
@@ -192,7 +201,7 @@ def rule_invalid_user_enumeration(session: Dict[str, Any]) -> Optional[Dict[str,
     """
     # Use cross-session IP total so different fake usernames accumulate
     count = session.get("ip_invalid_user_count", 0) or session.get("invalid_user_count", 0)
-    if count < INVALID_USER_THRESHOLD:
+    if count < _get_threshold("invalid_user_enumeration", INVALID_USER_THRESHOLD):
         return None
 
     # Only fire on the session that actually has invalid_user events (avoid duplicate alerts)
@@ -246,7 +255,7 @@ def rule_suspicious_login_time(session: Dict[str, Any]) -> Optional[Dict[str, An
     Base risk: 15
     """
     hour = session.get("activity_hour", 12)
-    is_suspicious = (hour >= SUSPICIOUS_HOUR_START) or (hour < SUSPICIOUS_HOUR_END)
+    is_suspicious = (hour >= _get_threshold("suspicious_login_time", SUSPICIOUS_HOUR_START)) or (hour < SUSPICIOUS_HOUR_END)
 
     if not is_suspicious:
         return None
@@ -423,10 +432,10 @@ def rule_port_scan_detected(session: Dict[str, Any]) -> Optional[Dict[str, Any]]
     # Prefer cross-batch IP total; fall back to single-session count
     unique_ports = session.get("ip_unique_ports_scanned") or session.get("unique_ports_scanned", 0)
 
-    MEDIUM_THRESHOLD = 3
-    HIGH_THRESHOLD   = 8
+    MEDIUM_THRESHOLD = _get_threshold("port_scan_detected", PORT_SCAN_THRESHOLD) // 2
+    HIGH_THRESHOLD   = _get_threshold("port_scan_detected", PORT_SCAN_THRESHOLD)
 
-    if unique_ports < MEDIUM_THRESHOLD:
+    if unique_ports < max(MEDIUM_THRESHOLD, 3):
         return None
 
     count = session.get("port_scan_count", 0)
@@ -462,7 +471,7 @@ def rule_repeated_sudo_failures(session: Dict[str, Any]) -> Optional[Dict[str, A
     Base risk: 50
     """
     count = session.get("sudo_failure_count", 0)
-    if count < SUDO_FAILURE_THRESHOLD:
+    if count < _get_threshold("repeated_sudo_failures", SUDO_FAILURE_THRESHOLD):
         return None
 
     description = (

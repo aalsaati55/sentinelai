@@ -32,6 +32,7 @@ from routers import geoip as geoip_router
 from routers.watchlist import router as watchlist_router, playbook_router, soar_router
 from routers.threatintel import router as threatintel_router
 from routers import soar_execute as soar_execute_router
+from routers import tuning as tuning_router
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -70,6 +71,7 @@ app.include_router(playbook_router)
 app.include_router(soar_router)
 app.include_router(soar_execute_router.router)
 app.include_router(threatintel_router)
+app.include_router(tuning_router.router)
 
 
 # ── Health check ─────────────────────────────────────────────

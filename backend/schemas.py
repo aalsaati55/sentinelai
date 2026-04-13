@@ -40,6 +40,8 @@ class AlertSchema(BaseModel):
     source_ip:         Optional[str]   = None
     username:          Optional[str]   = None
     created_at:        Optional[str]   = None
+    false_positive:    Optional[int]   = 0
+    fp_reason:         Optional[str]   = None
 
     class Config:
         from_attributes = True
@@ -57,6 +59,8 @@ class IncidentSchema(BaseModel):
     assigned_to:   Optional[str] = None
     created_at:    Optional[str] = None
     note_count:    Optional[int] = 0
+    false_positive: Optional[int] = 0
+    fp_reason:      Optional[str] = None
 
     class Config:
         from_attributes = True

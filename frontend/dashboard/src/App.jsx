@@ -9,6 +9,7 @@ import { Settings } from './pages/Settings'
 import { AuditLog } from './pages/AuditLog'
 import { AttackMap } from './pages/AttackMap'
 import { Watchlist } from './pages/Watchlist'
+import { AlertTuning } from './pages/AlertTuning'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { token } from './api'
@@ -78,6 +79,7 @@ function App() {
     users:     <Users />,
     settings:  <Settings />,
     audit:     <AuditLog />,
+    tuning:    <AlertTuning />,
   }
 
   return (

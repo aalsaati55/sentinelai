@@ -168,6 +168,14 @@ CREATE TABLE IF NOT EXISTS user_notifications (
 );
 
 CREATE INDEX IF NOT EXISTS idx_user_notifs_username ON user_notifications(username, created_at);
+
+CREATE TABLE IF NOT EXISTS rule_thresholds (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    rule_name   TEXT    NOT NULL UNIQUE,
+    threshold   INTEGER NOT NULL,
+    updated_by  TEXT    NOT NULL,
+    updated_at  TEXT    NOT NULL
+);
 """
 
 
@@ -187,6 +195,10 @@ def init_db() -> None:
             "ALTER TABLE alerts ADD COLUMN username TEXT",
             "ALTER TABLE watchlist ADD COLUMN alert_count INTEGER NOT NULL DEFAULT 1",
             "ALTER TABLE threat_intel_cache ADD COLUMN is_tor INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE alerts ADD COLUMN false_positive INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE alerts ADD COLUMN fp_reason TEXT",
+            "ALTER TABLE incidents ADD COLUMN false_positive INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE incidents ADD COLUMN fp_reason TEXT",
         ]:
             try:
                 conn.execute(sql)
@@ -719,6 +731,61 @@ def save_ssh_config(host: str, port: int, username: str, key_path: str) -> Dict[
             (host, port, username, key_path, now_iso()),
         )
     return get_ssh_config()
+
+
+# ──────────────────────────────────────────────
+# False Positive helpers
+# ──────────────────────────────────────────────
+
+def mark_alert_false_positive(alert_id: int, fp: bool, reason: str = "") -> Optional[Dict[str, Any]]:
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE alerts SET false_positive = ?, fp_reason = ? WHERE id = ?",
+            (1 if fp else 0, reason if fp else None, alert_id),
+        )
+        row = conn.execute("SELECT * FROM alerts WHERE id = ?", (alert_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def mark_incident_false_positive(incident_id: int, fp: bool, reason: str = "") -> Optional[Dict[str, Any]]:
+    with get_connection() as conn:
+        conn.execute(
+            "UPDATE incidents SET false_positive = ?, fp_reason = ? WHERE id = ?",
+            (1 if fp else 0, reason if fp else None, incident_id),
+        )
+        row = conn.execute("SELECT * FROM incidents WHERE id = ?", (incident_id,)).fetchone()
+    return dict(row) if row else None
+
+
+# ──────────────────────────────────────────────
+# Rule Thresholds
+# ──────────────────────────────────────────────
+
+def get_rule_thresholds() -> List[Dict[str, Any]]:
+    with get_connection() as conn:
+        rows = conn.execute("SELECT * FROM rule_thresholds ORDER BY rule_name").fetchall()
+    return [dict(r) for r in rows]
+
+
+def set_rule_threshold(rule_name: str, threshold: int, updated_by: str) -> Dict[str, Any]:
+    with get_connection() as conn:
+        conn.execute(
+            """INSERT INTO rule_thresholds (rule_name, threshold, updated_by, updated_at)
+               VALUES (?, ?, ?, ?)
+               ON CONFLICT(rule_name) DO UPDATE SET
+                   threshold=excluded.threshold,
+                   updated_by=excluded.updated_by,
+                   updated_at=excluded.updated_at""",
+            (rule_name, threshold, updated_by, now_iso()),
+        )
+        row = conn.execute("SELECT * FROM rule_thresholds WHERE rule_name = ?", (rule_name,)).fetchone()
+    return dict(row)
+
+
+def delete_rule_threshold(rule_name: str) -> bool:
+    with get_connection() as conn:
+        cur = conn.execute("DELETE FROM rule_thresholds WHERE rule_name = ?", (rule_name,))
+    return cur.rowcount > 0
 
 
 # ──────────────────────────────────────────────

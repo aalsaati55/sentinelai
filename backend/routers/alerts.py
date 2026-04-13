@@ -11,7 +11,8 @@ from fastapi import APIRouter, HTTPException, Query, Depends
 from fastapi.responses import StreamingResponse
 from typing import List, Optional
 
-from storage import get_alerts, count_alerts, get_connection
+from pydantic import BaseModel
+from storage import get_alerts, count_alerts, get_connection, mark_alert_false_positive, add_audit_log
 from schemas import AlertSchema
 from auth import get_current_user
 
@@ -55,3 +56,18 @@ def get_alert(alert_id: int):
     if row is None:
         raise HTTPException(status_code=404, detail="Alert not found")
     return dict(row)
+
+
+class FalsePositiveRequest(BaseModel):
+    false_positive: bool
+    reason: Optional[str] = ""
+
+
+@router.patch("/{alert_id}/false-positive")
+def set_false_positive(alert_id: int, body: FalsePositiveRequest, current_user: dict = Depends(get_current_user)):
+    row = mark_alert_false_positive(alert_id, body.false_positive, body.reason or "")
+    if row is None:
+        raise HTTPException(status_code=404, detail="Alert not found")
+    action = "fp_marked" if body.false_positive else "fp_cleared"
+    add_audit_log(current_user["username"], action, "alert", alert_id, body.reason or "")
+    return row

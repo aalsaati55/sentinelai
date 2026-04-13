@@ -51,7 +51,7 @@ function CopyIpButton({ ip }) {
   )
 }
 
-function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistChange, onNoteAdded }) {
+function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistChange, onNoteAdded, onFpChange }) {
   const [inc, setInc]         = useState(null)
   const [status, setStatus]   = useState('')
   const [saving, setSaving]   = useState(false)
@@ -78,6 +78,8 @@ function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistCha
   const [loggedCmds, setLoggedCmds]     = useState(new Set())
   const [runningCmd, setRunningCmd]     = useState(null)
   const [runResult, setRunResult]       = useState(null)
+  const [fpPending, setFpPending]       = useState(false)
+  const [fpReason, setFpReason]         = useState('')
   const me = token.user()
 
   useEffect(() => {
@@ -152,6 +154,16 @@ function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistCha
       }
       onWatchlistChange?.()
     } finally { setWatchlisting(false) }
+  }
+
+  async function markFP(isFP, reason = '') {
+    try {
+      const updated = await api.markIncidentFP(id, isFP, reason)
+      setInc(prev => ({ ...prev, false_positive: updated.false_positive, fp_reason: updated.fp_reason }))
+      onFpChange?.(id, isFP, reason)
+    } catch (_) {}
+    setFpPending(false)
+    setFpReason('')
   }
 
   async function saveAssign() {
@@ -668,6 +680,53 @@ function IncidentModal({ id, onClose, watchlistedIps = new Set(), onWatchlistCha
         </div>
       </div>
     </div>
+
+      {/* FP Reason Modal */}
+      {fpPending && (
+        <div className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4">
+          <div className="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-sm p-5 space-y-4">
+            <h3 className="text-white font-semibold text-sm">Mark Incident as False Positive</h3>
+            <p className="text-slate-500 text-xs">Select the reason this incident is not a real threat:</p>
+            <div className="space-y-2">
+              {[
+                'Known scanner / security tool',
+                'Internal service activity',
+                'Misconfigured rule',
+                'Test / lab traffic',
+                'Authorized admin activity',
+                'Other',
+              ].map(r => (
+                <button
+                  key={r}
+                  onClick={() => setFpReason(r)}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm border transition-colors ${
+                    fpReason === r
+                      ? 'bg-yellow-500/15 border-yellow-500/40 text-yellow-300'
+                      : 'bg-[#1c2128] border-[#30363d] text-slate-300 hover:border-yellow-500/30'
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => markFP(true, fpReason)}
+                disabled={!fpReason}
+                className="flex-1 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-white text-sm font-semibold py-2 rounded-lg transition-colors"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => { setFpPending(false); setFpReason('') }}
+                className="flex-1 bg-[#1c2128] border border-[#30363d] text-slate-300 text-sm py-2 rounded-lg hover:border-slate-500 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
@@ -676,6 +735,9 @@ export function Incidents() {
   const [incidents, setIncidents]     = useState([])
   const [selected, setSelected]       = useState(null)
   const [filter, setFilter]           = useState('')
+  const [fpFilter, setFpFilter]       = useState('all') // 'all' | 'real' | 'fp'
+  const [fpPending, setFpPending]     = useState(null)  // incident id awaiting reason
+  const [fpReason, setFpReason]       = useState('')
   const [search, setSearch]           = useState('')
   const [loading, setLoading]         = useState(true)
   const [geoMap, setGeoMap]           = useState({})
@@ -749,23 +811,41 @@ export function Incidents() {
   }, [])
 
   const filtered = useMemo(() => {
+    let result = incidents
+    if (fpFilter === 'real') result = result.filter(i => !i.false_positive)
+    if (fpFilter === 'fp')   result = result.filter(i =>  !!i.false_positive)
     const q = search.trim().toLowerCase()
-    if (!q) return incidents
-    return incidents.filter(i =>
+    if (!q) return result
+    return result.filter(i =>
       (i.title      || '').toLowerCase().includes(q) ||
       (i.source_ip  || '').toLowerCase().includes(q) ||
       (i.username   || '').toLowerCase().includes(q)
     )
-  }, [incidents, search])
+  }, [incidents, search, fpFilter])
 
   function handleModalClose(refresh) {
     setSelected(null)
     if (refresh) load()
   }
 
+  function handleFpChange(incId, fp, reason) {
+    setIncidents(prev => prev.map(i =>
+      i.id === incId ? { ...i, false_positive: fp ? 1 : 0, fp_reason: reason } : i
+    ))
+  }
+
+  async function markFP(incId, isFP, reason = '') {
+    try {
+      await api.markIncidentFP(incId, isFP, reason)
+      handleFpChange(incId, isFP, reason)
+    } catch (_) {}
+    setFpPending(null)
+    setFpReason('')
+  }
+
   return (
     <div className="space-y-5">
-      {selected && <IncidentModal id={selected} onClose={handleModalClose} watchlistedIps={watchlistedIps} onWatchlistChange={loadWatchlist} onNoteAdded={incId => setIncidents(prev => prev.map(i => i.id === incId ? { ...i, note_count: (i.note_count || 0) + 1 } : i))} />}
+      {selected && <IncidentModal id={selected} onClose={handleModalClose} watchlistedIps={watchlistedIps} onWatchlistChange={loadWatchlist} onNoteAdded={incId => setIncidents(prev => prev.map(i => i.id === incId ? { ...i, note_count: (i.note_count || 0) + 1 } : i))} onFpChange={handleFpChange} />}
 
       <div>
         <h2 className="text-xl font-bold text-white mb-1">Incidents</h2>
@@ -812,6 +892,18 @@ export function Incidents() {
             <Download size={13} />
             Export CSV
           </button>
+          <div className="relative">
+            <select
+              value={fpFilter}
+              onChange={e => setFpFilter(e.target.value)}
+              className="appearance-none bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 pr-8 outline-none focus:border-blue-500 cursor-pointer"
+            >
+              <option value="all">All incidents</option>
+              <option value="real">Real attacks only</option>
+              <option value="fp">False positives</option>
+            </select>
+            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+          </div>
           <span className="text-xs text-slate-500">{filtered.length} incident{filtered.length !== 1 ? 's' : ''}</span>
         </div>
 
@@ -829,16 +921,22 @@ export function Incidents() {
               {loading ? (
                 <tr><td colSpan={9} className="py-10 text-center text-slate-500">Loading…</td></tr>
               ) : filtered.length ? filtered.map(i => (
-                <tr key={i.id} className="border-t border-[#30363d] hover:bg-white/[0.02] transition-colors cursor-pointer"
+                <tr key={i.id} className={`border-t border-[#30363d] transition-colors cursor-pointer ${!!i.false_positive ? 'opacity-50 bg-slate-500/5' : 'hover:bg-white/[0.02]'}`}
                     onClick={() => setSelected(i.id)}>
                   <td className="py-3 pr-4 text-slate-500 text-xs">{i.id}</td>
                   <td className="py-3 pr-4 text-slate-200 max-w-[220px]">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="truncate block">{i.title}</span>
                       {i.note_count > 0 && (
                         <span title={`${i.note_count} investigation note${i.note_count !== 1 ? 's' : ''}`}
                           className="shrink-0 flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-blue-500/15 text-blue-400 border border-blue-500/20">
                           <MessageSquare size={9} />{i.note_count}
+                        </span>
+                      )}
+                      {!!i.false_positive && (
+                        <span title={i.fp_reason || 'False positive'}
+                          className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded border bg-yellow-500/10 border-yellow-500/30 text-yellow-400">
+                          FP
                         </span>
                       )}
                     </div>
@@ -881,12 +979,29 @@ export function Incidents() {
                   <td className="py-3 pr-4 text-slate-400 text-xs">{i.assigned_to || <span className="text-slate-700">—</span>}</td>
                   <td className="py-3 pr-4 text-slate-500 text-xs whitespace-nowrap">{fmtTs(i.created_at)}</td>
                   <td className="py-3">
-                    <button
-                      onClick={e => { e.stopPropagation(); setSelected(i.id) }}
-                      className="text-xs text-blue-400 hover:text-blue-300 transition-colors"
-                    >
-                      Details
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={e => { e.stopPropagation(); setSelected(i.id) }}
+                        className="text-xs text-blue-400 hover:text-blue-300 transition-colors whitespace-nowrap"
+                      >
+                        Details
+                      </button>
+                      <button
+                        onClick={e => {
+                          e.stopPropagation()
+                          if (!!i.false_positive) { markFP(i.id, false) }
+                          else { setFpPending(i.id); setFpReason('') }
+                        }}
+                        title={!!i.false_positive ? `FP: ${i.fp_reason || 'false positive'} — click to clear` : 'Mark as false positive'}
+                        className={`p-1 rounded transition-colors ${
+                          !!i.false_positive
+                            ? 'text-yellow-400 bg-yellow-500/10 hover:bg-yellow-500/20'
+                            : 'text-slate-600 hover:text-yellow-400 hover:bg-yellow-500/10'
+                        }`}
+                      >
+                        <ShieldOff size={13} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               )) : (
@@ -898,6 +1013,53 @@ export function Incidents() {
           </table>
         </div>
       </Panel>
+
+      {/* FP Reason Modal */}
+      {fpPending && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-sm p-5 space-y-4">
+            <h3 className="text-white font-semibold text-sm">Mark Incident as False Positive</h3>
+            <p className="text-slate-500 text-xs">Select the reason this incident is not a real threat:</p>
+            <div className="space-y-2">
+              {[
+                'Known scanner / security tool',
+                'Internal service activity',
+                'Misconfigured rule',
+                'Test / lab traffic',
+                'Authorized admin activity',
+                'Other',
+              ].map(r => (
+                <button
+                  key={r}
+                  onClick={() => setFpReason(r)}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm border transition-colors ${
+                    fpReason === r
+                      ? 'bg-yellow-500/15 border-yellow-500/40 text-yellow-300'
+                      : 'bg-[#1c2128] border-[#30363d] text-slate-300 hover:border-yellow-500/30'
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => markFP(fpPending, true, fpReason)}
+                disabled={!fpReason}
+                className="flex-1 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-white text-sm font-semibold py-2 rounded-lg transition-colors"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => { setFpPending(null); setFpReason('') }}
+                className="flex-1 bg-[#1c2128] border border-[#30363d] text-slate-300 text-sm py-2 rounded-lg hover:border-slate-500 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
