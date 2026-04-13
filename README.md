@@ -23,11 +23,17 @@ A full-stack AI-assisted SIEM (Security Information and Event Management) protot
 - **Known Threat badge** — 🔴 Threat badge shown next to source IPs scoring ≥ 75% confidence in Alerts and Incidents tables
 - **Suspicious badge** — ⚠ Suspicious badge shown for IPs scoring 25–74% confidence
 - **24-hour result cache** — AbuseIPDB results cached in the database to minimise API quota usage
-- **Smart auto-watchlisting** — IPs scoring ≥ 75% are automatically added to the watchlist on first discovery; manual removals are respected and not overridden by threat intel re-checks; new live attacks from removed IPs re-trigger watchlisting
+- **Auto-incident creation** — IPs scoring ≥ 75% automatically generate a Threat Intelligence incident (deduplicated — one open incident per IP)
+- **Smart auto-watchlisting** — IPs scoring ≥ 75% are automatically added to the watchlist; if an IP was manually removed and re-checked, threat intel overrides the removal and re-adds it
+- **Real-time watchlist updates** — watchlist page updates instantly via WebSocket when threat intel flags a new high-abuse IP — no refresh required
 
 ### SOAR (Security Orchestration, Automation and Response)
 - **Auto-generated remediation commands** — each incident modal shows a set of ready-to-run Ubuntu shell commands tailored to the specific attack type (brute force, port scan, reverse shell, privilege escalation, etc.)
 - **Real IP and username filled in** — commands are pre-populated with the actual attacker IP and targeted username from the incident
+- **SSH auto-execute** — analysts can click **Run** on any SOAR command to execute it directly on the SIEM's target host via SSH; stdout/stderr shown in a result modal
+- **SSH config panel** — Settings page has a dedicated SSH Config section; host, port, username, and private key path are saved to the database and persist across restarts
+- **Test Connection** — one-click SSH connection test from the Settings page; shows live output from the remote host
+- **Passwordless SSH** — uses RSA key authentication (no password prompts during automated execution)
 - **Copy per command** — one-click copy button for each individual command
 - **Copy All** — copies the full command block at once
 - **Mark as Executed** — analysts can mark commands as executed; logged to the audit trail with username and timestamp
@@ -48,9 +54,18 @@ A full-stack AI-assisted SIEM (Security Information and Event Management) protot
 - **Clickable badges** — technique badges in the Alerts table link directly to the official MITRE ATT&CK page for that technique
 - **Stored in DB** — MITRE technique IDs stored as JSON in the alerts table for querying and export
 
+### Real-time Updates (WebSocket)
+- **Alerts page** — new alerts appear instantly during an attack without any refresh; debounced to avoid hammering the API during Hydra storms
+- **Incidents page** — new incidents (including auto-created Threat Intelligence incidents) appear in real time
+- **Watchlist page** — IP automatically appears when threat intel flags it, no refresh needed
+- **Live feed** — Overview page live event feed streams events and alerts via WebSocket with auto-reconnect and keep-alive ping
+- **Robust WS connections** — all listeners reconnect automatically after 3 seconds if the backend restarts
+
 ### Dashboard & Visualisation
 - **GeoIP enrichment** — every source IP resolved to country + city via `ip-api.com` with in-memory caching; flag emoji and city shown in Alerts and Incidents tables
-- **Attack Map** — live world map showing attacker source IPs as colour-coded dots (Critical = red, High = orange, Medium = yellow, Low = green) with a summary table below
+- **Attack Map** — live world map showing attacker source IPs as colour-coded dots (Critical = red, High = orange, Medium = yellow, Low = green); Threat Intelligence IPs shown as **purple** markers with a ⚠ badge
+- **Attack Map TI integration** — high-abuse IPs from the threat intel cache appear on the map alongside alert IPs, with a Source column distinguishing `Threat Intel` from `Alerts`
+- **Attack Map legend** — purple Threat Intel entry added to the map legend
 - **Risk trend sparkline** — Overview page shows average and peak risk scores over the last 7 days
 - **Overview auto-refresh** — dashboard refreshes every 30 seconds with a live "last updated X seconds ago" countdown
 - **Live feed severity filter** — filter the live event feed by All / Alerts only / Critical / High+ to cut noise during demos
@@ -68,8 +83,8 @@ A full-stack AI-assisted SIEM (Security Information and Event Management) protot
 - **Dedicated Watchlist page** — `/watchlist` route with IP table, reason, added date, added-by, and remove button
 - **Manual watchlist management** — admins can add IPs with a preset reason dropdown or custom reason; removals also supported
 - **Auto-watchlisting** — IPs that trigger Critical/High alerts are automatically added to the watchlist
-- **Threat intel auto-watchlisting** — IPs with AbuseIPDB confidence ≥ 75% are auto-added on first discovery
-- **Smart removal tracking** — manually removed IPs are tracked; threat intel won't re-add them, but new live attacks will
+- **Threat intel auto-watchlisting** — IPs with AbuseIPDB confidence ≥ 75% are auto-added; if manually removed and re-queried, threat intel overrides the removal and re-adds them
+- **Real-time updates** — watchlist page updates live via WebSocket when TI flags a new IP
 - **Watchlist badge** — 🚫 icon shown next to watchlisted IPs in the Alerts and Incidents tables
 - **Audit logging** — all watchlist additions and removals recorded in audit log
 
@@ -122,7 +137,8 @@ sentinelai/
 │       ├── geoip.py             # /api/geoip — lookup, bulk, attack map IPs
 │       ├── audit.py             # /api/audit — audit log + CSV export + POST logging
 │       ├── watchlist.py         # /api/watchlist + playbook + SOAR commands
-│       ├── threatintel.py       # /api/threatintel — AbuseIPDB lookup + cache
+│       ├── threatintel.py       # /api/threatintel — AbuseIPDB lookup + cache + WS broadcast
+│       ├── soar_execute.py      # /api/soar/execute + /ssh-config + /ssh-test
 │       └── live.py              # /api/live/ingest (POST) + /api/live/ws (WS)
 │                                # /api/events/types — distinct event types from DB
 ├── frontend/
@@ -363,6 +379,7 @@ ALERT_EMAILS=soc@yourorg.com,analyst@yourorg.com
 | ML | Isolation Forest (scikit-learn), StandardScaler |
 | GeoIP | ip-api.com (HTTP, in-memory cache) |
 | Frontend | React 18, Vite, Tailwind CSS, Recharts, Lucide Icons |
-| Real-time | WebSocket (FastAPI), log agent (`tail -F` + HTTP POST) |
+| Real-time | WebSocket (FastAPI), log agent (`tail -F` + HTTP POST), debounced reload |
 | Notifications | Browser Notifications API (desktop alerts for Critical/High) |
+| SSH Automation | paramiko (SOAR auto-execute) |
 | Testing | pytest (137 tests) |

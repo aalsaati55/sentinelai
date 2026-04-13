@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { RefreshCw, Globe, AlertTriangle, Wifi } from 'lucide-react'
 import { api } from '../api'
 import { Panel } from '../components/Panel'
@@ -18,12 +18,39 @@ const SEV_GLOW = {
   low:      '0 0 4px #22c55e66',
 }
 
+const W = 1010
+const H = 505
+
 // Convert lat/lon to x/y on an equirectangular projection
-// Map canvas: width=1010, height=505 (standard equirectangular ratio)
-function latLonToXY(lat, lon, w = 1010, h = 505) {
+function latLonToXY(lat, lon, w = W, h = H) {
   const x = (lon + 180) * (w / 360)
   const y = (90 - lat) * (h / 180)
   return { x, y }
+}
+
+// Convert a GeoJSON ring (array of [lon,lat]) to an SVG path string
+function ringToPath(ring) {
+  return ring.map(([lon, lat], i) => {
+    const { x, y } = latLonToXY(lat, lon)
+    return `${i === 0 ? 'M' : 'L'}${x.toFixed(2)},${y.toFixed(2)}`
+  }).join(' ') + ' Z'
+}
+
+// Build one combined SVG path string from a GeoJSON FeatureCollection
+function geojsonToSvgPaths(geojson) {
+  if (!geojson || !geojson.features) return []
+  const paths = []
+  for (const feature of geojson.features) {
+    const { type, coordinates } = feature.geometry
+    if (type === 'Polygon') {
+      paths.push(coordinates.map(ringToPath).join(' '))
+    } else if (type === 'MultiPolygon') {
+      for (const poly of coordinates) {
+        paths.push(poly.map(ringToPath).join(' '))
+      }
+    }
+  }
+  return paths
 }
 
 function Tooltip({ point, pos }) {
@@ -84,8 +111,20 @@ export function AttackMap() {
   const [hovered, setHovered] = useState(null)
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 })
   const [svgSize, setSvgSize] = useState({ w: 1010, h: 505 })
+  const [worldPaths, setWorldPaths] = useState([])
+  const [isZoomed, setIsZoomed] = useState(false)
   const containerRef = useRef(null)
   const svgRef = useRef(null)
+  const groupRef = useRef(null)
+  const dragRef = useRef(null)
+  const xfRef = useRef({ scale: 1, tx: 0, ty: 0 })
+
+  useEffect(() => {
+    fetch('/world.geojson')
+      .then(r => r.json())
+      .then(gj => setWorldPaths(geojsonToSvgPaths(gj)))
+      .catch(() => {})
+  }, [])
 
   async function load() {
     setLoading(true)
@@ -114,8 +153,71 @@ export function AttackMap() {
     return () => ro.disconnect()
   }, [])
 
-  function handleMouseMove(e) {
-    setMousePos({ x: e.clientX, y: e.clientY })
+  function applyTransform() {
+    const { scale, tx, ty } = xfRef.current
+    if (groupRef.current)
+      groupRef.current.setAttribute('transform', `translate(${tx},${ty}) scale(${scale})`)
+    setIsZoomed(scale > 1.01)
+  }
+
+  function resetZoom() {
+    xfRef.current = { scale: 1, tx: 0, ty: 0 }
+    applyTransform()
+  }
+
+  // Attach all gesture listeners once, manipulate DOM directly — zero React re-renders during gesture
+  useEffect(() => {
+    const svg = svgRef.current
+    if (!svg) return
+
+    function onWheel(e) {
+      e.preventDefault()
+      const rect = svg.getBoundingClientRect()
+      const mx = (e.clientX - rect.left) * (1010 / rect.width)
+      const my = (e.clientY - rect.top)  * (505  / rect.height)
+      const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15
+      const t = xfRef.current
+      const newScale = Math.min(12, Math.max(1, t.scale * factor))
+      xfRef.current = {
+        scale: newScale,
+        tx: mx - (mx - t.tx) * (newScale / t.scale),
+        ty: my - (my - t.ty) * (newScale / t.scale),
+      }
+      applyTransform()
+    }
+
+    function onMouseMove(e) {
+      // Only update React state for tooltip when not dragging — avoids re-renders during drag
+      if (!dragRef.current) setMousePos({ x: e.clientX, y: e.clientY })
+      if (!dragRef.current) return
+      const rect = svg.getBoundingClientRect()
+      const scaleX = 1010 / rect.width
+      const scaleY = 505  / rect.height
+      xfRef.current = {
+        ...xfRef.current,
+        tx: dragRef.current.startTx + (e.clientX - dragRef.current.startX) * scaleX,
+        ty: dragRef.current.startTy + (e.clientY - dragRef.current.startY) * scaleY,
+      }
+      applyTransform()
+    }
+
+    function onMouseUp() { dragRef.current = null }
+
+    svg.addEventListener('wheel', onWheel, { passive: false })
+    window.addEventListener('mousemove', onMouseMove)
+    window.addEventListener('mouseup', onMouseUp)
+    return () => {
+      svg.removeEventListener('wheel', onWheel)
+      window.removeEventListener('mousemove', onMouseMove)
+      window.removeEventListener('mouseup', onMouseUp)
+    }
+  }, [])
+
+  function handleMouseDown(e) {
+    dragRef.current = {
+      startX: e.clientX, startY: e.clientY,
+      startTx: xfRef.current.tx, startTy: xfRef.current.ty,
+    }
   }
 
   const criticalCount = points.filter(p => p.severity === 'critical').length
@@ -123,7 +225,7 @@ export function AttackMap() {
   const countries     = new Set(points.map(p => p.country_code)).size
 
   return (
-    <div className="space-y-5" onMouseMove={handleMouseMove}>
+    <div className="space-y-5">
       <div>
         <h2 className="text-xl font-bold text-white mb-1">Attack Map</h2>
         <p className="text-sm text-slate-500">Live geographic view of alert source IPs resolved via GeoIP</p>
@@ -157,6 +259,14 @@ export function AttackMap() {
             <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
             Refresh
           </button>
+          {isZoomed && (
+            <button
+              onClick={resetZoom}
+              className="flex items-center gap-2 bg-[#1c2128] border border-[#30363d] hover:border-red-500 text-slate-400 text-sm px-3 py-2 rounded-lg transition-colors"
+            >
+              Reset Zoom
+            </button>
+          )}
           {/* Legend */}
           <div className="flex items-center gap-4 ml-auto text-xs text-slate-500">
             {Object.entries(SEV_COLOR).map(([sev, color]) => (
@@ -177,24 +287,31 @@ export function AttackMap() {
           ref={containerRef}
           className="relative w-full rounded-xl overflow-hidden bg-[#0d1117] border border-[#30363d]"
           style={{ minHeight: 320 }}
+          onMouseDown={handleMouseDown}
         >
+          {/* Zoom hint */}
+          {!isZoomed && (
+            <div className="absolute bottom-2 right-3 text-[10px] text-slate-600 pointer-events-none z-10 select-none">
+              Scroll to zoom · Drag to pan
+            </div>
+          )}
           {/* World map SVG background */}
           <svg
             ref={svgRef}
             viewBox="0 0 1010 505"
             className="w-full"
-            style={{ display: 'block' }}
+            style={{ display: 'block', cursor: dragRef.current ? 'grabbing' : 'grab' }}
           >
             {/* Ocean background */}
             <rect width="1010" height="505" fill="#0d1117" />
 
-            {/* Simple world landmass silhouette using a public domain path */}
-            <image
-              href="https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/World_map_-_low_resolution.svg/1010px-World_map_-_low_resolution.svg.png"
-              x="0" y="0" width="1010" height="505"
-              preserveAspectRatio="xMidYMid meet"
-              opacity="0.18"
-            />
+            {/* Zoomable/pannable group — transform applied via DOM ref, not React state */}
+            <g ref={groupRef}>
+
+            {/* Local GeoJSON world landmasses rendered as SVG paths */}
+            {worldPaths.map((d, i) => (
+              <path key={i} d={d} fill="#1e2d3d" stroke="#2d4a6b" strokeWidth="0.4" opacity="0.9" />
+            ))}
 
             {/* Grid lines */}
             {[-60, -30, 0, 30, 60].map(lat => {
@@ -253,6 +370,7 @@ export function AttackMap() {
                 No external IPs resolved yet — trigger some alerts first
               </text>
             )}
+            </g>
           </svg>
         </div>
 
