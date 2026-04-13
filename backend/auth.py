@@ -128,6 +128,12 @@ def delete_user(user_id: int) -> bool:
     return cursor.rowcount > 0
 
 
+def change_password(user_id: int, new_password: str) -> None:
+    hashed = hash_password(new_password)
+    with get_connection() as conn:
+        conn.execute("UPDATE users SET hashed_pw = ? WHERE id = ?", (hashed, user_id))
+
+
 def authenticate_user(username: str, password: str) -> Optional[dict]:
     user = get_user_by_username(username)
     if not user:

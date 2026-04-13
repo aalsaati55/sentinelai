@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Bell, X, AlertTriangle, Zap } from 'lucide-react'
+import { Bell, X, AlertTriangle, Zap, UserCheck, AtSign } from 'lucide-react'
 import { api } from '../api'
 
 function fmtTs(ts) {
@@ -7,31 +7,55 @@ function fmtTs(ts) {
   return ts.replace('T', ' ').slice(0, 16)
 }
 
-const SEV_ICON = {
+// ── Alert-type notification rendering ─────────────────────────
+const ALERT_ICON = {
   critical: <Zap size={12} className="text-red-400" />,
   high:     <AlertTriangle size={12} className="text-orange-400" />,
 }
-const SEV_COLOR = {
+const ALERT_COLOR = {
   critical: 'border-l-red-500 bg-red-500/5',
   high:     'border-l-orange-500 bg-orange-500/5',
 }
 
+// ── User-notification rendering ────────────────────────────────
+const USER_NOTIF_ICON = {
+  assignment: <UserCheck size={12} className="text-blue-400" />,
+  mention:    <AtSign size={12} className="text-purple-400" />,
+}
+const USER_NOTIF_COLOR = {
+  assignment: 'border-l-blue-500 bg-blue-500/5',
+  mention:    'border-l-purple-500 bg-purple-500/5',
+}
+
 export function NotificationBell() {
-  const [notifs, setNotifs]     = useState([])
-  const [unseen, setUnseen]     = useState(0)
-  const [open, setOpen]         = useState(false)
-  const sinceRef                = useRef(new Date().toISOString())
-  const intervalRef             = useRef(null)
-  const panelRef                = useRef(null)
+  const [alertNotifs, setAlertNotifs]     = useState([])
+  const [userNotifs,  setUserNotifs]      = useState([])
+  const [unseen, setUnseen]               = useState(0)
+  const [open, setOpen]                   = useState(false)
+
+  const alertSinceRef = useRef(new Date().toISOString())
+  const userSinceRef  = useRef(new Date().toISOString())
+  const intervalRef   = useRef(null)
+  const panelRef      = useRef(null)
 
   const poll = useCallback(async () => {
     try {
-      const fresh = await api.notifications(sinceRef.current)
-      if (fresh.length > 0) {
-        sinceRef.current = fresh[0].created_at
-        setNotifs(prev => [...fresh, ...prev].slice(0, 50))
-        setUnseen(prev => prev + fresh.length)
+      const [freshAlerts, freshUser] = await Promise.all([
+        api.notifications(alertSinceRef.current),
+        api.userNotifications(userSinceRef.current),
+      ])
+      let added = 0
+      if (freshAlerts.length > 0) {
+        alertSinceRef.current = freshAlerts[0].created_at
+        setAlertNotifs(prev => [...freshAlerts, ...prev].slice(0, 40))
+        added += freshAlerts.length
       }
+      if (freshUser.length > 0) {
+        userSinceRef.current = freshUser[0].created_at
+        setUserNotifs(prev => [...freshUser, ...prev].slice(0, 20))
+        added += freshUser.length
+      }
+      if (added > 0) setUnseen(prev => prev + added)
     } catch (_) {}
   }, [])
 
@@ -53,17 +77,31 @@ export function NotificationBell() {
   function openPanel() {
     setOpen(o => !o)
     setUnseen(0)
+    if (!open) api.markNotifsRead().catch(() => {})
   }
 
-  function dismiss(idx) {
-    setNotifs(prev => prev.filter((_, i) => i !== idx))
+  function dismissAlert(idx) {
+    setAlertNotifs(prev => prev.filter((_, i) => i !== idx))
+  }
+  function dismissUser(idx) {
+    setUserNotifs(prev => prev.filter((_, i) => i !== idx))
   }
 
   function clearAll() {
-    setNotifs([])
+    setAlertNotifs([])
+    setUserNotifs([])
     setUnseen(0)
     setOpen(false)
+    api.clearNotifs().catch(() => {})
   }
+
+  // Merge and sort all notifications newest-first for unified display
+  const allNotifs = [
+    ...userNotifs.map(n => ({ ...n, _kind: 'user' })),
+    ...alertNotifs.map(n => ({ ...n, _kind: 'alert' })),
+  ].sort((a, b) => (b.created_at > a.created_at ? 1 : -1)).slice(0, 50)
+
+  const total = allNotifs.length
 
   return (
     <div className="relative" ref={panelRef}>
@@ -87,9 +125,9 @@ export function NotificationBell() {
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-[#30363d]">
             <span className="text-sm font-semibold text-white">
-              Alerts {notifs.length > 0 && <span className="text-slate-500 font-normal">({notifs.length})</span>}
+              Notifications {total > 0 && <span className="text-slate-500 font-normal">({total})</span>}
             </span>
-            {notifs.length > 0 && (
+            {total > 0 && (
               <button onClick={clearAll} className="text-xs text-slate-500 hover:text-slate-300 transition-colors">
                 Clear all
               </button>
@@ -97,31 +135,54 @@ export function NotificationBell() {
           </div>
 
           {/* Notifications list */}
-          <div className="max-h-80 overflow-y-auto">
-            {notifs.length === 0 ? (
-              <div className="px-4 py-8 text-center text-slate-600 text-sm">No new alerts</div>
+          <div className="max-h-96 overflow-y-auto">
+            {total === 0 ? (
+              <div className="px-4 py-8 text-center text-slate-600 text-sm">No new notifications</div>
             ) : (
-              notifs.map((n, idx) => (
-                <div
-                  key={`${n.id}-${idx}`}
-                  className={`flex items-start gap-3 px-4 py-3 border-b border-[#30363d]/50 border-l-2 ${SEV_COLOR[n.severity] || 'border-l-slate-600'}`}
-                >
-                  <div className="mt-0.5 shrink-0">{SEV_ICON[n.severity]}</div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <code className="text-[11px] font-mono text-slate-300">{n.rule_name}</code>
-                      <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${n.severity === 'critical' ? 'bg-red-500/20 text-red-400' : 'bg-orange-500/20 text-orange-400'}`}>
-                        {n.severity}
-                      </span>
+              allNotifs.map((n, idx) => {
+                if (n._kind === 'user') {
+                  const origIdx = userNotifs.findIndex(u => u.id === n.id)
+                  return (
+                    <div
+                      key={`u-${n.id}`}
+                      className={`flex items-start gap-3 px-4 py-3 border-b border-[#30363d]/50 border-l-2 ${USER_NOTIF_COLOR[n.type] || 'border-l-slate-600'}`}
+                    >
+                      <div className="mt-0.5 shrink-0">{USER_NOTIF_ICON[n.type] || <Bell size={12} className="text-slate-400" />}</div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-slate-200 truncate">{n.title}</p>
+                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-2" title={n.body}>{n.body}</p>
+                        <span className="text-[10px] text-slate-600">{fmtTs(n.created_at)}</span>
+                      </div>
+                      <button onClick={() => dismissUser(origIdx)} className="shrink-0 text-slate-600 hover:text-slate-400 transition-colors mt-0.5">
+                        <X size={12} />
+                      </button>
                     </div>
-                    <p className="text-xs text-slate-500 mt-0.5 truncate" title={n.description}>{n.description}</p>
-                    <span className="text-[10px] text-slate-600">{fmtTs(n.created_at)}</span>
+                  )
+                }
+                // Alert notification
+                const origIdx = alertNotifs.findIndex(a => a.id === n.id)
+                return (
+                  <div
+                    key={`a-${n.id}`}
+                    className={`flex items-start gap-3 px-4 py-3 border-b border-[#30363d]/50 border-l-2 ${ALERT_COLOR[n.severity] || 'border-l-slate-600'}`}
+                  >
+                    <div className="mt-0.5 shrink-0">{ALERT_ICON[n.severity]}</div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <code className="text-[11px] font-mono text-slate-300 truncate">{n.rule_name}</code>
+                        <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded shrink-0 ${n.severity === 'critical' ? 'bg-red-500/20 text-red-400' : 'bg-orange-500/20 text-orange-400'}`}>
+                          {n.severity}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-0.5 truncate" title={n.description}>{n.description}</p>
+                      <span className="text-[10px] text-slate-600">{fmtTs(n.created_at)}</span>
+                    </div>
+                    <button onClick={() => dismissAlert(origIdx)} className="shrink-0 text-slate-600 hover:text-slate-400 transition-colors mt-0.5">
+                      <X size={12} />
+                    </button>
                   </div>
-                  <button onClick={() => dismiss(idx)} className="shrink-0 text-slate-600 hover:text-slate-400 transition-colors mt-0.5">
-                    <X size={12} />
-                  </button>
-                </div>
-              ))
+                )
+              })
             )}
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Mail, Save, Send, CheckCircle, XCircle, Settings as SettingsIcon, Terminal, Wifi, WifiOff, ShieldCheck, ShieldOff, KeyRound, QrCode } from 'lucide-react'
+import { Mail, Save, Send, CheckCircle, XCircle, Settings as SettingsIcon, Terminal, Wifi, WifiOff, ShieldCheck, ShieldOff, KeyRound, QrCode, Lock, Eye, EyeOff } from 'lucide-react'
 import { Panel } from '../components/Panel'
 import { api, token } from '../api'
 
@@ -42,6 +42,27 @@ export function Settings() {
   const [sshTesting, setSshTesting] = useState(false)
   const [sshMsg, setSshMsg]         = useState(null)
   const [sshConfigured, setSshConfigured] = useState(false)
+
+  // Password change state
+  const [pwForm, setPwForm]         = useState({ current: '', next: '', confirm: '' })
+  const [showPw, setShowPw]         = useState({ current: false, next: false, confirm: false })
+  const [pwLoading, setPwLoading]   = useState(false)
+  const [pwMsg, setPwMsg]           = useState(null)
+
+  async function handleChangePassword(e) {
+    e.preventDefault()
+    setPwMsg(null)
+    if (pwForm.next !== pwForm.confirm)
+      return setPwMsg({ type: 'error', text: 'New passwords do not match' })
+    setPwLoading(true)
+    try {
+      await api.changePassword(pwForm.current, pwForm.next)
+      setPwMsg({ type: 'success', text: 'Password changed successfully.' })
+      setPwForm({ current: '', next: '', confirm: '' })
+    } catch (err) {
+      setPwMsg({ type: 'error', text: err.message })
+    } finally { setPwLoading(false) }
+  }
 
   // MFA state
   const [mfaEnabled, setMfaEnabled]   = useState(false)
@@ -253,6 +274,50 @@ export function Settings() {
           </div>
         </Panel>
       )}
+
+      {/* Password Change Panel — available to all users */}
+      <Panel title="Change Password">
+        <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
+          {(['current', 'next', 'confirm']).map(field => {
+            const labels = { current: 'Current Password', next: 'New Password', confirm: 'Confirm New Password' }
+            return (
+              <div key={field}>
+                <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1.5">{labels[field]}</label>
+                <div className="relative">
+                  <input
+                    type={showPw[field] ? 'text' : 'password'}
+                    value={pwForm[field]}
+                    onChange={e => setPwForm(f => ({ ...f, [field]: e.target.value }))}
+                    required
+                    placeholder="••••••••"
+                    className="w-full bg-[#1c2128] border border-[#30363d] focus:border-blue-500 text-slate-200 placeholder:text-slate-600 text-sm rounded-lg px-3 py-2.5 pr-10 outline-none transition-colors"
+                  />
+                  <button type="button" onClick={() => setShowPw(s => ({ ...s, [field]: !s[field] }))}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
+                    {showPw[field] ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+
+          {pwMsg && (
+            <div className={`flex items-center gap-2 rounded-lg px-4 py-3 text-sm ${
+              pwMsg.type === 'success'
+                ? 'bg-green-500/10 border border-green-500/20 text-green-400'
+                : 'bg-red-500/10 border border-red-500/20 text-red-400'
+            }`}>
+              {pwMsg.type === 'success' ? <CheckCircle size={14} /> : <XCircle size={14} />}
+              {pwMsg.text}
+            </div>
+          )}
+
+          <button type="submit" disabled={pwLoading || !pwForm.current || !pwForm.next || !pwForm.confirm}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
+            <Lock size={14} />{pwLoading ? 'Saving…' : 'Change Password'}
+          </button>
+        </form>
+      </Panel>
 
       {/* MFA Panel — available to all users */}
       <Panel title="Two-Factor Authentication (MFA)">

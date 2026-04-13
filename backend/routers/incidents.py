@@ -14,14 +14,15 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import List, Optional
 
+import re as _re
 from storage import (
     get_incidents, count_incidents,
     get_incident_events, get_connection,
     add_incident_note, get_incident_notes,
-    add_audit_log,
+    add_audit_log, add_user_notification,
 )
 from schemas import IncidentSchema, EventSchema
-from auth import get_current_user
+from auth import get_current_user, get_user_by_username
 
 router = APIRouter(prefix="/api/incidents", tags=["incidents"])
 
@@ -120,9 +121,20 @@ def assign_incident(incident_id: int, body: AssignRequest, current_user: dict = 
         row = conn.execute("SELECT * FROM incidents WHERE id = ?", (incident_id,)).fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail="Incident not found")
+    incident = dict(row)
     assignee = body.assigned_to or "unassigned"
     add_audit_log(current_user["username"], "assignment", "incident", incident_id, f"Assigned to {assignee}")
-    return dict(row)
+    # Notify the assignee (skip if unassigned or self-assigned)
+    if body.assigned_to and body.assigned_to != current_user["username"]:
+        if get_user_by_username(body.assigned_to):
+            add_user_notification(
+                username=body.assigned_to,
+                type_="assignment",
+                title="Incident assigned to you",
+                body=f"{current_user['username']} assigned incident #{incident_id} — {incident['title']}",
+                link_id=incident_id,
+            )
+    return incident
 
 
 class NoteCreate(BaseModel):
@@ -148,4 +160,17 @@ def create_note(incident_id: int, body: NoteCreate, current_user: dict = Depends
         raise HTTPException(status_code=404, detail="Incident not found")
     note = add_incident_note(incident_id, current_user["username"], body.note.strip())
     add_audit_log(current_user["username"], "note_added", "incident", incident_id, body.note.strip()[:100])
+    # Parse @mentions and notify each mentioned user (skip self-mentions)
+    mentioned = set(_re.findall(r'@([a-zA-Z0-9_\-]+)', body.note))
+    for mention in mentioned:
+        if mention == current_user["username"]:
+            continue
+        if get_user_by_username(mention):
+            add_user_notification(
+                username=mention,
+                type_="mention",
+                title=f"@{current_user['username']} mentioned you",
+                body=f"In incident #{incident_id}: {body.note.strip()[:120]}",
+                link_id=incident_id,
+            )
     return note

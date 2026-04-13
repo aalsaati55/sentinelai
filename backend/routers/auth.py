@@ -20,8 +20,13 @@ from auth import (
     get_user_by_username, update_user_role, delete_user, count_users,
     generate_totp_secret, get_totp_uri, verify_totp,
     save_totp_secret, enable_mfa, disable_mfa,
+    verify_password, change_password,
 )
-from storage import add_audit_log
+from storage import (
+    add_audit_log,
+    add_user_notification, get_user_notifications,
+    mark_user_notifications_read, clear_user_notifications,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -277,6 +282,43 @@ def mfa_status(current_user: dict = Depends(get_current_user)):
     """Return current MFA status for the logged-in user."""
     user = get_user_by_username(current_user["username"])
     return {"mfa_enabled": bool(user.get("mfa_enabled")), "username": user["username"]}
+
+
+# ── Password Change ───────────────────────────────────────────
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+@router.post("/change-password", status_code=200)
+def change_password_endpoint(body: ChangePasswordRequest, current_user: dict = Depends(get_current_user)):
+    if not verify_password(body.current_password, current_user["hashed_pw"]):
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+    validate_password(body.new_password)
+    if body.current_password == body.new_password:
+        raise HTTPException(status_code=400, detail="New password must differ from current password")
+    change_password(current_user["id"], body.new_password)
+    add_audit_log(current_user["username"], "password_changed", "user", current_user["id"], "Password changed")
+    logger.info(f"Password changed for {current_user['username']}")
+    return {"detail": "Password changed successfully"}
+
+
+# ── User Notifications ────────────────────────────────────────
+
+@router.get("/notifications")
+def list_notifications(since: Optional[str] = None, current_user: dict = Depends(get_current_user)):
+    """Poll for user-targeted in-app notifications (assignment, @mention)."""
+    return get_user_notifications(current_user["username"], since_iso=since, limit=30)
+
+
+@router.post("/notifications/read", status_code=204)
+def mark_read(current_user: dict = Depends(get_current_user)):
+    mark_user_notifications_read(current_user["username"])
+
+
+@router.delete("/notifications", status_code=204)
+def clear_notifications(current_user: dict = Depends(get_current_user)):
+    clear_user_notifications(current_user["username"])
 
 
 @router.delete("/users/{user_id}", status_code=204)

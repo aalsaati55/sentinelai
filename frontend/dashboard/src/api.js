@@ -222,6 +222,15 @@ export const api = {
     return r.json()
   },
   me: () => get('/auth/me'),
+  changePassword: (current_password, new_password) => fetch(`${BASE}/auth/change-password`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ current_password, new_password }),
+  }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.detail || 'Failed'); return d }),
+
+  // User notifications
+  userNotifications: (since) => get(`/auth/notifications${since ? `?since=${encodeURIComponent(since)}` : ''}`),
+  markNotifsRead:    () => fetch(`${BASE}/auth/notifications/read`, { method: 'POST', headers: authHeaders() }),
+  clearNotifs:       () => fetch(`${BASE}/auth/notifications`, { method: 'DELETE', headers: authHeaders() }),
 
   // MFA
   mfaStatus:  () => get('/auth/mfa/status'),

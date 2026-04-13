@@ -155,6 +155,19 @@ CREATE TABLE IF NOT EXISTS ssh_config (
     key_path   TEXT    NOT NULL DEFAULT '',
     updated_at TEXT    NOT NULL DEFAULT ''
 );
+
+CREATE TABLE IF NOT EXISTS user_notifications (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    username    TEXT    NOT NULL,
+    type        TEXT    NOT NULL,
+    title       TEXT    NOT NULL,
+    body        TEXT    NOT NULL,
+    link_id     INTEGER,
+    read        INTEGER NOT NULL DEFAULT 0,
+    created_at  TEXT    NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_notifs_username ON user_notifications(username, created_at);
 """
 
 
@@ -706,6 +719,48 @@ def save_ssh_config(host: str, port: int, username: str, key_path: str) -> Dict[
             (host, port, username, key_path, now_iso()),
         )
     return get_ssh_config()
+
+
+# ──────────────────────────────────────────────
+# User Notifications
+# ──────────────────────────────────────────────
+
+def add_user_notification(username: str, type_: str, title: str, body: str, link_id: int = None) -> Dict[str, Any]:
+    """Create an in-app notification for a specific user."""
+    with get_connection() as conn:
+        cursor = conn.execute(
+            "INSERT INTO user_notifications (username, type, title, body, link_id, read, created_at) VALUES (?, ?, ?, ?, ?, 0, ?)",
+            (username, type_, title, body, link_id, now_iso()),
+        )
+        row = conn.execute("SELECT * FROM user_notifications WHERE id = ?", (cursor.lastrowid,)).fetchone()
+    return dict(row)
+
+
+def get_user_notifications(username: str, since_iso: str = None, limit: int = 30) -> List[Dict[str, Any]]:
+    """Fetch unread notifications for a user, optionally filtered by since_iso."""
+    if since_iso:
+        with get_connection() as conn:
+            rows = conn.execute(
+                "SELECT * FROM user_notifications WHERE username = ? AND created_at > ? ORDER BY created_at DESC LIMIT ?",
+                (username, since_iso, limit),
+            ).fetchall()
+    else:
+        with get_connection() as conn:
+            rows = conn.execute(
+                "SELECT * FROM user_notifications WHERE username = ? ORDER BY created_at DESC LIMIT ?",
+                (username, limit),
+            ).fetchall()
+    return [dict(r) for r in rows]
+
+
+def mark_user_notifications_read(username: str) -> None:
+    with get_connection() as conn:
+        conn.execute("UPDATE user_notifications SET read = 1 WHERE username = ?", (username,))
+
+
+def clear_user_notifications(username: str) -> None:
+    with get_connection() as conn:
+        conn.execute("DELETE FROM user_notifications WHERE username = ?", (username,))
 
 
 def clear_all_data() -> None:
