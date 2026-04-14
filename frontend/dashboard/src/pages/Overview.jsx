@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
-import { Activity, AlertTriangle, Bell, Globe, Radio, ShieldAlert, TrendingUp, Zap, RefreshCw } from 'lucide-react'
+import { Activity, AlertTriangle, Bell, Globe, Radio, ShieldAlert, ShieldOff, TrendingUp, Zap, RefreshCw } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -47,6 +47,7 @@ export function Overview({ onGoToIncidents }) {
   const [riskTrend, setRiskTrend]           = useState([])
   const [mttdMttr, setMttdMttr]             = useState(null)
   const [teamActivity, setTeamActivity]     = useState([])
+  const [fpStats, setFpStats]               = useState(null)
   const [days, setDays]                     = useState(30)
   const [lastRefresh, setLastRefresh]       = useState(null)
   const [secondsAgo, setSecondsAgo]         = useState(0)
@@ -79,9 +80,11 @@ export function Overview({ onGoToIncidents }) {
       api.riskTrend(7),
       api.mttdMttr(),
       api.teamActivity(),
-    ]).then(([s, ips, sev, et, inc, itl, atl, geo, rt, mm, ta]) => {
+      api.fpStats(),
+    ]).then(([s, ips, sev, et, inc, itl, atl, geo, rt, mm, ta, fp]) => {
       if (mm) setMttdMttr(mm)
       if (ta) setTeamActivity(ta)
+      if (fp) setFpStats(fp)
       setSummary(s)
       setTopIps(ips)
       setSeverity(sev.map(d => ({ name: d.severity, value: d.count })))
@@ -214,6 +217,56 @@ export function Overview({ onGoToIncidents }) {
             </p>
             <p className="text-xs text-slate-600 mt-1">Avg. time from incident creation to close</p>
           </div>
+        </div>
+      )}
+
+      {/* False Positive Rate Panel */}
+      {fpStats && (
+        <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <ShieldOff size={14} className="text-yellow-400" />
+            <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">False Positive Rate</span>
+            {fpStats.fp_this_week > 0 && (
+              <span className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400">
+                {fpStats.fp_this_week} FP marked this week
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="bg-[#1c2128] border border-[#30363d] rounded-lg p-3">
+              <p className="text-xs text-slate-500 mb-1">Alert FP Rate</p>
+              <p className="text-2xl font-bold text-white">{fpStats.alert_fp_rate}<span className="text-base text-slate-500">%</span></p>
+              <p className="text-xs text-slate-600 mt-1">{fpStats.alert_fp} of {fpStats.alert_total} alerts marked false positive</p>
+              <div className="mt-2 h-1.5 bg-[#30363d] rounded-full overflow-hidden">
+                <div className="h-full rounded-full bg-yellow-500/60" style={{ width: `${Math.min(fpStats.alert_fp_rate, 100)}%` }} />
+              </div>
+            </div>
+            <div className="bg-[#1c2128] border border-[#30363d] rounded-lg p-3">
+              <p className="text-xs text-slate-500 mb-1">Incident FP Rate</p>
+              <p className="text-2xl font-bold text-white">{fpStats.inc_fp_rate}<span className="text-base text-slate-500">%</span></p>
+              <p className="text-xs text-slate-600 mt-1">{fpStats.inc_fp} of {fpStats.inc_total} incidents marked false positive</p>
+              <div className="mt-2 h-1.5 bg-[#30363d] rounded-full overflow-hidden">
+                <div className="h-full rounded-full bg-yellow-500/60" style={{ width: `${Math.min(fpStats.inc_fp_rate, 100)}%` }} />
+              </div>
+            </div>
+          </div>
+          {fpStats.top_fp_rules.length > 0 && (
+            <div>
+              <p className="text-xs text-slate-600 uppercase tracking-wider mb-2">Top rules generating false positives</p>
+              <div className="space-y-1.5">
+                {fpStats.top_fp_rules.map(r => (
+                  <div key={r.rule_name} className="flex items-center gap-3">
+                    <code className="text-xs font-mono text-slate-400 w-52 truncate">{r.rule_name}</code>
+                    <div className="flex-1 h-1.5 bg-[#30363d] rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bg-yellow-500/50"
+                        style={{ width: `${Math.min((r.fp_count / fpStats.alert_fp) * 100, 100)}%` }} />
+                    </div>
+                    <span className="text-xs text-slate-500 w-8 text-right">{r.fp_count}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 

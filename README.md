@@ -109,7 +109,8 @@ A full-stack AI-assisted SIEM (Security Information and Event Management) protot
 - **Alert Tuning page** — dedicated `/alert-tuning` page (admin only) to adjust detection thresholds and suppress rules without touching code; changes persist in the database across restarts
 - **False positive marking** — analysts can mark any alert or incident as a false positive with a reason (e.g. "Test / lab traffic", "Known scanner"); FP records are dimmed with a yellow **FP** badge; FP status survives page navigation and restarts
 - **FP filtering** — Alerts and Incidents pages both have an "All / Real attacks only / False positives" dropdown filter so analysts can focus their queue
-- **Audit log** — tracks all actions: status changes, assignments, role changes, note additions, watchlist add/remove, SOAR executed, MFA changes, FP marked/cleared — filterable by action type with CSV export
+- **FP rate metric** — Overview dashboard shows Alert FP rate %, Incident FP rate %, FPs marked this week, and top rules generating false positives with mini bar charts
+- **Audit log** — tracks all actions: status changes, assignments, role changes, note additions, watchlist add/remove, SOAR executed, MFA changes, FP marked/cleared, threshold tuned/reset — filterable by action type with CSV export; FP reason shown inline in the Detail column; tuning changes (who changed what rule to what value, when) fully recorded
 - **Email alerting** — High and Critical incidents trigger email notifications via SMTP
 - **Browser notifications** — Critical and High alerts fire desktop notifications when the tab is in the background
 - **Copy IP button** — one-click clipboard copy next to every source IP in Alerts and Incidents tables
@@ -305,6 +306,7 @@ SentinelAI separates three analyst tools for managing alert quality:
 - **Event-based rules** — suppress-only controls for rules that fire on a single event (success after failures, privilege escalation, reverse shell, etc.)
 - All changes persist in the database; displayed with an **Overridden** badge when non-default
 - Reset any rule back to its default with one click
+- Every threshold change and reset is **audit-logged** with the analyst's username, the rule name, old → new value, and timestamp — visible in the Audit Log under the "Threshold Changed" / "Threshold Reset" filters
 
 ---
 

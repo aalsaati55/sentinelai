@@ -38,11 +38,17 @@ async function patch(path, body) {
 
 export const api = {
   // Dashboard
-  summary:      () => get('/dashboard/summary'),
-  topIps:       (limit = 10) => get(`/dashboard/top-ips?limit=${limit}`),
-  severity:     () => get('/dashboard/severity'),
-  eventTypes:   () => get('/dashboard/event-types'),
-  timeline:     (bucket = 'hour') => get(`/dashboard/timeline?bucket=${bucket}`),
+  summary:          () => get('/dashboard/summary'),
+  topIps:           (limit = 10) => get(`/dashboard/top-ips?limit=${limit}`),
+  severity:         () => get('/dashboard/severity'),
+  eventTypes:       () => get('/dashboard/event-types'),
+  timeline:         (bucket = 'hour') => get(`/dashboard/timeline?bucket=${bucket}`),
+  incidentTimeline: (days = 30) => get(`/dashboard/incident-timeline?days=${days}`),
+  alertTimeline:    (days = 30) => get(`/dashboard/alert-timeline?days=${days}`),
+  riskTrend:        (days = 7)  => get(`/dashboard/risk-trend?days=${days}`),
+  mttdMttr:         ()          => get('/dashboard/mttd-mttr'),
+  teamActivity:     ()          => get('/dashboard/team-activity'),
+  fpStats:          ()          => get('/dashboard/fp-stats'),
 
   // Events
   events: (params = {}) => {

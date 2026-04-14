@@ -192,6 +192,38 @@ def mttd_mttr():
     }
 
 
+@router.get("/fp-stats")
+def fp_stats():
+    """Return false positive counts and rates for alerts and incidents."""
+    with get_connection() as conn:
+        alert_total = conn.execute("SELECT COUNT(*) as c FROM alerts").fetchone()["c"]
+        alert_fp    = conn.execute("SELECT COUNT(*) as c FROM alerts WHERE false_positive = 1").fetchone()["c"]
+        inc_total   = conn.execute("SELECT COUNT(*) as c FROM incidents").fetchone()["c"]
+        inc_fp      = conn.execute("SELECT COUNT(*) as c FROM incidents WHERE false_positive = 1").fetchone()["c"]
+        # FP marked this week
+        fp_this_week = conn.execute("""
+            SELECT COUNT(*) as c FROM audit_log
+            WHERE action = 'fp_marked'
+              AND created_at >= DATE('now', '-7 days')
+        """).fetchone()["c"]
+        # Top rules generating FPs
+        top_fp_rules = conn.execute("""
+            SELECT rule_name, COUNT(*) as fp_count
+            FROM alerts WHERE false_positive = 1
+            GROUP BY rule_name ORDER BY fp_count DESC LIMIT 5
+        """).fetchall()
+    return {
+        "alert_total":    alert_total,
+        "alert_fp":       alert_fp,
+        "alert_fp_rate":  round(alert_fp / alert_total * 100, 1) if alert_total else 0,
+        "inc_total":      inc_total,
+        "inc_fp":         inc_fp,
+        "inc_fp_rate":    round(inc_fp / inc_total * 100, 1) if inc_total else 0,
+        "fp_this_week":   fp_this_week,
+        "top_fp_rules":   [dict(r) for r in top_fp_rules],
+    }
+
+
 @router.get("/risk-trend")
 def risk_trend(days: int = Query(7, ge=1, le=90)):
     """Return average and max risk score per day for the last N days."""

@@ -17,6 +17,10 @@ const ACTION_STYLES = {
   'Watchlist Add':  'bg-red-500/10 text-red-400 border-red-500/20',
   'Watchlist Remove': 'bg-slate-500/10 text-slate-300 border-slate-500/20',
   soar_executed:    'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+  fp_marked:        'bg-yellow-500/10 text-yellow-300 border-yellow-500/20',
+  fp_cleared:       'bg-slate-500/10 text-slate-300 border-slate-500/20',
+  threshold_set:    'bg-orange-500/10 text-orange-400 border-orange-500/20',
+  threshold_reset:  'bg-slate-500/10 text-slate-400 border-slate-500/20',
 }
 
 const ACTION_LABELS = {
@@ -28,6 +32,10 @@ const ACTION_LABELS = {
   'Watchlist Add':  'Watchlist Add',
   'Watchlist Remove': 'Watchlist Remove',
   soar_executed:    'SOAR Executed',
+  fp_marked:        'FP Marked',
+  fp_cleared:       'FP Cleared',
+  threshold_set:    'Threshold Changed',
+  threshold_reset:  'Threshold Reset',
 }
 
 function ActionBadge({ action }) {
@@ -81,6 +89,10 @@ export function AuditLog() {
             <option value="Watchlist Add">Watchlist Add</option>
             <option value="Watchlist Remove">Watchlist Remove</option>
             <option value="soar_executed">SOAR Executed</option>
+            <option value="fp_marked">FP Marked</option>
+            <option value="fp_cleared">FP Cleared</option>
+            <option value="threshold_set">Threshold Changed</option>
+            <option value="threshold_reset">Threshold Reset</option>
           </select>
 
           <button
@@ -128,7 +140,14 @@ export function AuditLog() {
                     {e.target_id ? <span className="text-slate-600 ml-1">#{e.target_id}</span> : null}
                   </td>
                   <td className="py-3 text-slate-400 text-xs max-w-[320px]">
-                    <span className="truncate block" title={e.detail}>{e.detail || '—'}</span>
+                    {(e.action === 'fp_marked' || e.action === 'fp_cleared') && e.detail ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="text-yellow-400/80">{e.action === 'fp_marked' ? 'Reason:' : 'Cleared:'}</span>
+                        <span className="truncate" title={e.detail}>{e.detail || '—'}</span>
+                      </span>
+                    ) : (
+                      <span className="truncate block" title={e.detail}>{e.detail || '—'}</span>
+                    )}
                   </td>
                 </tr>
               )) : (
