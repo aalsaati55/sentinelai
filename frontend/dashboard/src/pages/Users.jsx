@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Shield, ShieldAlert, Trash2, UserCog, Users as UsersIcon } from 'lucide-react'
+import { Shield, ShieldAlert, Trash2, UserCog, Users as UsersIcon, Plus, Key, X } from 'lucide-react'
 import { api, token } from '../api'
 import { Panel } from '../components/Panel'
 
@@ -19,15 +19,58 @@ export function Users() {
   const [error, setError]       = useState('')
   const [confirm, setConfirm]   = useState(null)  // { type: 'delete'|'role', user, newRole }
   const [busy, setBusy]         = useState(false)
+  const [createModal, setCreateModal] = useState(false)
+  const [resetModal, setResetModal]   = useState(null)  // user object
+  const [createForm, setCreateForm]   = useState({ username: '', email: '', password: '', role: 'analyst' })
+  const [resetPw, setResetPw]         = useState('')
+  const [formError, setFormError]     = useState('')
+  const [success, setSuccess]         = useState('')
 
   const me = token.user()
 
-  useEffect(() => {
+  function load() {
     api.users()
       .then(setUsers)
       .catch(() => setError('Failed to load users'))
       .finally(() => setLoading(false))
-  }, [])
+  }
+
+  useEffect(() => { load() }, [])
+
+  async function createUser() {
+    setBusy(true); setFormError('')
+    try {
+      const r = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token.get()}` },
+        body: JSON.stringify(createForm),
+      })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.detail || 'Failed')
+      if (d.role !== createForm.role) await api.changeRole(d.id, createForm.role)
+      setCreateModal(false)
+      setCreateForm({ username: '', email: '', password: '', role: 'analyst' })
+      setSuccess('User created successfully.')
+      load()
+    } catch (e) { setFormError(e.message) }
+    finally { setBusy(false) }
+  }
+
+  async function doResetPassword() {
+    setBusy(true); setFormError('')
+    try {
+      const r = await fetch(`/api/auth/users/${resetModal.id}/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token.get()}` },
+        body: JSON.stringify({ new_password: resetPw }),
+      })
+      const d = await r.json()
+      if (!r.ok) throw new Error(d.detail || 'Failed')
+      setResetModal(null); setResetPw('')
+      setSuccess(`Password reset for ${resetModal.username}.`)
+    } catch (e) { setFormError(e.message) }
+    finally { setBusy(false) }
+  }
 
   async function handleRoleChange(user, newRole) {
     setConfirm({ type: 'role', user, newRole })
@@ -63,9 +106,20 @@ export function Users() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold text-white mb-1">User Management</h2>
-        <p className="text-sm text-slate-500">Manage analyst and admin accounts — admin only</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-xl font-bold text-white mb-1">User Management</h2>
+          <p className="text-sm text-slate-500">Manage analyst and admin accounts — admin only</p>
+        </div>
+        <div className="flex items-center gap-3">
+          {success && <span className="text-xs text-green-400 font-medium">{success}</span>}
+          <button
+            onClick={() => { setCreateModal(true); setFormError(''); setSuccess('') }}
+            className="flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <Plus size={12} /> New User
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -122,6 +176,16 @@ export function Users() {
                           {user.role === 'admin' ? 'Make Analyst' : 'Make Admin'}
                         </button>
 
+                        {/* Reset Password */}
+                        <button
+                          onClick={() => { setResetModal(user); setResetPw(''); setFormError('') }}
+                          className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border border-[#30363d] text-slate-400 hover:text-yellow-400 hover:border-yellow-500/30 transition-colors"
+                          title="Reset password"
+                        >
+                          <Key size={12} />
+                          Reset PW
+                        </button>
+
                         {/* Delete */}
                         <button
                           onClick={() => handleDelete(user)}
@@ -172,6 +236,100 @@ export function Users() {
                 }`}
               >
                 {busy ? 'Processing…' : confirm.type === 'delete' ? 'Delete' : 'Confirm'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Create User Modal */}
+      {createModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-sm p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-white font-semibold text-sm">Create New User</h3>
+              <button onClick={() => setCreateModal(false)} className="text-slate-500 hover:text-slate-300"><X size={14} /></button>
+            </div>
+            {formError && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded px-3 py-2">{formError}</p>}
+            <div className="space-y-3">
+              {[
+                { label: 'Username', key: 'username', type: 'text', placeholder: 'e.g. john.doe1' },
+                { label: 'Email', key: 'email', type: 'email', placeholder: 'john.doe1@sentinelai.com' },
+                { label: 'Password', key: 'password', type: 'password', placeholder: 'Min 8 chars, 1 upper, 1 digit, 1 special' },
+              ].map(({ label, key, type, placeholder }) => (
+                <div key={key}>
+                  <label className="text-xs text-slate-500 mb-1 block">{label}</label>
+                  <input
+                    type={type}
+                    value={createForm[key]}
+                    onChange={e => setCreateForm(prev => ({ ...prev, [key]: e.target.value }))}
+                    placeholder={placeholder}
+                    className="w-full bg-[#1c2128] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50"
+                  />
+                </div>
+              ))}
+              <div>
+                <label className="text-xs text-slate-500 mb-1 block">Role</label>
+                <select
+                  value={createForm.role}
+                  onChange={e => setCreateForm(prev => ({ ...prev, role: e.target.value }))}
+                  className="w-full bg-[#1c2128] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none"
+                >
+                  <option value="analyst">Analyst</option>
+                  <option value="admin">Admin</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={createUser}
+                disabled={busy || !createForm.username || !createForm.email || !createForm.password}
+                className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-sm font-semibold py-2 rounded-lg transition-colors"
+              >
+                {busy ? 'Creating…' : 'Create'}
+              </button>
+              <button
+                onClick={() => { setCreateModal(false); setFormError('') }}
+                className="flex-1 bg-[#1c2128] border border-[#30363d] text-slate-300 text-sm py-2 rounded-lg hover:border-slate-500 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {resetModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-sm p-5 space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-white font-semibold text-sm">Reset password for <span className="text-yellow-400">{resetModal.username}</span></h3>
+              <button onClick={() => setResetModal(null)} className="text-slate-500 hover:text-slate-300"><X size={14} /></button>
+            </div>
+            {formError && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded px-3 py-2">{formError}</p>}
+            <div>
+              <label className="text-xs text-slate-500 mb-1 block">New Password</label>
+              <input
+                type="password"
+                value={resetPw}
+                onChange={e => setResetPw(e.target.value)}
+                placeholder="Min 8 chars, 1 upper, 1 digit, 1 special"
+                className="w-full bg-[#1c2128] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-yellow-500/50"
+              />
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={doResetPassword}
+                disabled={busy || !resetPw.trim()}
+                className="flex-1 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-white text-sm font-semibold py-2 rounded-lg transition-colors"
+              >
+                {busy ? 'Saving…' : 'Reset Password'}
+              </button>
+              <button
+                onClick={() => { setResetModal(null); setFormError('') }}
+                className="flex-1 bg-[#1c2128] border border-[#30363d] text-slate-300 text-sm py-2 rounded-lg hover:border-slate-500 transition-colors"
+              >
+                Cancel
               </button>
             </div>
           </div>

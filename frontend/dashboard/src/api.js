@@ -119,6 +119,25 @@ export const api = {
     method: 'DELETE', headers: authHeaders(),
   }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.detail || 'Failed'); return d }),
 
+  // Alert notes
+  alertNotes:   (id) => get(`/alerts/${id}/notes`),
+  addAlertNote: (id, note) => fetch(`${BASE}/alerts/${id}/notes`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ note }),
+  }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.detail || 'Failed'); return d }),
+
+  // Alert assign
+  assignAlert: (id, assigned_to) => fetch(`${BASE}/alerts/${id}/assign`, {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ assigned_to }),
+  }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.detail || 'Failed'); return d }),
+
+  // Suppression with expiry
+  suppressRuleExpiry: (rule_name, reason = '', expires_at = null) => fetch(`${BASE}/suppression`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify({ rule_name, reason, expires_at }),
+  }).then(r => { if (!r.ok) throw new Error('Failed'); return r.json() }),
+
   // False positive
   markAlertFP: (id, false_positive, reason = '') => fetch(`${BASE}/alerts/${id}/false-positive`, {
     method: 'PATCH', headers: { 'Content-Type': 'application/json', ...authHeaders() },

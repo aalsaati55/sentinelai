@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from 'react'
-import { RefreshCw, Globe, AlertTriangle, Wifi } from 'lucide-react'
+import { RefreshCw, Globe, AlertTriangle, Wifi, Search } from 'lucide-react'
 import { api } from '../api'
 import { Panel } from '../components/Panel'
 import { Badge } from '../components/Badge'
@@ -113,6 +113,8 @@ export function AttackMap() {
   const [svgSize, setSvgSize] = useState({ w: 1010, h: 505 })
   const [worldPaths, setWorldPaths] = useState([])
   const [isZoomed, setIsZoomed] = useState(false)
+  const [tableSearch, setTableSearch] = useState('')
+  const [tableSevFilter, setTableSevFilter] = useState('')
   const containerRef = useRef(null)
   const svgRef = useRef(null)
   const groupRef = useRef(null)
@@ -377,9 +379,33 @@ export function AttackMap() {
         {/* IP table below the map */}
         {points.length > 0 && (
           <div className="mt-5">
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
-              Resolved Attackers ({points.length})
-            </h3>
+            <div className="flex items-center gap-3 mb-3 flex-wrap">
+              <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                Resolved Attackers ({points.length})
+              </h3>
+              <div className="flex items-center gap-2 ml-auto">
+                <div className="relative">
+                  <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+                  <input
+                    value={tableSearch}
+                    onChange={e => setTableSearch(e.target.value)}
+                    placeholder="Search IP, country…"
+                    className="pl-7 pr-3 py-1.5 bg-[#1c2128] border border-[#30363d] rounded-lg text-xs text-slate-300 placeholder-slate-600 focus:outline-none focus:border-blue-500/50 w-44"
+                  />
+                </div>
+                <select
+                  value={tableSevFilter}
+                  onChange={e => setTableSevFilter(e.target.value)}
+                  className="bg-[#1c2128] border border-[#30363d] rounded-lg text-xs text-slate-300 px-2 py-1.5 focus:outline-none"
+                >
+                  <option value="">All severities</option>
+                  <option value="critical">Critical</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
@@ -391,6 +417,12 @@ export function AttackMap() {
                 </thead>
                 <tbody>
                   {[...points]
+                    .filter(p => {
+                      const q = tableSearch.trim().toLowerCase()
+                      if (tableSevFilter && p.severity !== tableSevFilter) return false
+                      if (!q) return true
+                      return (p.ip || '').includes(q) || (p.country || '').toLowerCase().includes(q) || (p.city || '').toLowerCase().includes(q) || (p.isp || '').toLowerCase().includes(q)
+                    })
                     .sort((a, b) => {
                       const o = { critical: 4, high: 3, medium: 2, low: 1 }
                       return (o[b.severity] || 0) - (o[a.severity] || 0)

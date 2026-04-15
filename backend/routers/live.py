@@ -271,6 +271,11 @@ async def ingest_lines(batch: LogBatch):
                 if event_ids:
                     link_incident_events(inc_id, event_ids)
                 logger.info(f"[live] Auto-created incident #{inc_id}: {inc['title']} (ip={ip})")
+                # Email alert for critical/high incidents
+                risk = inc.get("risk_score", 0)
+                sev = "critical" if risk >= 80 else "high" if risk >= 60 else "low"
+                if sev in ("critical", "high"):
+                    send_incident_alert({**inc, "severity": sev})
 
     # 6. Broadcast each new event to connected dashboard clients
     for event in events:

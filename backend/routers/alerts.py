@@ -71,3 +71,5 @@ def set_false_positive(alert_id: int, body: FalsePositiveRequest, current_user: 
     action = "fp_marked" if body.false_positive else "fp_cleared"
     add_audit_log(current_user["username"], action, "alert", alert_id, body.reason or "")
     return row
+
+

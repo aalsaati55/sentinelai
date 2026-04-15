@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { RefreshCw, Download, ClipboardList } from 'lucide-react'
-import { api } from '../api'
+import { api, token } from '../api'
 import { Panel } from '../components/Panel'
 
 function fmtTs(ts) {
@@ -9,34 +9,54 @@ function fmtTs(ts) {
 }
 
 const ACTION_STYLES = {
-  status_change:    'bg-blue-500/10 text-blue-400 border-blue-500/20',
-  assignment:       'bg-purple-500/10 text-purple-400 border-purple-500/20',
-  note_added:       'bg-green-500/10 text-green-400 border-green-500/20',
-  role_change:      'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-  user_deleted:     'bg-red-500/10 text-red-400 border-red-500/20',
-  'Watchlist Add':  'bg-red-500/10 text-red-400 border-red-500/20',
+  status_change:      'bg-blue-500/10 text-blue-400 border-blue-500/20',
+  assignment:         'bg-purple-500/10 text-purple-400 border-purple-500/20',
+  note_added:         'bg-green-500/10 text-green-400 border-green-500/20',
+  role_change:        'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+  user_deleted:       'bg-red-500/10 text-red-400 border-red-500/20',
+  user_created:       'bg-green-500/10 text-green-400 border-green-500/20',
+  'Watchlist Add':    'bg-red-500/10 text-red-400 border-red-500/20',
   'Watchlist Remove': 'bg-slate-500/10 text-slate-300 border-slate-500/20',
-  soar_executed:    'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-  fp_marked:        'bg-yellow-500/10 text-yellow-300 border-yellow-500/20',
-  fp_cleared:       'bg-slate-500/10 text-slate-300 border-slate-500/20',
-  threshold_set:    'bg-orange-500/10 text-orange-400 border-orange-500/20',
-  threshold_reset:  'bg-slate-500/10 text-slate-400 border-slate-500/20',
+  soar_executed:      'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+  fp_marked:          'bg-yellow-500/10 text-yellow-300 border-yellow-500/20',
+  fp_cleared:         'bg-slate-500/10 text-slate-300 border-slate-500/20',
+  threshold_set:      'bg-orange-500/10 text-orange-400 border-orange-500/20',
+  threshold_reset:    'bg-slate-500/10 text-slate-400 border-slate-500/20',
+  rule_suppressed:    'bg-red-500/10 text-red-400 border-red-500/20',
+  rule_unsuppressed:  'bg-green-500/10 text-green-400 border-green-500/20',
+  password_reset:     'bg-orange-500/10 text-orange-400 border-orange-500/20',
+  password_changed:   'bg-orange-500/10 text-orange-300 border-orange-500/20',
+  mfa_enabled:        'bg-green-500/10 text-green-400 border-green-500/20',
+  mfa_disabled:       'bg-red-500/10 text-red-400 border-red-500/20',
 }
 
 const ACTION_LABELS = {
-  status_change:    'Status Change',
-  assignment:       'Assignment',
-  note_added:       'Note Added',
-  role_change:      'Role Change',
-  user_deleted:     'User Deleted',
-  'Watchlist Add':  'Watchlist Add',
+  status_change:      'Status Change',
+  assignment:         'Assignment',
+  note_added:         'Note Added',
+  role_change:        'Role Change',
+  user_deleted:       'User Deleted',
+  user_created:       'User Created',
+  'Watchlist Add':    'Watchlist Add',
   'Watchlist Remove': 'Watchlist Remove',
-  soar_executed:    'SOAR Executed',
-  fp_marked:        'FP Marked',
-  fp_cleared:       'FP Cleared',
-  threshold_set:    'Threshold Changed',
-  threshold_reset:  'Threshold Reset',
+  soar_executed:      'SOAR Executed',
+  fp_marked:          'FP Marked',
+  fp_cleared:         'FP Cleared',
+  threshold_set:      'Threshold Changed',
+  threshold_reset:    'Threshold Reset',
+  rule_suppressed:    'Rule Suppressed',
+  rule_unsuppressed:  'Rule Unsuppressed',
+  password_reset:     'Password Reset',
+  password_changed:   'Password Changed',
+  mfa_enabled:        'MFA Enabled',
+  mfa_disabled:       'MFA Disabled',
 }
+
+// Actions that only admins should see
+const ADMIN_ONLY_ACTIONS = new Set([
+  'role_change', 'user_deleted', 'user_created',
+  'password_reset', 'password_changed', 'mfa_enabled', 'mfa_disabled',
+])
 
 function ActionBadge({ action }) {
   const cls = ACTION_STYLES[action] || 'bg-slate-500/10 text-slate-400 border-slate-500/20'
@@ -52,6 +72,8 @@ export function AuditLog() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter]   = useState('')
   const [userFilter, setUserFilter] = useState('')
+  const me = token.user()
+  const isAdmin = me?.role === 'admin'
 
   async function load() {
     setLoading(true)
@@ -65,6 +87,7 @@ export function AuditLog() {
   const users = [...new Set(entries.map(e => e.username).filter(Boolean))].sort()
 
   const filtered = entries
+    .filter(e => isAdmin || !ADMIN_ONLY_ACTIONS.has(e.action))
     .filter(e => !filter     || e.action   === filter)
     .filter(e => !userFilter || e.username === userFilter)
 
@@ -95,18 +118,35 @@ export function AuditLog() {
             className="appearance-none bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 outline-none focus:border-blue-500 cursor-pointer"
           >
             <option value="">All actions</option>
-            <option value="status_change">Status Change</option>
-            <option value="assignment">Assignment</option>
-            <option value="note_added">Note Added</option>
-            <option value="role_change">Role Change</option>
-            <option value="user_deleted">User Deleted</option>
-            <option value="Watchlist Add">Watchlist Add</option>
-            <option value="Watchlist Remove">Watchlist Remove</option>
-            <option value="soar_executed">SOAR Executed</option>
-            <option value="fp_marked">FP Marked</option>
-            <option value="fp_cleared">FP Cleared</option>
-            <option value="threshold_set">Threshold Changed</option>
-            <option value="threshold_reset">Threshold Reset</option>
+            <optgroup label="── Incidents / Alerts">
+              <option value="status_change">Status Change</option>
+              <option value="assignment">Assignment</option>
+              <option value="note_added">Note Added</option>
+              <option value="fp_marked">FP Marked</option>
+              <option value="fp_cleared">FP Cleared</option>
+            </optgroup>
+            <optgroup label="── Rules">
+              <option value="rule_suppressed">Rule Suppressed</option>
+              <option value="rule_unsuppressed">Rule Unsuppressed</option>
+              <option value="threshold_set">Threshold Changed</option>
+              <option value="threshold_reset">Threshold Reset</option>
+            </optgroup>
+            <optgroup label="── Watchlist / SOAR">
+              <option value="Watchlist Add">Watchlist Add</option>
+              <option value="Watchlist Remove">Watchlist Remove</option>
+              <option value="soar_executed">SOAR Executed</option>
+            </optgroup>
+            {isAdmin && (
+              <optgroup label="── User Management (Admin)">
+                <option value="user_created">User Created</option>
+                <option value="user_deleted">User Deleted</option>
+                <option value="role_change">Role Change</option>
+                <option value="password_reset">Password Reset</option>
+                <option value="password_changed">Password Changed</option>
+                <option value="mfa_enabled">MFA Enabled</option>
+                <option value="mfa_disabled">MFA Disabled</option>
+              </optgroup>
+            )}
           </select>
 
           <button

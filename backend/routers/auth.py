@@ -321,6 +321,23 @@ def clear_notifications(current_user: dict = Depends(get_current_user)):
     clear_user_notifications(current_user["username"])
 
 
+class AdminResetPasswordRequest(BaseModel):
+    new_password: str
+
+@router.post("/users/{user_id}/reset-password", status_code=200)
+def admin_reset_password(user_id: int, body: AdminResetPasswordRequest, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    user = get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    validate_password(body.new_password)
+    change_password(user_id, body.new_password)
+    add_audit_log(current_user["username"], "password_reset", "user", user_id, f"Admin reset password for {user['username']}")
+    logger.info(f"Admin {current_user['username']} reset password for user {user_id}")
+    return {"detail": "Password reset successfully"}
+
+
 @router.delete("/users/{user_id}", status_code=204)
 def remove_user(user_id: int, current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "admin":

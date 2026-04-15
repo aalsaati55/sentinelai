@@ -123,6 +123,15 @@ CREATE TABLE IF NOT EXISTS suppressed_rules (
     rule_name   TEXT    NOT NULL UNIQUE,
     suppressed_by TEXT  NOT NULL,
     reason      TEXT,
+    expires_at  TEXT,
+    created_at  TEXT    NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS alert_notes (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    alert_id    INTEGER NOT NULL REFERENCES alerts(id) ON DELETE CASCADE,
+    username    TEXT    NOT NULL,
+    note        TEXT    NOT NULL,
     created_at  TEXT    NOT NULL
 );
 
@@ -179,6 +188,21 @@ CREATE TABLE IF NOT EXISTS rule_thresholds (
 """
 
 
+_MIGRATIONS = [
+    "ALTER TABLE suppressed_rules ADD COLUMN expires_at TEXT",
+    "ALTER TABLE alerts ADD COLUMN assigned_to TEXT",
+]
+
+
+def _run_migrations() -> None:
+    with get_connection() as conn:
+        for sql in _MIGRATIONS:
+            try:
+                conn.execute(sql)
+            except Exception:
+                pass
+
+
 def init_db() -> None:
     """
     Create all tables and indexes if they do not exist.
@@ -199,6 +223,8 @@ def init_db() -> None:
             "ALTER TABLE alerts ADD COLUMN fp_reason TEXT",
             "ALTER TABLE incidents ADD COLUMN false_positive INTEGER NOT NULL DEFAULT 0",
             "ALTER TABLE incidents ADD COLUMN fp_reason TEXT",
+            "ALTER TABLE suppressed_rules ADD COLUMN expires_at TEXT",
+            "ALTER TABLE alerts ADD COLUMN assigned_to TEXT",
         ]:
             try:
                 conn.execute(sql)
@@ -219,15 +245,23 @@ def get_suppressed_rules() -> List[Dict[str, Any]]:
 
 def is_rule_suppressed(rule_name: str) -> bool:
     with get_connection() as conn:
-        row = conn.execute("SELECT id FROM suppressed_rules WHERE rule_name = ?", (rule_name,)).fetchone()
-    return row is not None
+        row = conn.execute(
+            "SELECT id, expires_at FROM suppressed_rules WHERE rule_name = ?", (rule_name,)
+        ).fetchone()
+    if not row:
+        return False
+    if row["expires_at"] and row["expires_at"] < now_iso():
+        with get_connection() as conn:
+            conn.execute("DELETE FROM suppressed_rules WHERE rule_name = ?", (rule_name,))
+        return False
+    return True
 
 
-def suppress_rule(rule_name: str, suppressed_by: str, reason: str = "") -> Dict[str, Any]:
+def suppress_rule(rule_name: str, suppressed_by: str, reason: str = "", expires_at: Optional[str] = None) -> Dict[str, Any]:
     with get_connection() as conn:
         conn.execute(
-            "INSERT OR REPLACE INTO suppressed_rules (rule_name, suppressed_by, reason, created_at) VALUES (?, ?, ?, ?)",
-            (rule_name, suppressed_by, reason, now_iso()),
+            "INSERT OR REPLACE INTO suppressed_rules (rule_name, suppressed_by, reason, expires_at, created_at) VALUES (?, ?, ?, ?, ?)",
+            (rule_name, suppressed_by, reason, expires_at, now_iso()),
         )
         row = conn.execute("SELECT * FROM suppressed_rules WHERE rule_name = ?", (rule_name,)).fetchone()
     return dict(row)
@@ -744,6 +778,38 @@ def mark_alert_false_positive(alert_id: int, fp: bool, reason: str = "") -> Opti
             "UPDATE alerts SET false_positive = ?, fp_reason = ? WHERE id = ?",
             (1 if fp else 0, reason if fp else None, alert_id),
         )
+        row = conn.execute("SELECT * FROM alerts WHERE id = ?", (alert_id,)).fetchone()
+    return dict(row) if row else None
+
+
+# ──────────────────────────────────────────────
+# Alert Notes
+# ──────────────────────────────────────────────
+
+def add_alert_note(alert_id: int, username: str, note: str) -> dict:
+    sql = "INSERT INTO alert_notes (alert_id, username, note, created_at) VALUES (?, ?, ?, ?)"
+    with get_connection() as conn:
+        cursor = conn.execute(sql, (alert_id, username, note, now_iso()))
+        row = conn.execute("SELECT * FROM alert_notes WHERE id = ?", (cursor.lastrowid,)).fetchone()
+    return dict(row)
+
+
+def get_alert_notes(alert_id: int) -> List[Dict[str, Any]]:
+    with get_connection() as conn:
+        rows = conn.execute(
+            "SELECT * FROM alert_notes WHERE alert_id = ? ORDER BY created_at ASC",
+            (alert_id,)
+        ).fetchall()
+    return [dict(r) for r in rows]
+
+
+# ──────────────────────────────────────────────
+# Alert Assign
+# ──────────────────────────────────────────────
+
+def assign_alert(alert_id: int, assigned_to: Optional[str]) -> Optional[Dict[str, Any]]:
+    with get_connection() as conn:
+        conn.execute("UPDATE alerts SET assigned_to = ? WHERE id = ?", (assigned_to, alert_id))
         row = conn.execute("SELECT * FROM alerts WHERE id = ?", (alert_id,)).fetchone()
     return dict(row) if row else None
 

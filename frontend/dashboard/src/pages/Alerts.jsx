@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
-import { RefreshCw, ChevronDown, Download, Search, VolumeX, Volume2, Copy, Check, ShieldOff, ShieldCheck, CheckSquare, Square, Trash2 } from 'lucide-react'
+import { RefreshCw, ChevronDown, Download, Search, VolumeX, Volume2, Copy, Check, ShieldOff, ShieldCheck, CheckSquare, Square, Trash2, Clock } from 'lucide-react'
 import { api, token } from '../api'
 
 import { Panel } from '../components/Panel'
@@ -49,6 +49,8 @@ export function Alerts() {
   const [selected, setSelected]     = useState(new Set()) // bulk selection: Set of alert ids
   const [bulkFpPending, setBulkFpPending] = useState(false)
   const [bulkFpReason, setBulkFpReason]   = useState('')
+  const [suppressExpiry, setSuppressExpiry] = useState(null) // rule_name pending expiry pick
+  const [suppressExpiryHours, setSuppressExpiryHours] = useState('24')
   const me = token.user()
 
   const loadSuppressed = useCallback(async () => {
@@ -166,13 +168,25 @@ export function Alerts() {
   }
 
   async function toggleSuppress(ruleName) {
+    if (suppressed.has(ruleName)) {
+      setSuppressing(ruleName)
+      try { await api.unsuppressRule(ruleName); await loadSuppressed() } finally { setSuppressing('') }
+    } else {
+      setSuppressExpiry(ruleName)
+      setSuppressExpiryHours('24')
+    }
+  }
+
+  async function confirmSuppress(ruleName, hours) {
+    setSuppressExpiry(null)
     setSuppressing(ruleName)
     try {
-      if (suppressed.has(ruleName)) {
-        await api.unsuppressRule(ruleName)
-      } else {
-        await api.suppressRule(ruleName, 'Suppressed via UI')
+      let expires_at = null
+      if (hours !== 'forever') {
+        const d = new Date(); d.setHours(d.getHours() + parseInt(hours))
+        expires_at = d.toISOString().slice(0, 19)
       }
+      await api.suppressRuleExpiry(ruleName, 'Suppressed via UI', expires_at)
       await loadSuppressed()
     } finally { setSuppressing('') }
   }
@@ -415,7 +429,7 @@ export function Alerts() {
                     <td className="py-3 text-slate-500 text-xs whitespace-nowrap">{fmtTs(a.created_at)}</td>
                     <td className="py-3 pl-2">
                       <div className="flex items-center gap-1">
-                        {/* False positive toggle — all users */}
+                        {/* False positive toggle */}
                         <button
                           onClick={() => {
                             if (a.false_positive) { markFP(a.id, false) }
@@ -435,7 +449,7 @@ export function Alerts() {
                           <button
                             onClick={() => toggleSuppress(a.rule_name)}
                             disabled={suppressing === a.rule_name}
-                            title={suppressed.has(a.rule_name) ? 'Unsuppress rule' : 'Suppress rule'}
+                            title={suppressed.has(a.rule_name) ? 'Unsuppress rule' : 'Suppress rule (with expiry)'}
                             className={`p-1.5 rounded transition-colors ${
                               suppressed.has(a.rule_name)
                                 ? 'text-slate-500 hover:text-green-400 hover:bg-green-500/10'
@@ -544,6 +558,41 @@ export function Alerts() {
               >
                 Cancel
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Suppression Expiry Modal */}
+      {suppressExpiry && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-sm p-5 space-y-4">
+            <div className="flex items-center gap-2">
+              <Clock size={15} className="text-red-400" />
+              <h3 className="text-white font-semibold text-sm">Suppress rule: {suppressExpiry}</h3>
+            </div>
+            <p className="text-slate-500 text-xs">Choose how long to suppress this rule. After expiry it will automatically re-activate.</p>
+            <div className="space-y-2">
+              {[['1', '1 hour'], ['6', '6 hours'], ['24', '24 hours'], ['168', '7 days'], ['forever', 'Forever']].map(([val, label]) => (
+                <button
+                  key={val}
+                  onClick={() => setSuppressExpiryHours(val)}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm border transition-colors ${
+                    suppressExpiryHours === val
+                      ? 'bg-red-500/15 border-red-500/40 text-red-300'
+                      : 'bg-[#1c2128] border-[#30363d] text-slate-300 hover:border-red-500/30'
+                  }`}
+                >{label}</button>
+              ))}
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => confirmSuppress(suppressExpiry, suppressExpiryHours)}
+                className="flex-1 bg-red-700 hover:bg-red-600 text-white text-sm font-semibold py-2 rounded-lg transition-colors"
+              >Suppress</button>
+              <button
+                onClick={() => setSuppressExpiry(null)}
+                className="flex-1 bg-[#1c2128] border border-[#30363d] text-slate-300 text-sm py-2 rounded-lg hover:border-slate-500 transition-colors"
+              >Cancel</button>
             </div>
           </div>
         </div>

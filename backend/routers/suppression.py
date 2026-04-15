@@ -23,6 +23,7 @@ router = APIRouter(tags=["suppression"])
 class SuppressRequest(BaseModel):
     rule_name:  str
     reason:     Optional[str] = ""
+    expires_at: Optional[str] = None  # ISO timestamp, e.g. 2026-04-16T00:00:00
 
 
 @router.get("/api/suppression")
@@ -34,7 +35,7 @@ def list_suppressed(current_user: dict = Depends(get_current_user)):
 def suppress(body: SuppressRequest, current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
-    result = suppress_rule(body.rule_name, current_user["username"], body.reason or "")
+    result = suppress_rule(body.rule_name, current_user["username"], body.reason or "", body.expires_at)
     add_audit_log(current_user["username"], "rule_suppressed", "alert_rule", None, f"Suppressed {body.rule_name}: {body.reason}")
     return result
 
