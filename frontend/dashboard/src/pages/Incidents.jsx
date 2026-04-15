@@ -850,6 +850,13 @@ export function Incidents() {
     setBulkFpReason('')
   }
 
+  async function bulkClearFP() {
+    const fpIds = filtered.filter(i => bulkSelected.has(i.id) && i.false_positive).map(i => i.id)
+    await Promise.allSettled(fpIds.map(id => api.markIncidentFP(id, false, '')))
+    setIncidents(prev => prev.map(i => fpIds.includes(i.id) ? { ...i, false_positive: 0, fp_reason: '' } : i))
+    setBulkSelected(new Set())
+  }
+
   function handleModalClose(refresh) {
     setSelected(null)
     if (refresh) load()
@@ -945,6 +952,14 @@ export function Incidents() {
             >
               <ShieldOff size={12} /> Mark all as FP
             </button>
+            {filtered.some(i => bulkSelected.has(i.id) && i.false_positive) && (
+              <button
+                onClick={bulkClearFP}
+                className="flex items-center gap-1.5 text-xs bg-green-500/10 border border-green-500/30 text-green-300 px-3 py-1.5 rounded-lg hover:bg-green-500/20 transition-colors"
+              >
+                <ShieldCheck size={12} /> Clear FP
+              </button>
+            )}
             <button
               onClick={() => setBulkSelected(new Set())}
               className="ml-auto text-xs text-slate-500 hover:text-slate-300 transition-colors"
@@ -1068,7 +1083,7 @@ export function Incidents() {
                 </tr>
                 )}) : (
                 <tr><td colSpan={11} className="py-10 text-center text-slate-500 text-sm">
-                  {search ? `No incidents match "${search}"` : 'No incidents found. Run the pipeline to generate data.'}
+                  {search ? `No incidents match "${search}"` : 'No incidents found.'}
                 </td></tr>
               )}
             </tbody>

@@ -139,6 +139,13 @@ export function Alerts() {
     setBulkFpReason('')
   }
 
+  async function bulkClearFP() {
+    const fpIds = filtered.filter(a => selected.has(a.id) && a.false_positive).map(a => a.id)
+    await Promise.allSettled(fpIds.map(id => api.markAlertFP(id, false, '')))
+    setAlerts(prev => prev.map(a => fpIds.includes(a.id) ? { ...a, false_positive: 0, fp_reason: '' } : a))
+    setSelected(new Set())
+  }
+
   async function bulkSuppress() {
     const ruleNames = [...new Set(filtered.filter(a => selected.has(a.id)).map(a => a.rule_name))]
     await Promise.allSettled(ruleNames.filter(r => !suppressed.has(r)).map(r => api.suppressRule(r, 'Bulk suppressed via UI')))
@@ -279,6 +286,14 @@ export function Alerts() {
             >
               <ShieldOff size={12} /> Mark all as FP
             </button>
+            {filtered.some(a => selected.has(a.id) && a.false_positive) && (
+              <button
+                onClick={bulkClearFP}
+                className="flex items-center gap-1.5 text-xs bg-green-500/10 border border-green-500/30 text-green-300 px-3 py-1.5 rounded-lg hover:bg-green-500/20 transition-colors"
+              >
+                <ShieldCheck size={12} /> Clear FP
+              </button>
+            )}
             {me?.role === 'admin' && (
               <button
                 onClick={bulkSuppress}
