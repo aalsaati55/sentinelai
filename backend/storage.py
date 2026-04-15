@@ -510,6 +510,19 @@ def insert_incident(incident: Dict[str, Any]) -> int:
         return cursor.lastrowid
 
 
+def escalate_incident_risk(incident_id: int, new_score: int) -> Optional[Dict[str, Any]]:
+    """Update incident risk_score if new_score is higher. Returns dict with old/new score, or None if not found."""
+    with get_connection() as conn:
+        row = conn.execute("SELECT id, risk_score, status FROM incidents WHERE id = ?", (incident_id,)).fetchone()
+        if not row:
+            return None
+        old_score = row["risk_score"]
+        if new_score <= old_score:
+            return None  # No escalation needed
+        conn.execute("UPDATE incidents SET risk_score = ? WHERE id = ?", (new_score, incident_id))
+    return {"incident_id": incident_id, "old_score": old_score, "new_score": new_score}
+
+
 def link_incident_events(incident_id: int, event_ids: List[int]) -> None:
     """Link a list of event IDs to an incident in incident_events."""
     if not event_ids:

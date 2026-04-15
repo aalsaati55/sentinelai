@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
-import { RefreshCw, ChevronDown, Download, Search, VolumeX, Volume2, Copy, Check, ShieldOff, ShieldCheck } from 'lucide-react'
+import { RefreshCw, ChevronDown, Download, Search, VolumeX, Volume2, Copy, Check, ShieldOff, ShieldCheck, CheckSquare, Square, Trash2 } from 'lucide-react'
 import { api, token } from '../api'
 
 import { Panel } from '../components/Panel'
@@ -46,6 +46,9 @@ export function Alerts() {
   const [fpFilter, setFpFilter]     = useState('all') // 'all' | 'real' | 'fp'
   const [fpPending, setFpPending]   = useState(null)  // { id, current } — awaiting reason pick
   const [fpReason, setFpReason]     = useState('')
+  const [selected, setSelected]     = useState(new Set()) // bulk selection: Set of alert ids
+  const [bulkFpPending, setBulkFpPending] = useState(false)
+  const [bulkFpReason, setBulkFpReason]   = useState('')
   const me = token.user()
 
   const loadSuppressed = useCallback(async () => {
@@ -128,6 +131,33 @@ export function Alerts() {
     setFpReason('')
   }
 
+  async function bulkMarkFP(reason) {
+    await Promise.allSettled([...selected].map(id => api.markAlertFP(id, true, reason)))
+    setAlerts(prev => prev.map(a => selected.has(a.id) ? { ...a, false_positive: 1, fp_reason: reason } : a))
+    setSelected(new Set())
+    setBulkFpPending(false)
+    setBulkFpReason('')
+  }
+
+  async function bulkSuppress() {
+    const ruleNames = [...new Set(filtered.filter(a => selected.has(a.id)).map(a => a.rule_name))]
+    await Promise.allSettled(ruleNames.filter(r => !suppressed.has(r)).map(r => api.suppressRule(r, 'Bulk suppressed via UI')))
+    await loadSuppressed()
+    setSelected(new Set())
+  }
+
+  function toggleSelect(id) {
+    setSelected(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s })
+  }
+
+  function toggleSelectAll() {
+    if (selected.size === filtered.length) {
+      setSelected(new Set())
+    } else {
+      setSelected(new Set(filtered.map(a => a.id)))
+    }
+  }
+
   async function toggleSuppress(ruleName) {
     setSuppressing(ruleName)
     try {
@@ -148,10 +178,17 @@ export function Alerts() {
     if (fpFilter === 'real') result = result.filter(a => !a.false_positive)
     if (fpFilter === 'fp')   result = result.filter(a =>  a.false_positive)
     const q = search.trim().toLowerCase()
-    if (q) result = result.filter(a =>
-      (a.rule_name   || '').toLowerCase().includes(q) ||
-      (a.description || '').toLowerCase().includes(q)
-    )
+    if (q) {
+      const idQ = q.startsWith('#') ? q.slice(1) : null
+      result = result.filter(a =>
+        idQ !== null ? String(a.id) === idQ :
+          (a.rule_name   || '').toLowerCase().includes(q) ||
+          (a.description || '').toLowerCase().includes(q) ||
+          (a.source_ip   || '').toLowerCase().includes(q) ||
+          (a.username    || '').toLowerCase().includes(q) ||
+          String(a.id).includes(q)
+      )
+    }
     return result
   }, [alerts, search, ruleFilter, fpFilter])
 
@@ -196,7 +233,7 @@ export function Alerts() {
             <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search rule, description…"
+              placeholder="Search #ID, IP, rule, description…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg pl-8 pr-3 py-2 w-52 outline-none focus:border-blue-500 placeholder-slate-600"
@@ -232,11 +269,45 @@ export function Alerts() {
           <span className="text-xs text-slate-500">{filtered.length} alert{filtered.length !== 1 ? 's' : ''}</span>
         </div>
 
+        {/* Bulk action bar */}
+        {selected.size > 0 && (
+          <div className="flex items-center gap-3 mb-4 px-3 py-2 bg-blue-500/5 border border-blue-500/20 rounded-lg">
+            <span className="text-sm text-blue-300 font-semibold">{selected.size} alert{selected.size !== 1 ? 's' : ''} selected</span>
+            <button
+              onClick={() => { setBulkFpPending(true); setBulkFpReason('') }}
+              className="flex items-center gap-1.5 text-xs bg-yellow-500/10 border border-yellow-500/30 text-yellow-300 px-3 py-1.5 rounded-lg hover:bg-yellow-500/20 transition-colors"
+            >
+              <ShieldOff size={12} /> Mark all as FP
+            </button>
+            {me?.role === 'admin' && (
+              <button
+                onClick={bulkSuppress}
+                className="flex items-center gap-1.5 text-xs bg-red-500/10 border border-red-500/30 text-red-300 px-3 py-1.5 rounded-lg hover:bg-red-500/20 transition-colors"
+              >
+                <VolumeX size={12} /> Suppress rules
+              </button>
+            )}
+            <button
+              onClick={() => setSelected(new Set())}
+              className="ml-auto text-xs text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              Clear selection
+            </button>
+          </div>
+        )}
+
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left">
+                <th className="pb-3 pr-2">
+                  <button onClick={toggleSelectAll} className="text-slate-500 hover:text-slate-300 transition-colors">
+                    {selected.size > 0 && selected.size === filtered.length
+                      ? <CheckSquare size={14} className="text-blue-400" />
+                      : <Square size={14} />}
+                  </button>
+                </th>
                 {['#', 'Rule', 'MITRE ATT&CK', 'Severity', 'Risk Score', 'Anomaly Level', 'Source', 'Description', 'Created', ''].map(h => (
                   <th key={h} className="pb-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">{h}</th>
                 ))}
@@ -254,11 +325,18 @@ export function Alerts() {
               {!loading && filtered.map(a => {
                 const geo = a.source_ip ? geoMap[a.source_ip] : null
                 const flag = geo?.country_code ? countryFlag(geo.country_code) : null
+                const isSelected = selected.has(a.id)
                 return (
                   <tr key={a.id} className={`border-t border-[#30363d] transition-colors ${
+                    isSelected ? 'bg-blue-500/5' :
                     !!a.false_positive ? 'opacity-50 bg-slate-500/5' :
                     suppressed.has(a.rule_name) ? 'opacity-40' : 'hover:bg-white/[0.02]'
                   }`}>
+                    <td className="py-3 pr-2">
+                      <button onClick={() => toggleSelect(a.id)} className="text-slate-500 hover:text-blue-400 transition-colors">
+                        {isSelected ? <CheckSquare size={14} className="text-blue-400" /> : <Square size={14} />}
+                      </button>
+                    </td>
                     <td className="py-3 pr-4 text-slate-500 text-xs">{a.id}</td>
                     <td className="py-3 pr-4">
                       <div className="flex items-center gap-2 flex-wrap">
@@ -361,6 +439,53 @@ export function Alerts() {
           </table>
         </div>
       </Panel>
+
+      {/* Bulk FP Reason Modal */}
+      {bulkFpPending && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-sm p-5 space-y-4">
+            <h3 className="text-white font-semibold text-sm">Mark {selected.size} Alert{selected.size !== 1 ? 's' : ''} as False Positive</h3>
+            <p className="text-slate-500 text-xs">Select the reason these alerts are not real threats:</p>
+            <div className="space-y-2">
+              {[
+                'Known scanner / security tool',
+                'Internal service activity',
+                'Misconfigured rule',
+                'Test / lab traffic',
+                'Authorized admin activity',
+                'Other',
+              ].map(r => (
+                <button
+                  key={r}
+                  onClick={() => setBulkFpReason(r)}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm border transition-colors ${
+                    bulkFpReason === r
+                      ? 'bg-yellow-500/15 border-yellow-500/40 text-yellow-300'
+                      : 'bg-[#1c2128] border-[#30363d] text-slate-300 hover:border-yellow-500/30'
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => bulkMarkFP(bulkFpReason)}
+                disabled={!bulkFpReason}
+                className="flex-1 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-white text-sm font-semibold py-2 rounded-lg transition-colors"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => { setBulkFpPending(false); setBulkFpReason('') }}
+                className="flex-1 bg-[#1c2128] border border-[#30363d] text-slate-300 text-sm py-2 rounded-lg hover:border-slate-500 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* FP Reason Modal */}
       {fpPending && (

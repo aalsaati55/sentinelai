@@ -24,7 +24,7 @@ from risk_scoring import score_alert
 from storage import (
     insert_events_bulk, insert_alert, insert_incident, is_rule_suppressed,
     add_to_watchlist, get_alerts, get_incidents, link_incident_events, get_connection,
-    clear_watchlist_removed,
+    clear_watchlist_removed, escalate_incident_risk, add_user_notification,
 )
 from correlation import correlate_alerts
 from emailer import send_incident_alert
@@ -264,6 +264,38 @@ async def ingest_lines(batch: LogBatch):
             new_incidents = correlate_alerts(ip_alerts)
             for inc in new_incidents:
                 if (ip, inc["title"]) in existing_keys:
+                    # ── Auto-escalation: bump risk score on existing open incident ──
+                    existing_inc = next(
+                        (i for i in existing if i.get("source_ip") == ip and i["title"] == inc["title"] and i["status"] != "closed"),
+                        None
+                    )
+                    if existing_inc:
+                        new_score = max(inc.get("risk_score", 0), existing_inc["risk_score"] + 5)
+                        new_score = min(new_score, 100)
+                        result = escalate_incident_risk(existing_inc["id"], new_score)
+                        if result:
+                            logger.info(f"[live] Escalated incident #{existing_inc['id']} risk {result['old_score']} → {result['new_score']}")
+                            # Notify all users that the incident has escalated
+                            with get_connection() as conn:
+                                users = conn.execute("SELECT username FROM users").fetchall()
+                            for u in users:
+                                add_user_notification(
+                                    username=u["username"],
+                                    type_="escalation",
+                                    title=f"Incident escalated: {existing_inc['title']}",
+                                    body=f"Risk score raised {result['old_score']} → {result['new_score']} as new alerts arrived from {ip}",
+                                    link_id=existing_inc["id"],
+                                )
+                            await manager.broadcast({
+                                "type": "incident_escalated",
+                                "data": {
+                                    "incident_id": existing_inc["id"],
+                                    "title":       existing_inc["title"],
+                                    "old_score":   result["old_score"],
+                                    "new_score":   result["new_score"],
+                                    "source_ip":   ip,
+                                }
+                            })
                     continue
                 inc_id = insert_incident(inc)
                 # Link event IDs to the incident

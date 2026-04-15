@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
-import { RefreshCw, X, ChevronDown, MessageSquare, Send, Download, Search, FileText, ShieldAlert, ShieldCheck, ShieldOff, CheckSquare, Square, Copy, Check, Zap, AlertTriangle, Play, Loader2 } from 'lucide-react'
+import { RefreshCw, X, ChevronDown, MessageSquare, Send, Download, Search, FileText, ShieldAlert, ShieldCheck, ShieldOff, CheckSquare, Square, Copy, Check, Zap, AlertTriangle, Play, Loader2, TrendingUp } from 'lucide-react'
 import { api, token } from '../api'
 import { Panel } from '../components/Panel'
 import { Badge, severityFromScore } from '../components/Badge'
@@ -743,6 +743,10 @@ export function Incidents() {
   const [geoMap, setGeoMap]           = useState({})
   const [watchlistedIps, setWatchlistedIps] = useState(new Set())
   const [tiMap, setTiMap]             = useState({})
+  const [escalationToast, setEscalationToast] = useState(null)
+  const [bulkSelected, setBulkSelected]     = useState(new Set())
+  const [bulkFpPending, setBulkFpPending]   = useState(false)
+  const [bulkFpReason, setBulkFpReason]     = useState('')
 
   async function loadWatchlist() {
     try {
@@ -793,6 +797,13 @@ export function Incidents() {
             clearTimeout(debounceTimer)
             debounceTimer = setTimeout(() => loadRef.current?.(), 2000)
           }
+          if (msg.type === 'incident_escalated') {
+            const d = msg.data
+            setEscalationToast(d)
+            setTimeout(() => setEscalationToast(null), 6000)
+            clearTimeout(debounceTimer)
+            debounceTimer = setTimeout(() => loadRef.current?.(), 2000)
+          }
         } catch (_) {}
       }
       ws.onclose = () => {
@@ -816,17 +827,42 @@ export function Incidents() {
     if (fpFilter === 'fp')   result = result.filter(i =>  !!i.false_positive)
     const q = search.trim().toLowerCase()
     if (!q) return result
+    const idQ = q.startsWith('#') ? q.slice(1) : null
     return result.filter(i =>
-      (i.title      || '').toLowerCase().includes(q) ||
-      (i.source_ip  || '').toLowerCase().includes(q) ||
-      (i.username   || '').toLowerCase().includes(q)
+      (idQ !== null ? String(i.id) === idQ :
+        (i.title      || '').toLowerCase().includes(q) ||
+        (i.source_ip  || '').toLowerCase().includes(q) ||
+        (i.username   || '').toLowerCase().includes(q) ||
+        String(i.id).includes(q)
+      )
     )
   }, [incidents, search, fpFilter])
+
+  function toggleBulkSelect(id) {
+    setBulkSelected(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s })
+  }
+
+  function toggleBulkSelectAll() {
+    if (bulkSelected.size === filtered.length) {
+      setBulkSelected(new Set())
+    } else {
+      setBulkSelected(new Set(filtered.map(i => i.id)))
+    }
+  }
+
+  async function bulkMarkFP(reason) {
+    await Promise.allSettled([...bulkSelected].map(id => api.markIncidentFP(id, true, reason)))
+    setIncidents(prev => prev.map(i => bulkSelected.has(i.id) ? { ...i, false_positive: 1, fp_reason: reason } : i))
+    setBulkSelected(new Set())
+    setBulkFpPending(false)
+    setBulkFpReason('')
+  }
 
   function handleModalClose(refresh) {
     setSelected(null)
     if (refresh) load()
   }
+
 
   function handleFpChange(incId, fp, reason) {
     setIncidents(prev => prev.map(i =>
@@ -872,7 +908,7 @@ export function Incidents() {
             <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
             <input
               type="text"
-              placeholder="Search title, IP, user…"
+              placeholder="Search #ID, title, IP, user…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg pl-8 pr-3 py-2 w-52 outline-none focus:border-blue-500 placeholder-slate-600"
@@ -907,11 +943,37 @@ export function Incidents() {
           <span className="text-xs text-slate-500">{filtered.length} incident{filtered.length !== 1 ? 's' : ''}</span>
         </div>
 
+        {/* Bulk action bar */}
+        {bulkSelected.size > 0 && (
+          <div className="flex items-center gap-3 mb-4 px-3 py-2 bg-blue-500/5 border border-blue-500/20 rounded-lg">
+            <span className="text-sm text-blue-300 font-semibold">{bulkSelected.size} incident{bulkSelected.size !== 1 ? 's' : ''} selected</span>
+            <button
+              onClick={() => { setBulkFpPending(true); setBulkFpReason('') }}
+              className="flex items-center gap-1.5 text-xs bg-yellow-500/10 border border-yellow-500/30 text-yellow-300 px-3 py-1.5 rounded-lg hover:bg-yellow-500/20 transition-colors"
+            >
+              <ShieldOff size={12} /> Mark all as FP
+            </button>
+            <button
+              onClick={() => setBulkSelected(new Set())}
+              className="ml-auto text-xs text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              Clear selection
+            </button>
+          </div>
+        )}
+
         {/* Table */}
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left">
+                <th className="pb-3 pr-2">
+                  <button onClick={toggleBulkSelectAll} className="text-slate-500 hover:text-slate-300 transition-colors">
+                    {bulkSelected.size > 0 && bulkSelected.size === filtered.length
+                      ? <CheckSquare size={14} className="text-blue-400" />
+                      : <Square size={14} />}
+                  </button>
+                </th>
                 {['#', 'Title', 'Source IP', 'User', 'Risk Score', 'Severity', 'Status', 'SLA', 'Assigned', 'Created', ''].map(h => (
                   <th key={h} className="pb-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">{h}</th>
                 ))}
@@ -920,9 +982,17 @@ export function Incidents() {
             <tbody>
               {loading ? (
                 <tr><td colSpan={9} className="py-10 text-center text-slate-500">Loading…</td></tr>
-              ) : filtered.length ? filtered.map(i => (
-                <tr key={i.id} className={`border-t border-[#30363d] transition-colors cursor-pointer ${!!i.false_positive ? 'opacity-50 bg-slate-500/5' : 'hover:bg-white/[0.02]'}`}
-                    onClick={() => setSelected(i.id)}>
+              ) : filtered.length ? filtered.map(i => {
+                const isBulkSel = bulkSelected.has(i.id)
+                return (
+                <tr key={i.id} className={`border-t border-[#30363d] transition-colors cursor-pointer ${
+                  isBulkSel ? 'bg-blue-500/5' : !!i.false_positive ? 'opacity-50 bg-slate-500/5' : 'hover:bg-white/[0.02]'
+                }`} onClick={() => setSelected(i.id)}>
+                  <td className="py-3 pr-2" onClick={e => { e.stopPropagation(); toggleBulkSelect(i.id) }}>
+                    <button className="text-slate-500 hover:text-blue-400 transition-colors">
+                      {isBulkSel ? <CheckSquare size={14} className="text-blue-400" /> : <Square size={14} />}
+                    </button>
+                  </td>
                   <td className="py-3 pr-4 text-slate-500 text-xs">{i.id}</td>
                   <td className="py-3 pr-4 text-slate-200 max-w-[220px]">
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -1004,7 +1074,7 @@ export function Incidents() {
                     </div>
                   </td>
                 </tr>
-              )) : (
+                )}) : (
                 <tr><td colSpan={11} className="py-10 text-center text-slate-500 text-sm">
                   {search ? `No incidents match "${search}"` : 'No incidents found. Run the pipeline to generate data.'}
                 </td></tr>
@@ -1058,6 +1128,73 @@ export function Incidents() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Bulk FP Reason Modal */}
+      {bulkFpPending && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-sm p-5 space-y-4">
+            <h3 className="text-white font-semibold text-sm">Mark {bulkSelected.size} Incident{bulkSelected.size !== 1 ? 's' : ''} as False Positive</h3>
+            <p className="text-slate-500 text-xs">Select the reason these incidents are not real threats:</p>
+            <div className="space-y-2">
+              {[
+                'Known scanner / security tool',
+                'Internal service activity',
+                'Misconfigured rule',
+                'Test / lab traffic',
+                'Authorized admin activity',
+                'Other',
+              ].map(r => (
+                <button
+                  key={r}
+                  onClick={() => setBulkFpReason(r)}
+                  className={`w-full text-left px-3 py-2 rounded-lg text-sm border transition-colors ${
+                    bulkFpReason === r
+                      ? 'bg-yellow-500/15 border-yellow-500/40 text-yellow-300'
+                      : 'bg-[#1c2128] border-[#30363d] text-slate-300 hover:border-yellow-500/30'
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={() => bulkMarkFP(bulkFpReason)}
+                disabled={!bulkFpReason}
+                className="flex-1 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-white text-sm font-semibold py-2 rounded-lg transition-colors"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => { setBulkFpPending(false); setBulkFpReason('') }}
+                className="flex-1 bg-[#1c2128] border border-[#30363d] text-slate-300 text-sm py-2 rounded-lg hover:border-slate-500 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Escalation Toast */}
+      {escalationToast && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-start gap-3 bg-[#161b22] border border-orange-500/40 rounded-xl px-4 py-3 shadow-2xl max-w-sm animate-in">
+          <TrendingUp size={16} className="text-orange-400 shrink-0 mt-0.5" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-white truncate">{escalationToast.title}</p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Risk score escalated&nbsp;
+              <span className="text-slate-500 line-through">{escalationToast.old_score}</span>
+              &nbsp;→&nbsp;
+              <span className="text-orange-400 font-bold">{escalationToast.new_score}</span>
+              &nbsp;· new alerts from {escalationToast.source_ip}
+            </p>
+          </div>
+          <button onClick={() => setEscalationToast(null)} className="text-slate-600 hover:text-slate-300 transition-colors shrink-0">
+            <X size={13} />
+          </button>
         </div>
       )}
     </div>

@@ -51,6 +51,7 @@ export function AuditLog() {
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter]   = useState('')
+  const [userFilter, setUserFilter] = useState('')
 
   async function load() {
     setLoading(true)
@@ -61,9 +62,11 @@ export function AuditLog() {
 
   useEffect(() => { load() }, [])
 
-  const filtered = filter
-    ? entries.filter(e => e.action === filter)
-    : entries
+  const users = [...new Set(entries.map(e => e.username).filter(Boolean))].sort()
+
+  const filtered = entries
+    .filter(e => !filter     || e.action   === filter)
+    .filter(e => !userFilter || e.username === userFilter)
 
   return (
     <div className="space-y-5">
@@ -75,6 +78,17 @@ export function AuditLog() {
       <Panel>
         {/* Toolbar */}
         <div className="flex items-center gap-3 mb-5 flex-wrap">
+          <select
+            value={userFilter}
+            onChange={e => setUserFilter(e.target.value)}
+            className="appearance-none bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 outline-none focus:border-purple-500 cursor-pointer"
+          >
+            <option value="">All users</option>
+            {users.map(u => (
+              <option key={u} value={u}>{u}</option>
+            ))}
+          </select>
+
           <select
             value={filter}
             onChange={e => setFilter(e.target.value)}
