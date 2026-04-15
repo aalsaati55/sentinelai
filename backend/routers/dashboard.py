@@ -117,26 +117,40 @@ def team_activity():
             GROUP BY username
         """).fetchall()
 
-    # Merge all into a dict keyed by username
-    analysts = {}
+    # Seed from live users table — deleted users will never appear
+    with get_connection() as conn:
+        live_users = conn.execute("SELECT username FROM users").fetchall()
+
+    analysts = {
+        row["username"]: {
+            "username": row["username"],
+            "incidents_closed": 0,
+            "incidents_assigned": 0,
+            "notes_added": 0,
+            "soar_executed": 0,
+            "avg_resolution_minutes": None,
+        }
+        for row in live_users
+    }
 
     def _get(u):
-        if u not in analysts:
-            analysts[u] = {
-                "username": u,
-                "incidents_closed": 0,
-                "incidents_assigned": 0,
-                "notes_added": 0,
-                "soar_executed": 0,
-                "avg_resolution_minutes": None,
-            }
-        return analysts[u]
+        return analysts.get(u)  # returns None for deleted users — they are skipped
 
-    for r in notes_rows:    _get(r["username"])["notes_added"]          = r["notes_added"]
-    for r in closed_rows:   _get(r["username"])["incidents_closed"]     = r["incidents_closed"]
-    for r in assigned_rows: _get(r["username"])["incidents_assigned"]   = r["incidents_assigned"]
-    for r in resolution_rows: _get(r["username"])["avg_resolution_minutes"] = r["avg_resolution_minutes"]
-    for r in soar_rows:     _get(r["username"])["soar_executed"]        = r["soar_executed"]
+    for r in notes_rows:
+        e = _get(r["username"])
+        if e: e["notes_added"] = r["notes_added"]
+    for r in closed_rows:
+        e = _get(r["username"])
+        if e: e["incidents_closed"] = r["incidents_closed"]
+    for r in assigned_rows:
+        e = _get(r["username"])
+        if e: e["incidents_assigned"] = r["incidents_assigned"]
+    for r in resolution_rows:
+        e = _get(r["username"])
+        if e: e["avg_resolution_minutes"] = r["avg_resolution_minutes"]
+    for r in soar_rows:
+        e = _get(r["username"])
+        if e: e["soar_executed"] = r["soar_executed"]
 
     # Sort by incidents closed desc
     result = sorted(analysts.values(), key=lambda a: a["incidents_closed"], reverse=True)
