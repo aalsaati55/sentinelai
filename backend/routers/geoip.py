@@ -77,6 +77,7 @@ def geo_map():
             worst = "critical" if score >= 90 else "high"
 
         isp = geo.get("isp") or (ti_map[ip]["isp"] if ip in ti_map else None)
+        from_ti = ip in ti_ips and ip not in alert_ips
         points.append({
             "ip":           ip,
             "country":      geo["country"],
@@ -87,7 +88,7 @@ def geo_map():
             "isp":          isp,
             "alert_count":  count,
             "severity":     worst,
-            "from_ti":      ip in ti_ips and ip not in alert_ips,
+            "from_ti":      from_ti,
         })
 
     return {"points": points, "total": len(points)}

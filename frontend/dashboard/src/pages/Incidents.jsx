@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo, useCallback, useRef } from 'react'
-import { RefreshCw, X, ChevronDown, MessageSquare, Send, Download, Search, FileText, ShieldAlert, ShieldCheck, ShieldOff, CheckSquare, Square, Copy, Check, Zap, AlertTriangle, Play, Loader2, TrendingUp } from 'lucide-react'
+import { RefreshCw, X, ChevronDown, MessageSquare, Send, Download, Search, FileText, ShieldAlert, ShieldCheck, ShieldOff, CheckSquare, Square, Copy, Check, Zap, AlertTriangle, Play, Loader2 } from 'lucide-react'
 import { api, token } from '../api'
 import { Panel } from '../components/Panel'
 import { Badge, severityFromScore } from '../components/Badge'
@@ -743,7 +743,6 @@ export function Incidents() {
   const [geoMap, setGeoMap]           = useState({})
   const [watchlistedIps, setWatchlistedIps] = useState(new Set())
   const [tiMap, setTiMap]             = useState({})
-  const [escalationToast, setEscalationToast] = useState(null)
   const [bulkSelected, setBulkSelected]     = useState(new Set())
   const [bulkFpPending, setBulkFpPending]   = useState(false)
   const [bulkFpReason, setBulkFpReason]     = useState('')
@@ -794,13 +793,6 @@ export function Incidents() {
         try {
           const msg = JSON.parse(e.data)
           if (msg.type === 'incident') {
-            clearTimeout(debounceTimer)
-            debounceTimer = setTimeout(() => loadRef.current?.(), 2000)
-          }
-          if (msg.type === 'incident_escalated') {
-            const d = msg.data
-            setEscalationToast(d)
-            setTimeout(() => setEscalationToast(null), 6000)
             clearTimeout(debounceTimer)
             debounceTimer = setTimeout(() => loadRef.current?.(), 2000)
           }
@@ -1178,25 +1170,6 @@ export function Incidents() {
         </div>
       )}
 
-      {/* Escalation Toast */}
-      {escalationToast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-start gap-3 bg-[#161b22] border border-orange-500/40 rounded-xl px-4 py-3 shadow-2xl max-w-sm animate-in">
-          <TrendingUp size={16} className="text-orange-400 shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white truncate">{escalationToast.title}</p>
-            <p className="text-xs text-slate-400 mt-0.5">
-              Risk score escalated&nbsp;
-              <span className="text-slate-500 line-through">{escalationToast.old_score}</span>
-              &nbsp;→&nbsp;
-              <span className="text-orange-400 font-bold">{escalationToast.new_score}</span>
-              &nbsp;· new alerts from {escalationToast.source_ip}
-            </p>
-          </div>
-          <button onClick={() => setEscalationToast(null)} className="text-slate-600 hover:text-slate-300 transition-colors shrink-0">
-            <X size={13} />
-          </button>
-        </div>
-      )}
     </div>
   )
 }
