@@ -64,6 +64,7 @@ A full-stack AI-assisted SIEM (Security Information and Event Management) protot
 ### Dashboard & Visualisation
 - **GeoIP enrichment** — every source IP resolved to country + city via `ip-api.com` with in-memory caching; flag emoji and city shown in Alerts and Incidents tables
 - **Attack Map** — live world map showing attacker source IPs as colour-coded dots (Critical = red, High = orange, Medium = yellow, Low = green); Threat Intelligence IPs shown as **purple** markers with a ⚠ badge
+- **Attack Map filter** — Resolved Attackers table has a live search bar (filter by IP, country, city, ISP) and a severity dropdown filter; results update instantly as you type
 - **Attack Map zoom & pan** — scroll to zoom up to 12×; drag to pan; "Reset Zoom" button appears in the toolbar when zoomed in; hint text shown at default zoom; all gestures are crash-proof (DOM-based transform with zero React re-renders during interaction)
 - **Attack Map local GeoJSON rendering** — world landmasses rendered from a local `world.geojson` file as SVG paths; no external image dependency; equirectangular projection perfectly aligned with the GeoIP coordinate system
 - **Attack Map TI integration** — high-abuse IPs from the threat intel cache appear on the map alongside alert IPs, with a Source column distinguishing `Threat Intel` from `Alerts`
@@ -105,13 +106,14 @@ A full-stack AI-assisted SIEM (Security Information and Event Management) protot
 - **JWT authentication** — register/login with bcrypt password hashing; first user auto-assigned admin role
 - **Multi-factor authentication** — TOTP MFA available to all users (see MFA section above)
 - **Role-based access** — `admin` (full access) and `analyst` (read + update incidents)
-- **Rule suppression** — admins can suppress noisy rules directly from the Alerts page
+- **Rule suppression with expiry** — admins can suppress noisy rules directly from the Alerts page with an optional expiry time (1h / 6h / 24h / 7d / Forever); rules auto-unsuppress when the timer expires — no manual cleanup required
 - **Alert Tuning page** — dedicated `/alert-tuning` page (admin only) to adjust detection thresholds and suppress rules without touching code; changes persist in the database across restarts
 - **False positive marking** — analysts can mark any alert or incident as a false positive with a reason (e.g. "Test / lab traffic", "Known scanner"); FP records are dimmed with a yellow **FP** badge; FP status survives page navigation and restarts
 - **FP filtering** — Alerts and Incidents pages both have an "All / Real attacks only / False positives" dropdown filter so analysts can focus their queue
 - **FP rate metric** — Overview dashboard shows Alert FP rate %, Incident FP rate %, FPs marked this week, and top rules generating false positives with mini bar charts
-- **Audit log** — tracks all actions: status changes, assignments, role changes, note additions, watchlist add/remove, SOAR executed, MFA changes, FP marked/cleared, threshold tuned/reset — filterable by action type with CSV export; FP reason shown inline in the Detail column; tuning changes (who changed what rule to what value, when) fully recorded
-- **Email alerting** — High and Critical incidents trigger email notifications via SMTP
+- **Audit log** — tracks all actions: status changes, assignments, role changes, note additions, watchlist add/remove, SOAR executed, MFA changes, FP marked/cleared, threshold tuned/reset, rule suppressed/unsuppressed, password reset/changed, user created/deleted — filterable by categorised action groups (Incidents/Alerts, Rules, Watchlist/SOAR, User Management) with CSV export; sensitive user-management entries (password resets, role changes, MFA events) are hidden from analysts and only visible to admins
+- **User management page** — admins can create new users, change roles (admin ↔ analyst) with a confirm dialog, reset any user's password, and delete accounts — all changes audit-logged
+- **Email alerting** — High and Critical incidents trigger automatic email notifications via SMTP; configurable via environment variables; gracefully skipped if SMTP is not configured
 - **Browser notifications** — Critical and High alerts fire desktop notifications when the tab is in the background
 - **Copy IP button** — one-click clipboard copy next to every source IP in Alerts and Incidents tables
 - **React SOC dashboard** — Overview, Incidents, Alerts, Events, Attack Map, Watchlist, Audit Log pages with live filtering and CSV export
@@ -238,6 +240,8 @@ npm run dev
 # From the project root
 python scripts/run_pipeline.py --reset
 ```
+
+> **Note (Windows):** If uvicorn fails with `WinError 10013` (socket permission denied), run the terminal as Administrator or add a Windows Firewall inbound rule for `python.exe`.
 
 ---
 
@@ -391,12 +395,15 @@ sudo rm /etc/cron.d/demo_rev
 Set these environment variables before starting the backend to enable email alerts for High and Critical incidents:
 
 ```bash
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your@gmail.com
-SMTP_PASS=your_app_password
-ALERT_EMAILS=soc@yourorg.com,analyst@yourorg.com
+SENTINEL_SMTP_HOST=smtp.gmail.com
+SENTINEL_SMTP_PORT=587
+SENTINEL_SMTP_USER=your@gmail.com
+SENTINEL_SMTP_PASSWORD=your_app_password
+SENTINEL_ALERT_EMAIL=soc@yourorg.com,analyst@yourorg.com
+SENTINEL_EMAIL_ENABLED=true   # set to false to disable without removing config
 ```
+
+Emails are sent automatically when a new High or Critical incident is created (risk score ≥ 60). If SMTP is not configured the backend logs a warning and continues normally — email is fully optional.
 
 ---
 
@@ -411,14 +418,16 @@ ALERT_EMAILS=soc@yourorg.com,analyst@yourorg.com
 | Mark alerts / incidents as false positive | ✅ | ✅ |
 | Filter alerts / incidents by FP status | ✅ | ✅ |
 | View watchlist | ✅ | ✅ |
-| View audit log | ✅ | ✅ |
+| View audit log (operational entries) | ✅ | ✅ |
+| View audit log (user management entries) | ❌ | ✅ |
 | Enable / disable MFA on own account | ✅ | ✅ |
 | Add / remove watchlist entries | ❌ | ✅ |
-| Suppress detection rules | ❌ | ✅ |
+| Suppress detection rules (with expiry) | ❌ | ✅ |
 | Tune alert thresholds (Alert Tuning page) | ❌ | ✅ |
 | Configure SSH auto-execute | ❌ | ✅ |
-| View all users | ❌ | ✅ |
-| Manage user accounts | ❌ | ✅ |
+| Create / delete users | ❌ | ✅ |
+| Change user roles | ❌ | ✅ |
+| Reset any user's password | ❌ | ✅ |
 
 ---
 
