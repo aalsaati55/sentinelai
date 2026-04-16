@@ -33,6 +33,7 @@ from routers.watchlist import router as watchlist_router, playbook_router, soar_
 from routers.threatintel import router as threatintel_router
 from routers import soar_execute as soar_execute_router
 from routers import tuning as tuning_router
+import scheduler
 
 setup_logging()
 logger = logging.getLogger(__name__)
@@ -105,4 +106,5 @@ def on_startup():
     emailer.SMTP_PASS     = os.environ.get("SENTINEL_SMTP_PASSWORD", "")
     emailer.ALERT_EMAIL   = os.environ.get("SENTINEL_ALERT_EMAIL", "")
     emailer.EMAIL_ENABLED = os.environ.get("SENTINEL_EMAIL_ENABLED", "true").lower() == "true"
+    scheduler.start()
     logger.info("SentinelAI ready.")

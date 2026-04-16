@@ -47,6 +47,7 @@ export function Alerts() {
   const [fpPending, setFpPending]   = useState(null)  // { id, current } — awaiting reason pick
   const [fpReason, setFpReason]     = useState('')
   const [selected, setSelected]     = useState(new Set()) // bulk selection: Set of alert ids
+  const lastCheckedIndex = useRef(null)
   const [bulkFpPending, setBulkFpPending] = useState(false)
   const [bulkFpReason, setBulkFpReason]   = useState('')
   const [suppressExpiry, setSuppressExpiry] = useState(null) // rule_name pending expiry pick
@@ -155,8 +156,17 @@ export function Alerts() {
     setSelected(new Set())
   }
 
-  function toggleSelect(id) {
-    setSelected(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s })
+  function toggleSelect(id, e) {
+    const idx = filtered.findIndex(a => a.id === id)
+    if (e?.shiftKey && lastCheckedIndex.current !== null) {
+      const lo = Math.min(lastCheckedIndex.current, idx)
+      const hi = Math.max(lastCheckedIndex.current, idx)
+      const rangeIds = filtered.slice(lo, hi + 1).map(a => a.id)
+      setSelected(prev => { const s = new Set(prev); rangeIds.forEach(rid => s.add(rid)); return s })
+    } else {
+      setSelected(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s })
+      lastCheckedIndex.current = idx
+    }
   }
 
   function toggleSelectAll() {
@@ -362,7 +372,7 @@ export function Alerts() {
                     suppressed.has(a.rule_name) ? 'opacity-40' : 'hover:bg-white/[0.02]'
                   }`}>
                     <td className="py-3 pr-2">
-                      <button onClick={() => toggleSelect(a.id)} className="text-slate-500 hover:text-blue-400 transition-colors">
+                      <button onClick={(e) => toggleSelect(a.id, e)} className="text-slate-500 hover:text-blue-400 transition-colors" title="Click to select · Shift+click to select range">
                         {isSelected ? <CheckSquare size={14} className="text-blue-400" /> : <Square size={14} />}
                       </button>
                     </td>

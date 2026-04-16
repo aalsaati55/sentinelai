@@ -746,6 +746,7 @@ export function Incidents() {
   const [bulkSelected, setBulkSelected]     = useState(new Set())
   const [bulkFpPending, setBulkFpPending]   = useState(false)
   const [bulkFpReason, setBulkFpReason]     = useState('')
+  const lastCheckedIndex = useRef(null)
 
   async function loadWatchlist() {
     try {
@@ -830,8 +831,17 @@ export function Incidents() {
     )
   }, [incidents, search, fpFilter])
 
-  function toggleBulkSelect(id) {
-    setBulkSelected(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s })
+  function toggleBulkSelect(id, e) {
+    const idx = filtered.findIndex(i => i.id === id)
+    if (e?.shiftKey && lastCheckedIndex.current !== null) {
+      const lo = Math.min(lastCheckedIndex.current, idx)
+      const hi = Math.max(lastCheckedIndex.current, idx)
+      const rangeIds = filtered.slice(lo, hi + 1).map(i => i.id)
+      setBulkSelected(prev => { const s = new Set(prev); rangeIds.forEach(rid => s.add(rid)); return s })
+    } else {
+      setBulkSelected(prev => { const s = new Set(prev); s.has(id) ? s.delete(id) : s.add(id); return s })
+      lastCheckedIndex.current = idx
+    }
   }
 
   function toggleBulkSelectAll() {
@@ -995,7 +1005,7 @@ export function Incidents() {
                 <tr key={i.id} className={`border-t border-[#30363d] transition-colors cursor-pointer ${
                   isBulkSel ? 'bg-blue-500/5' : !!i.false_positive ? 'opacity-50 bg-slate-500/5' : 'hover:bg-white/[0.02]'
                 }`} onClick={() => setSelected(i.id)}>
-                  <td className="py-3 pr-2" onClick={e => { e.stopPropagation(); toggleBulkSelect(i.id) }}>
+                  <td className="py-3 pr-2" onClick={e => { e.stopPropagation(); toggleBulkSelect(i.id, e) }}>
                     <button className="text-slate-500 hover:text-blue-400 transition-colors">
                       {isBulkSel ? <CheckSquare size={14} className="text-blue-400" /> : <Square size={14} />}
                     </button>

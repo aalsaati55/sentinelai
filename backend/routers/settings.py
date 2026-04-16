@@ -98,6 +98,72 @@ def update_email_config(body: EmailConfig, current_user: dict = Depends(get_curr
     }
 
 
+class ReportConfig(BaseModel):
+    enabled: bool = False
+    period:  str  = "daily"
+    time:    str  = "08:00"
+    day:     int  = 0
+
+
+@router.get("/reports")
+def get_report_config(current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return {
+        "enabled": os.environ.get("SENTINEL_REPORT_ENABLED", "false").lower() == "true",
+        "period":  os.environ.get("SENTINEL_REPORT_PERIOD", "daily"),
+        "time":    os.environ.get("SENTINEL_REPORT_TIME", "08:00"),
+        "day":     int(os.environ.get("SENTINEL_REPORT_DAY", "0")),
+    }
+
+
+@router.post("/reports")
+def update_report_config(body: ReportConfig, current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    if body.period not in ("daily", "weekly"):
+        raise HTTPException(status_code=400, detail="period must be 'daily' or 'weekly'")
+    if not (0 <= body.day <= 6):
+        raise HTTPException(status_code=400, detail="day must be 0–6")
+    try:
+        h, m = map(int, body.time.split(":"))
+        assert 0 <= h <= 23 and 0 <= m <= 59
+    except Exception:
+        raise HTTPException(status_code=400, detail="time must be HH:MM (UTC)")
+
+    os.environ["SENTINEL_REPORT_ENABLED"] = "true" if body.enabled else "false"
+    os.environ["SENTINEL_REPORT_PERIOD"]  = body.period
+    os.environ["SENTINEL_REPORT_TIME"]    = body.time
+    os.environ["SENTINEL_REPORT_DAY"]     = str(body.day)
+
+    save_env_vars({
+        "SENTINEL_REPORT_ENABLED": "true" if body.enabled else "false",
+        "SENTINEL_REPORT_PERIOD":  body.period,
+        "SENTINEL_REPORT_TIME":    body.time,
+        "SENTINEL_REPORT_DAY":     str(body.day),
+    })
+    logger.info(f"Report schedule updated by {current_user['username']}: {body}")
+    return {"enabled": body.enabled, "period": body.period, "time": body.time, "day": body.day}
+
+
+@router.post("/reports/send-now")
+def send_report_now(current_user: dict = Depends(get_current_user)):
+    if current_user["role"] != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    import emailer
+    if not emailer._is_configured():
+        raise HTTPException(status_code=400, detail="Email not configured. Set SMTP settings first.")
+    period = os.environ.get("SENTINEL_REPORT_PERIOD", "daily")
+    try:
+        from reporter import send_scheduled_report
+        ok = send_scheduled_report(period)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    if not ok:
+        raise HTTPException(status_code=500, detail="Failed to send — check server logs.")
+    return {"message": f"{period.capitalize()} report sent successfully"}
+
+
 @router.post("/email/test")
 def test_email(current_user: dict = Depends(get_current_user)):
     if current_user["role"] != "admin":

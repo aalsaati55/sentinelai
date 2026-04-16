@@ -296,6 +296,16 @@ export const api = {
     body: JSON.stringify({ mfa_token, code }),
   }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.detail || 'Failed'); return d }),
 
+  // Scheduled reports (admin only)
+  reportConfigGet:  () => get('/settings/reports'),
+  reportConfigSave: (body) => fetch(`${BASE}/settings/reports`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() },
+    body: JSON.stringify(body),
+  }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.detail || 'Failed'); return d }),
+  reportSendNow: () => fetch(`${BASE}/settings/reports/send-now`, {
+    method: 'POST', headers: authHeaders(),
+  }).then(async r => { const d = await r.json(); if (!r.ok) throw new Error(d.detail || 'Failed'); return d }),
+
   // User management (admin only)
   users:          () => get('/auth/users'),
   changeRole:     (id, role) => patch(`/auth/users/${id}/role`, { role }),
