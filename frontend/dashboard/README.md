@@ -1,16 +1,54 @@
-# React + Vite
+# SentinelAI — Frontend Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React + Vite + Tailwind CSS SOC dashboard for the SentinelAI SIEM platform.
 
-Currently, two official plugins are available:
+## Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **React 18** — component-based UI
+- **Vite** — dev server with HMR
+- **Tailwind CSS** — utility-first styling with dark theme design system
+- **Recharts** — bar, line, area, and pie charts for analytics panels
+- **Lucide Icons** — icon library
+- **WebSocket** — live event/alert feed with auto-reconnect
 
-## React Compiler
+## Pages
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+| Page | Route | Description |
+|------|-------|-------------|
+| Login | `/` | JWT login with optional TOTP MFA step |
+| Register | `/register` | Account creation (first user → admin) |
+| Overview | `overview` | KPI cards, live feed, charts, team activity |
+| Incidents | `incidents` | Correlated incidents with SOAR, playbook, notes |
+| Alerts | `alerts` | Rule-based alerts with MITRE tags, GeoIP, FP marking |
+| Alert Tuning | `alert-tuning` | Threshold tuning and rule suppression (admin) |
+| Events | `events` | Raw normalized log events |
+| Attack Map | `attack-map` | Live SVG world map with attacker IPs |
+| Watchlist | `watchlist` | Monitored IP management |
+| Audit Log | `audit-log` | Full activity audit trail with filtered CSV export |
+| Users | `users` | User management (admin) |
+| Settings | `settings` | Email alerts, SSH config, MFA, password, reports |
 
-## Expanding the ESLint configuration
+## Development
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm install
+npm run dev
+# Runs at http://localhost:5173
+# Backend must be running at http://localhost:8000
+```
+
+## Key Components
+
+- **`LiveFeed.jsx`** — WebSocket live event/alert stream with severity filter, scrolls within its panel
+- **`NotificationBell.jsx`** — Notification dropdown rendered via React portal to always appear above all page content
+- **`Panel.jsx`** — Reusable card; auto-enables scrollable flex layout when given a fixed height class (e.g. `h-80`)
+- **`AttackMap.jsx`** — SVG world map from local GeoJSON with zoom/pan and threat intel markers
+- **`OnboardingModal.jsx`** — 8-step first-login tour
+
+## CSV Export
+
+All four data pages export **only the currently filtered rows**, not the full dataset:
+- **Alerts** — respects severity, rule, FP, and search filters
+- **Incidents** — respects status, severity, FP, and search filters
+- **Events** — respects source, type, status, and IP filters
+- **Audit Log** — respects user and action filters
