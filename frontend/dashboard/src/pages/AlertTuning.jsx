@@ -86,12 +86,12 @@ export function AlertTuning() {
     const isDirty = r.tunable && draft !== undefined && parseInt(draft, 10) !== r.threshold
     const isSuppressed = suppressedSet.has(r.rule_name)
     return (
-      <div className={`flex items-start gap-4 p-4 rounded-xl border transition-colors ${
+      <div className={`flex items-start gap-4 p-4 rounded-xl border transition-all ${
         isSuppressed
-          ? 'border-red-500/20 bg-red-500/5 opacity-60'
+          ? 'border-red-500/20 bg-red-500/[0.05] opacity-60'
           : r.overridden
-          ? 'border-blue-500/30 bg-blue-500/5'
-          : 'border-[#30363d] bg-[#1c2128]/50'
+          ? 'border-blue-500/25 bg-blue-500/[0.05]'
+          : 'border-white/[0.07] bg-white/[0.02] hover:border-white/[0.12]'
       }`}>
         {/* Rule info */}
         <div className="flex-1 min-w-0">
@@ -123,45 +123,31 @@ export function AlertTuning() {
                 max={9999}
                 value={currentVal}
                 onChange={e => setEditing(prev => ({ ...prev, [r.rule_name]: e.target.value }))}
-                className="w-20 bg-[#161b22] border border-[#30363d] focus:border-blue-500 text-slate-200 text-sm text-center rounded-lg px-2 py-1.5 outline-none transition-colors"
+                className="w-20 ctrl-input text-center"
               />
             </div>
           )}
 
           {isDirty && (
-            <button
-              onClick={() => saveThreshold(r.rule_name, draft)}
-              disabled={saving === r.rule_name}
-              className="flex items-center gap-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
-            >
-              <Plus size={11} />
-              {saving === r.rule_name ? 'Saving…' : 'Apply'}
+            <button onClick={() => saveThreshold(r.rule_name, draft)} disabled={saving === r.rule_name}
+              className="btn-primary flex items-center gap-1 text-xs px-3 py-1.5 rounded-[10px] whitespace-nowrap">
+              <Plus size={11} />{saving === r.rule_name ? 'Saving…' : 'Apply'}
             </button>
           )}
 
           {r.tunable && r.overridden && !isDirty && (
-            <button
-              onClick={() => resetThreshold(r.rule_name, r.default)}
-              disabled={saving === r.rule_name}
+            <button onClick={() => resetThreshold(r.rule_name, r.default)} disabled={saving === r.rule_name}
               title="Reset to default"
-              className="flex items-center gap-1 text-slate-500 hover:text-slate-300 text-xs px-2 py-1.5 rounded-lg hover:bg-white/5 transition-colors"
-            >
-              <RotateCcw size={11} />
-              Reset
+              className="btn-ghost flex items-center gap-1 text-xs px-2 py-1.5 rounded-[10px]">
+              <RotateCcw size={11} />Reset
             </button>
           )}
 
-          {/* Suppress toggle */}
-          <button
-            onClick={() => toggleSuppress(r.rule_name)}
-            disabled={suppressing === r.rule_name}
-            title={isSuppressed ? 'Unsuppress — re-enable this rule' : 'Suppress — silence all alerts from this rule'}
+          <button onClick={() => toggleSuppress(r.rule_name)} disabled={suppressing === r.rule_name}
+            title={isSuppressed ? 'Unsuppress' : 'Suppress'}
             className={`p-1.5 rounded-lg transition-colors ${
-              isSuppressed
-                ? 'text-red-400 bg-red-500/10 hover:bg-red-500/20'
-                : 'text-slate-500 hover:text-red-400 hover:bg-red-500/10'
-            }`}
-          >
+              isSuppressed ? 'text-red-400 bg-red-500/10 hover:bg-red-500/20' : 'text-slate-600 hover:text-red-400 hover:bg-red-500/10'
+            }`}>
             {isSuppressed ? <Volume2 size={14} /> : <VolumeX size={14} />}
           </button>
         </div>
@@ -172,17 +158,17 @@ export function AlertTuning() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-white mb-1">Alert Tuning</h2>
-        <p className="text-sm text-slate-500">All {rules.length} detection rules — adjust thresholds and suppress noisy rules without touching code</p>
+        <h2 className="page-title">Alert Tuning</h2>
+        <p className="page-sub">All {rules.length} detection rules — adjust thresholds and suppress noisy rules without touching code</p>
       </div>
 
       {msg && (
-        <div className={`flex items-center gap-2 rounded-lg px-4 py-3 text-sm ${
+        <div className={`flex items-center gap-2 rounded-xl px-4 py-3 text-xs font-medium ${
           msg.type === 'success'
-            ? 'bg-green-500/10 border border-green-500/20 text-green-400'
-            : 'bg-red-500/10 border border-red-500/20 text-red-400'
+            ? 'bg-green-500/8 border border-green-500/20 text-green-400'
+            : 'bg-red-500/8 border border-red-500/20 text-red-400'
         }`}>
-          {msg.type === 'success' ? <CheckCircle size={14} /> : <XCircle size={14} />}
+          {msg.type === 'success' ? <CheckCircle size={13} /> : <XCircle size={13} />}
           {msg.text}
         </div>
       )}
@@ -224,19 +210,15 @@ export function AlertTuning() {
         ) : (
           <div className="space-y-2">
             {suppressed.map(s => (
-              <div key={s.rule_name} className="flex items-center justify-between p-3 rounded-xl bg-red-500/5 border border-red-500/20">
+              <div key={s.rule_name} className="flex items-center justify-between p-3 rounded-xl bg-red-500/[0.05] border border-red-500/20">
                 <div>
                   <code className="text-xs font-mono text-red-400 font-semibold">{s.rule_name}</code>
                   {s.reason && <p className="text-xs text-slate-500 mt-0.5">{s.reason}</p>}
                   <p className="text-[10px] text-slate-600 mt-0.5">By {s.suppressed_by} · {fmtTs(s.created_at)}</p>
                 </div>
-                <button
-                  onClick={() => toggleSuppress(s.rule_name)}
-                  disabled={suppressing === s.rule_name}
-                  className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-green-400 hover:bg-green-500/10 px-3 py-1.5 rounded-lg border border-[#30363d] transition-colors"
-                >
-                  <Volume2 size={12} />
-                  Unsuppress
+                <button onClick={() => toggleSuppress(s.rule_name)} disabled={suppressing === s.rule_name}
+                  className="btn-success flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-[10px]">
+                  <Volume2 size={12} />Unsuppress
                 </button>
               </div>
             ))}

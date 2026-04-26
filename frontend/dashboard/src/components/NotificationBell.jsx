@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Bell, X, AlertTriangle, Zap, UserCheck, AtSign } from 'lucide-react'
 import { api } from '../api'
 
@@ -13,8 +14,8 @@ const ALERT_ICON = {
   high:     <AlertTriangle size={12} className="text-orange-400" />,
 }
 const ALERT_COLOR = {
-  critical: 'border-l-red-500 bg-red-500/5',
-  high:     'border-l-orange-500 bg-orange-500/5',
+  critical: 'border-l-red-500',
+  high:     'border-l-orange-500',
 }
 
 // ── User-notification rendering ────────────────────────────────
@@ -23,8 +24,8 @@ const USER_NOTIF_ICON = {
   mention:    <AtSign size={12} className="text-purple-400" />,
 }
 const USER_NOTIF_COLOR = {
-  assignment: 'border-l-blue-500 bg-blue-500/5',
-  mention:    'border-l-purple-500 bg-purple-500/5',
+  assignment: 'border-l-blue-500',
+  mention:    'border-l-purple-500',
 }
 
 export function NotificationBell() {
@@ -32,11 +33,14 @@ export function NotificationBell() {
   const [userNotifs,  setUserNotifs]      = useState([])
   const [unseen, setUnseen]               = useState(0)
   const [open, setOpen]                   = useState(false)
+  const [dropPos, setDropPos]             = useState({ top: 0, right: 0 })
 
   const alertSinceRef = useRef(new Date().toISOString())
   const userSinceRef  = useRef(new Date().toISOString())
   const intervalRef   = useRef(null)
   const panelRef      = useRef(null)
+  const dropRef       = useRef(null)
+  const bellRef       = useRef(null)
 
   const poll = useCallback(async () => {
     try {
@@ -65,16 +69,25 @@ export function NotificationBell() {
     return () => clearInterval(intervalRef.current)
   }, [poll])
 
-  // Close panel on outside click
+  // Close panel on outside click (check both bell wrapper and fixed dropdown)
   useEffect(() => {
     function handler(e) {
-      if (panelRef.current && !panelRef.current.contains(e.target)) setOpen(false)
+      const inBell = panelRef.current && panelRef.current.contains(e.target)
+      const inDrop = dropRef.current  && dropRef.current.contains(e.target)
+      if (!inBell && !inDrop) setOpen(false)
     }
     if (open) document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
   function openPanel() {
+    if (!open && bellRef.current) {
+      const rect = bellRef.current.getBoundingClientRect()
+      setDropPos({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right,
+      })
+    }
     setOpen(o => !o)
     setUnseen(0)
     if (!open) api.markNotifsRead().catch(() => {})
@@ -107,6 +120,7 @@ export function NotificationBell() {
     <div className="relative" ref={panelRef}>
       {/* Bell button */}
       <button
+        ref={bellRef}
         onClick={openPanel}
         className="relative flex items-center justify-center w-8 h-8 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-white/5 transition-colors"
         title="Notifications"
@@ -119,11 +133,22 @@ export function NotificationBell() {
         )}
       </button>
 
-      {/* Dropdown panel */}
-      {open && (
-        <div className="absolute right-0 top-10 w-80 bg-[#161b22] border border-[#30363d] rounded-xl shadow-2xl z-50 overflow-hidden">
+      {/* Dropdown panel — portalled into document.body to escape header backdrop-filter stacking context */}
+      {open && createPortal(
+        <div
+          ref={dropRef}
+          className="fixed w-80 rounded-xl shadow-2xl overflow-hidden"
+          style={{
+            top: dropPos.top,
+            right: dropPos.right,
+            zIndex: 9999,
+            background: '#0d1421',
+            border: '1px solid rgba(255,255,255,0.1)',
+            boxShadow: '0 24px 60px rgba(0,0,0,0.7), 0 0 0 1px rgba(56,139,253,0.1)',
+          }}
+        >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-[#30363d]">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-[#30363d]" style={{ background: '#0d1421' }}>
             <span className="text-sm font-semibold text-white">
               Notifications {total > 0 && <span className="text-slate-500 font-normal">({total})</span>}
             </span>
@@ -135,7 +160,7 @@ export function NotificationBell() {
           </div>
 
           {/* Notifications list */}
-          <div className="max-h-96 overflow-y-auto">
+          <div className="max-h-96 overflow-y-auto" style={{ background: '#0d1421' }}>
             {total === 0 ? (
               <div className="px-4 py-8 text-center text-slate-600 text-sm">No new notifications</div>
             ) : (
@@ -146,6 +171,7 @@ export function NotificationBell() {
                     <div
                       key={`u-${n.id}`}
                       className={`flex items-start gap-3 px-4 py-3 border-b border-[#30363d]/50 border-l-2 ${USER_NOTIF_COLOR[n.type] || 'border-l-slate-600'}`}
+                      style={{ background: '#0d1421' }}
                     >
                       <div className="mt-0.5 shrink-0">{USER_NOTIF_ICON[n.type] || <Bell size={12} className="text-slate-400" />}</div>
                       <div className="flex-1 min-w-0">
@@ -165,6 +191,7 @@ export function NotificationBell() {
                   <div
                     key={`a-${n.id}`}
                     className={`flex items-start gap-3 px-4 py-3 border-b border-[#30363d]/50 border-l-2 ${ALERT_COLOR[n.severity] || 'border-l-slate-600'}`}
+                    style={{ background: '#0d1421' }}
                   >
                     <div className="mt-0.5 shrink-0">{ALERT_ICON[n.severity]}</div>
                     <div className="flex-1 min-w-0">
@@ -185,7 +212,8 @@ export function NotificationBell() {
               })
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )

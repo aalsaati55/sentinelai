@@ -83,30 +83,45 @@ function App() {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#0d1117]">
+    <div className="flex h-screen overflow-hidden" style={{ background: 'var(--bg-base)' }}>
       {showOnboarding && <OnboardingModal onClose={closeOnboarding} />}
       <Sidebar page={page} setPage={setPage} userRole={user?.role} />
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top header bar */}
-        <header className="shrink-0 h-12 bg-[#161b22] border-b border-[#30363d] flex items-center justify-end px-5 gap-3">
+        <header className="shrink-0 h-12 glass-strong flex items-center justify-end px-5 gap-3 relative"
+          style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+          {/* Subtle gradient accent on header bottom border */}
+          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-500/20 to-transparent pointer-events-none" />
+
           <NotificationBell />
-          <div className="flex items-center gap-2 text-sm text-slate-400">
-            <User size={14} className="text-slate-500" />
-            <span className="font-medium text-slate-300">{user?.username}</span>
-            <span className="text-xs bg-blue-500/15 text-blue-400 border border-blue-500/20 px-2 py-0.5 rounded-full">
-              {user?.role}
-            </span>
+
+          <div className="flex items-center gap-1.5 pl-3" style={{ borderLeft: '1px solid rgba(255,255,255,0.07)' }}>
+            <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/[0.07]">
+              <div className="w-5 h-5 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center">
+                <User size={11} className="text-white" />
+              </div>
+              <span className="text-sm font-medium text-slate-300">{user?.username}</span>
+              <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider
+                ${user?.role === 'admin'
+                  ? 'bg-purple-500/15 text-purple-300 border border-purple-500/25'
+                  : 'bg-blue-500/15 text-blue-300 border border-blue-500/25'
+                }`}>
+                {user?.role}
+              </span>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-red-400 transition-colors ml-1 px-2 py-1 rounded-lg hover:bg-red-500/5"
+            >
+              <LogOut size={12} />
+              Sign out
+            </button>
           </div>
-          <button
-            onClick={handleLogout}
-            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-red-400 transition-colors ml-2"
-          >
-            <LogOut size={13} />
-            Sign out
-          </button>
         </header>
         <main className="flex-1 overflow-y-auto p-6">
-          {pages[page]}
+          <div className="animate-fade-in">
+            {pages[page]}
+          </div>
         </main>
       </div>
     </div>

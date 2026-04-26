@@ -99,8 +99,8 @@ export function Users() {
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center h-64 text-slate-500">
-      <UsersIcon size={24} className="animate-pulse mr-2" /> Loading users…
+    <div className="flex items-center justify-center h-64 text-slate-600">
+      <UsersIcon size={20} className="animate-pulse mr-2" /> Loading users…
     </div>
   )
 
@@ -108,14 +108,14 @@ export function Users() {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-xl font-bold text-white mb-1">User Management</h2>
-          <p className="text-sm text-slate-500">Manage analyst and admin accounts — admin only</p>
+          <h2 className="page-title">User Management</h2>
+          <p className="page-sub">Manage analyst and admin accounts — admin only</p>
         </div>
         <div className="flex items-center gap-3">
-          {success && <span className="text-xs text-green-400 font-medium">{success}</span>}
+          {success && <span className="text-xs text-green-400 font-medium animate-fade-in">{success}</span>}
           <button
             onClick={() => { setCreateModal(true); setFormError(''); setSuccess('') }}
-            className="flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg transition-colors"
+            className="btn-primary flex items-center gap-1.5 text-xs px-3 py-[0.4rem] rounded-[10px]"
           >
             <Plus size={12} /> New User
           </button>
@@ -123,7 +123,7 @@ export function Users() {
       </div>
 
       {error && (
-        <div className="bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg px-4 py-3 text-sm">
+        <div className="bg-red-500/8 border border-red-500/20 text-red-300 rounded-xl px-4 py-3 text-xs">
           {error}
         </div>
       )}
@@ -140,7 +140,7 @@ export function Users() {
             </thead>
             <tbody>
               {users.map(user => (
-                <tr key={user.id} className="border-t border-[#30363d] hover:bg-white/[0.02] transition-colors">
+                <tr key={user.id} className="table-row-hover border-t border-white/[0.05]">
                   <td className="py-3 pr-4 text-slate-500 text-xs">{user.id}</td>
                   <td className="py-3 pr-4">
                     <div className="flex items-center gap-2">
@@ -167,33 +167,20 @@ export function Users() {
                     ) : (
                       <div className="flex items-center gap-2">
                         {/* Role toggle */}
-                        <button
-                          onClick={() => handleRoleChange(user, user.role === 'admin' ? 'analyst' : 'admin')}
-                          className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border border-[#30363d] text-slate-400 hover:text-blue-400 hover:border-blue-500/30 transition-colors"
-                          title={`Make ${user.role === 'admin' ? 'analyst' : 'admin'}`}
-                        >
-                          <UserCog size={12} />
-                          {user.role === 'admin' ? 'Make Analyst' : 'Make Admin'}
+                        <button onClick={() => handleRoleChange(user, user.role === 'admin' ? 'analyst' : 'admin')}
+                          className="btn-ghost flex items-center gap-1 text-xs px-2.5 py-1 rounded-[8px]"
+                          title={`Make ${user.role === 'admin' ? 'analyst' : 'admin'}`}>
+                          <UserCog size={11} />{user.role === 'admin' ? 'Make Analyst' : 'Make Admin'}
                         </button>
-
-                        {/* Reset Password */}
-                        <button
-                          onClick={() => { setResetModal(user); setResetPw(''); setFormError('') }}
-                          className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border border-[#30363d] text-slate-400 hover:text-yellow-400 hover:border-yellow-500/30 transition-colors"
-                          title="Reset password"
-                        >
-                          <Key size={12} />
-                          Reset PW
+                        <button onClick={() => { setResetModal(user); setResetPw(''); setFormError('') }}
+                          className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-[8px] border border-yellow-500/20 text-yellow-500/70 hover:text-yellow-400 hover:border-yellow-500/40 hover:bg-yellow-500/5 transition-all"
+                          title="Reset password">
+                          <Key size={11} />Reset PW
                         </button>
-
-                        {/* Delete */}
-                        <button
-                          onClick={() => handleDelete(user)}
-                          className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-lg border border-[#30363d] text-slate-400 hover:text-red-400 hover:border-red-500/30 transition-colors"
-                          title="Delete user"
-                        >
-                          <Trash2 size={12} />
-                          Delete
+                        <button onClick={() => handleDelete(user)}
+                          className="btn-danger flex items-center gap-1 text-xs px-2.5 py-1 rounded-[8px]"
+                          title="Delete user">
+                          <Trash2 size={11} />Delete
                         </button>
                       </div>
                     )}
@@ -207,34 +194,28 @@ export function Users() {
 
       {/* Confirm modal */}
       {confirm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-6 w-full max-w-md shadow-2xl">
-            <h3 className="text-white font-semibold text-lg mb-2">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="relative rounded-2xl p-6 w-full max-w-md shadow-[0_24px_80px_rgba(0,0,0,0.6)]"
+            style={{ background: 'rgba(13,20,33,0.95)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)' }}>
+            <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-red-500/30 to-transparent" />
+            <h3 className="text-white font-bold text-base mb-2">
               {confirm.type === 'delete' ? 'Delete User' : 'Change Role'}
             </h3>
-            <p className="text-slate-400 text-sm mb-6">
+            <p className="text-slate-500 text-sm mb-6">
               {confirm.type === 'delete'
                 ? <>Are you sure you want to delete <span className="text-white font-semibold">{confirm.user.username}</span>? This cannot be undone.</>
-                : <>Change <span className="text-white font-semibold">{confirm.user.username}</span>'s role from <span className="font-semibold">{confirm.user.role}</span> to <span className="font-semibold text-blue-400">{confirm.newRole}</span>?</>
+                : <>Change <span className="text-white font-semibold">{confirm.user.username}</span>'s role to <span className="font-semibold text-blue-400">{confirm.newRole}</span>?</>
               }
             </p>
             <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setConfirm(null)}
-                disabled={busy}
-                className="px-4 py-2 text-sm rounded-lg border border-[#30363d] text-slate-400 hover:text-white transition-colors"
-              >
+              <button onClick={() => setConfirm(null)} disabled={busy}
+                className="btn-ghost text-xs px-4 py-2 rounded-[10px]">
                 Cancel
               </button>
-              <button
-                onClick={confirmAction}
-                disabled={busy}
-                className={`px-4 py-2 text-sm rounded-lg font-semibold transition-colors ${
-                  confirm.type === 'delete'
-                    ? 'bg-red-600 hover:bg-red-500 text-white'
-                    : 'bg-blue-600 hover:bg-blue-500 text-white'
-                }`}
-              >
+              <button onClick={confirmAction} disabled={busy}
+                className={`text-xs font-bold px-4 py-2 rounded-[10px] text-white transition-all disabled:opacity-40 ${
+                  confirm.type === 'delete' ? 'btn-danger' : 'btn-primary'
+                }`}>
                 {busy ? 'Processing…' : confirm.type === 'delete' ? 'Delete' : 'Confirm'}
               </button>
             </div>
@@ -243,13 +224,15 @@ export function Users() {
       )}
       {/* Create User Modal */}
       {createModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-sm p-5 space-y-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="relative rounded-2xl w-full max-w-sm p-6 space-y-4 shadow-[0_24px_80px_rgba(0,0,0,0.6)]"
+            style={{ background: 'rgba(13,20,33,0.95)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)' }}>
+            <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-blue-500/40 to-transparent" />
             <div className="flex items-center justify-between">
-              <h3 className="text-white font-semibold text-sm">Create New User</h3>
-              <button onClick={() => setCreateModal(false)} className="text-slate-500 hover:text-slate-300"><X size={14} /></button>
+              <h3 className="text-white font-bold text-sm">Create New User</h3>
+              <button onClick={() => setCreateModal(false)} className="text-slate-600 hover:text-slate-400 transition-colors"><X size={14} /></button>
             </div>
-            {formError && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded px-3 py-2">{formError}</p>}
+            {formError && <p className="text-red-300 text-xs bg-red-500/8 border border-red-500/20 rounded-xl px-3 py-2">{formError}</p>}
             <div className="space-y-3">
               {[
                 { label: 'Username', key: 'username', type: 'text', placeholder: 'e.g. john.doe1' },
@@ -257,40 +240,31 @@ export function Users() {
                 { label: 'Password', key: 'password', type: 'password', placeholder: 'Min 8 chars, 1 upper, 1 digit, 1 special' },
               ].map(({ label, key, type, placeholder }) => (
                 <div key={key}>
-                  <label className="text-xs text-slate-500 mb-1 block">{label}</label>
-                  <input
-                    type={type}
-                    value={createForm[key]}
+                  <label className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1.5 block">{label}</label>
+                  <input type={type} value={createForm[key]}
                     onChange={e => setCreateForm(prev => ({ ...prev, [key]: e.target.value }))}
                     placeholder={placeholder}
-                    className="w-full bg-[#1c2128] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/50"
-                  />
+                    className="ctrl-input w-full" />
                 </div>
               ))}
               <div>
-                <label className="text-xs text-slate-500 mb-1 block">Role</label>
-                <select
-                  value={createForm.role}
-                  onChange={e => setCreateForm(prev => ({ ...prev, role: e.target.value }))}
-                  className="w-full bg-[#1c2128] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-slate-300 focus:outline-none"
-                >
-                  <option value="analyst">Analyst</option>
-                  <option value="admin">Admin</option>
-                </select>
+                <label className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1.5 block">Role</label>
+                <div className="relative">
+                  <select value={createForm.role} onChange={e => setCreateForm(prev => ({ ...prev, role: e.target.value }))}
+                    className="ctrl-select w-full">
+                    <option value="analyst">Analyst</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
               </div>
             </div>
             <div className="flex gap-3 pt-1">
-              <button
-                onClick={createUser}
-                disabled={busy || !createForm.username || !createForm.email || !createForm.password}
-                className="flex-1 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 text-white text-sm font-semibold py-2 rounded-lg transition-colors"
-              >
+              <button onClick={createUser} disabled={busy || !createForm.username || !createForm.email || !createForm.password}
+                className="btn-primary flex-1 text-xs font-bold py-2 rounded-[10px] disabled:opacity-40">
                 {busy ? 'Creating…' : 'Create'}
               </button>
-              <button
-                onClick={() => { setCreateModal(false); setFormError('') }}
-                className="flex-1 bg-[#1c2128] border border-[#30363d] text-slate-300 text-sm py-2 rounded-lg hover:border-slate-500 transition-colors"
-              >
+              <button onClick={() => { setCreateModal(false); setFormError('') }}
+                className="btn-ghost flex-1 text-xs py-2 rounded-[10px]">
                 Cancel
               </button>
             </div>
@@ -300,35 +274,29 @@ export function Users() {
 
       {/* Reset Password Modal */}
       {resetModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-[#161b22] border border-[#30363d] rounded-xl w-full max-w-sm p-5 space-y-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="relative rounded-2xl w-full max-w-sm p-6 space-y-4 shadow-[0_24px_80px_rgba(0,0,0,0.6)]"
+            style={{ background: 'rgba(13,20,33,0.95)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)' }}>
+            <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-yellow-500/40 to-transparent" />
             <div className="flex items-center justify-between">
-              <h3 className="text-white font-semibold text-sm">Reset password for <span className="text-yellow-400">{resetModal.username}</span></h3>
-              <button onClick={() => setResetModal(null)} className="text-slate-500 hover:text-slate-300"><X size={14} /></button>
+              <h3 className="text-white font-bold text-sm">Reset password for <span className="text-yellow-400">{resetModal.username}</span></h3>
+              <button onClick={() => setResetModal(null)} className="text-slate-600 hover:text-slate-400 transition-colors"><X size={14} /></button>
             </div>
-            {formError && <p className="text-red-400 text-xs bg-red-500/10 border border-red-500/20 rounded px-3 py-2">{formError}</p>}
+            {formError && <p className="text-red-300 text-xs bg-red-500/8 border border-red-500/20 rounded-xl px-3 py-2">{formError}</p>}
             <div>
-              <label className="text-xs text-slate-500 mb-1 block">New Password</label>
-              <input
-                type="password"
-                value={resetPw}
-                onChange={e => setResetPw(e.target.value)}
+              <label className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1.5 block">New Password</label>
+              <input type="password" value={resetPw} onChange={e => setResetPw(e.target.value)}
                 placeholder="Min 8 chars, 1 upper, 1 digit, 1 special"
-                className="w-full bg-[#1c2128] border border-[#30363d] rounded-lg px-3 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-yellow-500/50"
-              />
+                className="ctrl-input w-full" />
             </div>
             <div className="flex gap-3 pt-1">
-              <button
-                onClick={doResetPassword}
-                disabled={busy || !resetPw.trim()}
-                className="flex-1 bg-yellow-600 hover:bg-yellow-500 disabled:opacity-40 text-white text-sm font-semibold py-2 rounded-lg transition-colors"
-              >
+              <button onClick={doResetPassword} disabled={busy || !resetPw.trim()}
+                className="flex-1 text-xs font-bold py-2 rounded-[10px] text-white disabled:opacity-40 transition-all"
+                style={{ background: 'linear-gradient(135deg,#a16207,#ca8a04)', boxShadow: '0 4px 14px rgba(202,138,4,0.25)' }}>
                 {busy ? 'Saving…' : 'Reset Password'}
               </button>
-              <button
-                onClick={() => { setResetModal(null); setFormError('') }}
-                className="flex-1 bg-[#1c2128] border border-[#30363d] text-slate-300 text-sm py-2 rounded-lg hover:border-slate-500 transition-colors"
-              >
+              <button onClick={() => { setResetModal(null); setFormError('') }}
+                className="btn-ghost flex-1 text-xs py-2 rounded-[10px]">
                 Cancel
               </button>
             </div>

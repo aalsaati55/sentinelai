@@ -146,8 +146,14 @@ export function Overview({ onGoToIncidents }) {
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center h-64 text-slate-500">
-      <Activity size={24} className="animate-spin mr-2" /> Loading…
+    <div className="flex items-center justify-center h-64">
+      <div className="flex flex-col items-center gap-3">
+        <div className="relative">
+          <div className="w-10 h-10 rounded-full border-2 border-blue-500/20 border-t-blue-500 animate-spin" />
+          <div className="absolute inset-2 rounded-full bg-blue-500/10" />
+        </div>
+        <span className="text-sm text-slate-500">Loading dashboard…</span>
+      </div>
     </div>
   )
 
@@ -155,24 +161,25 @@ export function Overview({ onGoToIncidents }) {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-xl font-bold text-white mb-1">SOC Overview</h2>
-          <p className="text-sm text-slate-500">Real-time security posture dashboard</p>
+          <div className="flex items-center gap-3 mb-1">
+            <div className="flex items-center gap-1.5">
+              <span className="neon-dot-green" />
+              <span className="text-[10px] font-bold uppercase tracking-widest text-green-400">Live</span>
+            </div>
+            <h2 className="text-2xl font-bold text-white tracking-tight">SOC Overview</h2>
+          </div>
+          <p className="text-sm text-slate-600">Real-time security posture · {lastRefresh && (
+            <span>{secondsAgo < 5 ? 'just updated' : `updated ${secondsAgo}s ago`}</span>
+          )}</p>
         </div>
-        <div className="flex items-center gap-3">
-          {lastRefresh && (
-            <span className="text-xs text-slate-600">
-              {secondsAgo < 5 ? 'Just updated' : `Updated ${secondsAgo}s ago`}
-            </span>
-          )}
-          <button
-            onClick={() => refreshSummary(false)}
-            disabled={refreshing}
-            className="flex items-center gap-2 bg-[#1c2128] border border-[#30363d] hover:border-blue-500 text-slate-400 hover:text-slate-200 text-xs px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50"
-          >
-            <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
-            Refresh
-          </button>
-        </div>
+        <button
+          onClick={() => refreshSummary(false)}
+          disabled={refreshing}
+          className="btn-ghost flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg disabled:opacity-50"
+        >
+          <RefreshCw size={12} className={refreshing ? 'animate-spin' : ''} />
+          Refresh
+        </button>
       </div>
 
       {/* Stat cards */}
@@ -193,91 +200,93 @@ export function Overview({ onGoToIncidents }) {
       {/* MTTD / MTTR */}
       {mttdMttr && (
         <div className="grid grid-cols-2 gap-4">
-          <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <Zap size={13} className="text-blue-400" />
-              <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Mean Time to Detect (MTTD)</span>
+          <div className="relative overflow-hidden rounded-2xl border border-blue-500/15 bg-blue-500/[0.04] p-4 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-blue-500 to-cyan-400 opacity-60" />
+            <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-blue-500/10 blur-2xl pointer-events-none" />
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-1.5 rounded-lg bg-blue-500/10"><Zap size={12} className="text-blue-400" /></div>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Mean Time to Detect</span>
             </div>
-            <p className="text-2xl font-bold text-white">
+            <p className="text-3xl font-bold text-blue-300">
               {mttdMttr.mttd_minutes < 1 ? '<1m' : mttdMttr.mttd_minutes < 60
                 ? `${Math.round(mttdMttr.mttd_minutes)}m`
                 : `${(mttdMttr.mttd_minutes / 60).toFixed(1)}h`}
             </p>
-            <p className="text-xs text-slate-600 mt-1">Avg. time from first alert to incident creation</p>
+            <p className="text-xs text-slate-600 mt-1">First alert → incident creation</p>
           </div>
-          <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-1">
-              <ShieldAlert size={13} className="text-green-400" />
-              <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Mean Time to Respond (MTTR)</span>
+          <div className="relative overflow-hidden rounded-2xl border border-green-500/15 bg-green-500/[0.04] p-4 shadow-[0_4px_20px_rgba(0,0,0,0.3)]">
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-green-500 to-emerald-400 opacity-60" />
+            <div className="absolute -top-6 -right-6 w-20 h-20 rounded-full bg-green-500/10 blur-2xl pointer-events-none" />
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-1.5 rounded-lg bg-green-500/10"><ShieldAlert size={12} className="text-green-400" /></div>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Mean Time to Respond</span>
             </div>
-            <p className="text-2xl font-bold text-white">
+            <p className="text-3xl font-bold text-green-300">
               {mttdMttr.mttr_minutes === 0 ? 'N/A' : mttdMttr.mttr_minutes < 60
                 ? `${Math.round(mttdMttr.mttr_minutes)}m`
                 : `${(mttdMttr.mttr_minutes / 60).toFixed(1)}h`}
             </p>
-            <p className="text-xs text-slate-600 mt-1">Avg. time from incident creation to close</p>
+            <p className="text-xs text-slate-600 mt-1">Incident creation → close</p>
           </div>
         </div>
       )}
 
       {/* False Positive Rate Panel */}
       {fpStats && (
-        <div className="bg-[#161b22] border border-[#30363d] rounded-xl p-5">
+        <Panel>
           <div className="flex items-center gap-2 mb-4">
-            <ShieldOff size={14} className="text-yellow-400" />
-            <span className="text-xs text-slate-500 uppercase tracking-wider font-semibold">False Positive Rate</span>
+            <div className="p-1.5 rounded-lg bg-yellow-500/10"><ShieldOff size={12} className="text-yellow-400" /></div>
+            <span className="text-xs font-bold uppercase tracking-widest text-slate-500">False Positive Rate</span>
             {fpStats.fp_this_week > 0 && (
-              <span className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-400">
-                {fpStats.fp_this_week} FP marked this week
+              <span className="ml-auto text-[10px] font-semibold px-2.5 py-0.5 rounded-full bg-yellow-500/10 border border-yellow-500/20 text-yellow-300">
+                {fpStats.fp_this_week} FP this week
               </span>
             )}
           </div>
           <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="bg-[#1c2128] border border-[#30363d] rounded-lg p-3">
-              <p className="text-xs text-slate-500 mb-1">Alert FP Rate</p>
-              <p className="text-2xl font-bold text-white">{fpStats.alert_fp_rate}<span className="text-base text-slate-500">%</span></p>
-              <p className="text-xs text-slate-600 mt-1">{fpStats.alert_fp} of {fpStats.alert_total} alerts marked false positive</p>
-              <div className="mt-2 h-1.5 bg-[#30363d] rounded-full overflow-hidden">
-                <div className="h-full rounded-full bg-yellow-500/60" style={{ width: `${Math.min(fpStats.alert_fp_rate, 100)}%` }} />
+            {[['Alert FP Rate', fpStats.alert_fp_rate, fpStats.alert_fp, fpStats.alert_total],
+              ['Incident FP Rate', fpStats.inc_fp_rate, fpStats.inc_fp, fpStats.inc_total]].map(([label, rate, fp, total]) => (
+              <div key={label} className="bg-white/[0.02] border border-white/[0.06] rounded-xl p-3">
+                <p className="text-[10px] text-slate-600 uppercase tracking-wider mb-1">{label}</p>
+                <p className="text-2xl font-bold text-yellow-300">{rate}<span className="text-base text-slate-500">%</span></p>
+                <p className="text-xs text-slate-600 mt-1">{fp} of {total} marked FP</p>
+                <div className="mt-2 h-1 bg-white/[0.05] rounded-full overflow-hidden">
+                  <div className="h-full rounded-full bg-gradient-to-r from-yellow-500 to-amber-300" style={{ width: `${Math.min(rate, 100)}%` }} />
+                </div>
               </div>
-            </div>
-            <div className="bg-[#1c2128] border border-[#30363d] rounded-lg p-3">
-              <p className="text-xs text-slate-500 mb-1">Incident FP Rate</p>
-              <p className="text-2xl font-bold text-white">{fpStats.inc_fp_rate}<span className="text-base text-slate-500">%</span></p>
-              <p className="text-xs text-slate-600 mt-1">{fpStats.inc_fp} of {fpStats.inc_total} incidents marked false positive</p>
-              <div className="mt-2 h-1.5 bg-[#30363d] rounded-full overflow-hidden">
-                <div className="h-full rounded-full bg-yellow-500/60" style={{ width: `${Math.min(fpStats.inc_fp_rate, 100)}%` }} />
-              </div>
-            </div>
+            ))}
           </div>
           {fpStats.top_fp_rules.length > 0 && (
             <div>
-              <p className="text-xs text-slate-600 uppercase tracking-wider mb-2">Top rules generating false positives</p>
-              <div className="space-y-1.5">
+              <p className="text-[10px] text-slate-700 uppercase tracking-widest mb-2">Top FP rules</p>
+              <div className="space-y-2">
                 {fpStats.top_fp_rules.map(r => (
                   <div key={r.rule_name} className="flex items-center gap-3">
-                    <code className="text-xs font-mono text-slate-400 w-52 truncate">{r.rule_name}</code>
-                    <div className="flex-1 h-1.5 bg-[#30363d] rounded-full overflow-hidden">
-                      <div className="h-full rounded-full bg-yellow-500/50"
+                    <code className="text-xs font-mono text-slate-500 w-52 truncate">{r.rule_name}</code>
+                    <div className="flex-1 h-1 bg-white/[0.04] rounded-full overflow-hidden">
+                      <div className="h-full rounded-full bg-gradient-to-r from-yellow-500/60 to-amber-400/60"
                         style={{ width: `${Math.min((r.fp_count / fpStats.alert_fp) * 100, 100)}%` }} />
                     </div>
-                    <span className="text-xs text-slate-500 w-8 text-right">{r.fp_count}</span>
+                    <span className="text-xs text-slate-500 w-6 text-right tabular-nums">{r.fp_count}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
-        </div>
+        </Panel>
       )}
 
       {liveEvents > 0 && (
-        <div className="flex items-center gap-3 bg-blue-500/5 border border-blue-500/20 rounded-lg px-4 py-2.5 text-sm">
-          <Radio size={13} className="text-blue-400 shrink-0" />
-          <span className="text-blue-300 font-medium">{liveEvents} live event{liveEvents !== 1 ? 's' : ''}</span>
+        <div className="flex items-center gap-3 bg-blue-500/[0.05] border border-blue-500/20 rounded-2xl px-4 py-3 shadow-[0_0_20px_rgba(56,139,253,0.08)]">
+          <span className="neon-dot-blue animate-pulse shrink-0" />
+          <span className="text-sm text-blue-300 font-semibold">{liveEvents} live event{liveEvents !== 1 ? 's' : ''}</span>
           {liveAlerts > 0 && (
-            <span className="text-red-400 font-medium">· {liveAlerts} new alert{liveAlerts !== 1 ? 's' : ''} detected</span>
+            <span className="flex items-center gap-1.5 text-sm text-red-300 font-semibold">
+              <span className="neon-dot-red" />
+              {liveAlerts} new alert{liveAlerts !== 1 ? 's' : ''}
+            </span>
           )}
-          <span className="text-slate-500">— stats auto-updated</span>
+          <span className="text-xs text-slate-600 ml-auto">stats auto-updated</span>
         </div>
       )}
 
@@ -383,17 +392,20 @@ export function Overview({ onGoToIncidents }) {
       </Panel>
 
       {/* Timeline charts */}
-      <div className="flex items-center justify-between mb-1">
-        <h3 className="text-sm font-semibold text-slate-400">Trend Charts</h3>
-        <div className="flex items-center gap-1 bg-[#1c2128] border border-[#30363d] rounded-lg p-1">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-slate-400 flex items-center gap-2">
+          <span className="w-1 h-3.5 rounded-full bg-gradient-to-b from-blue-400 to-blue-600 inline-block" />
+          Trend Charts
+        </h3>
+        <div className="flex items-center gap-1 bg-white/[0.03] border border-white/[0.07] rounded-xl p-1">
           {[7, 30, 90].map(d => (
             <button
               key={d}
               onClick={() => setDays(d)}
-              className={`text-xs px-3 py-1 rounded-md transition-colors ${
+              className={`text-xs px-3 py-1 rounded-lg transition-all ${
                 days === d
-                  ? 'bg-blue-600 text-white font-semibold'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold shadow-[0_0_10px_rgba(56,139,253,0.3)]'
+                  : 'text-slate-500 hover:text-slate-300'
               }`}
             >
               {d}d
@@ -442,37 +454,37 @@ export function Overview({ onGoToIncidents }) {
               <thead>
                 <tr className="text-left">
                   {['Analyst', 'Incidents Closed', 'Assigned', 'Notes Added', 'SOAR Executed', 'Avg Resolution'].map(h => (
-                    <th key={h} className="pb-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">{h}</th>
+                    <th key={h} className="pb-3 pr-4 text-[10px] font-bold uppercase tracking-widest text-slate-600 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {teamActivity.map((a, i) => (
-                  <tr key={a.username} className="border-t border-[#30363d] hover:bg-white/[0.02] transition-colors">
-                    <td className="py-2.5 pr-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center text-[10px] font-bold text-blue-400 shrink-0">
+                  <tr key={a.username} className="table-row-hover border-t border-white/[0.04]">
+                    <td className="py-3 pr-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-[11px] font-bold text-white shrink-0 shadow-[0_0_8px_rgba(56,139,253,0.3)]">
                           {a.username[0]?.toUpperCase()}
                         </div>
-                        <span className="text-slate-200 text-xs font-medium">{a.username}</span>
-                        {i === 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-semibold">TOP</span>}
+                        <span className="text-slate-200 text-xs font-semibold">{a.username}</span>
+                        {i === 0 && <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-yellow-500/10 text-yellow-300 border border-yellow-500/20 font-bold tracking-wide">MVP</span>}
                       </div>
                     </td>
-                    <td className="py-2.5 pr-4">
-                      <span className={`text-sm font-bold ${a.incidents_closed > 0 ? 'text-green-400' : 'text-slate-600'}`}>
+                    <td className="py-3 pr-4">
+                      <span className={`text-sm font-bold tabular-nums ${a.incidents_closed > 0 ? 'text-green-300' : 'text-slate-700'}`}>
                         {a.incidents_closed}
                       </span>
                     </td>
-                    <td className="py-2.5 pr-4 text-slate-400 text-xs">{a.incidents_assigned}</td>
-                    <td className="py-2.5 pr-4 text-slate-400 text-xs">{a.notes_added}</td>
-                    <td className="py-2.5 pr-4">
-                      <span className={`text-xs ${a.soar_executed > 0 ? 'text-yellow-400 font-semibold' : 'text-slate-600'}`}>
+                    <td className="py-3 pr-4 text-slate-500 text-xs tabular-nums">{a.incidents_assigned}</td>
+                    <td className="py-3 pr-4 text-slate-500 text-xs tabular-nums">{a.notes_added}</td>
+                    <td className="py-3 pr-4">
+                      <span className={`text-xs tabular-nums ${a.soar_executed > 0 ? 'text-yellow-300 font-bold' : 'text-slate-700'}`}>
                         {a.soar_executed > 0 ? `⚡ ${a.soar_executed}` : '—'}
                       </span>
                     </td>
-                    <td className="py-2.5 pr-4 text-xs text-slate-400">
+                    <td className="py-3 pr-4 text-xs text-slate-500 tabular-nums">
                       {a.avg_resolution_minutes == null ? (
-                        <span className="text-slate-600">—</span>
+                        <span className="text-slate-700">—</span>
                       ) : a.avg_resolution_minutes < 60 ? (
                         `${Math.round(a.avg_resolution_minutes)}m`
                       ) : (
@@ -492,8 +504,8 @@ export function Overview({ onGoToIncidents }) {
         title="Recent Incidents"
         action={
           <button onClick={onGoToIncidents}
-            className="text-xs text-blue-400 hover:text-blue-300 transition-colors">
-            View all →
+            className="text-xs text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1">
+            View all <span className="opacity-60">→</span>
           </button>
         }
       >
@@ -502,24 +514,24 @@ export function Overview({ onGoToIncidents }) {
             <thead>
               <tr className="text-left">
                 {['#', 'Title', 'Source IP', 'User', 'Risk', 'Status', 'Created'].map(h => (
-                  <th key={h} className="pb-3 pr-4 text-xs font-semibold uppercase tracking-wider text-slate-500 whitespace-nowrap">{h}</th>
+                  <th key={h} className="pb-3 pr-4 text-[10px] font-bold uppercase tracking-widest text-slate-600 whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {incidents.length ? incidents.map(i => (
-                <tr key={i.id} className="border-t border-[#30363d] hover:bg-white/[0.02] transition-colors">
-                  <td className="py-2.5 pr-4 text-slate-500 text-xs">{i.id}</td>
-                  <td className="py-2.5 pr-4 text-slate-200 max-w-[200px] truncate">{i.title}</td>
-                  <td className="py-2.5 pr-4 text-slate-400 font-mono text-xs">{i.source_ip || '—'}</td>
-                  <td className="py-2.5 pr-4 text-slate-400">{i.username || '—'}</td>
-                  <td className="py-2.5 pr-4"><ScoreBar score={i.risk_score} /></td>
-                  <td className="py-2.5 pr-4"><Badge value={i.status} /></td>
-                  <td className="py-2.5 text-slate-500 text-xs whitespace-nowrap">{fmtTs(i.created_at)}</td>
+                <tr key={i.id} className="table-row-hover border-t border-white/[0.04]">
+                  <td className="py-3 pr-4 text-slate-600 text-xs tabular-nums">#{i.id}</td>
+                  <td className="py-3 pr-4 text-slate-200 text-xs font-medium max-w-[200px] truncate">{i.title}</td>
+                  <td className="py-3 pr-4 text-slate-500 font-mono text-xs">{i.source_ip || '—'}</td>
+                  <td className="py-3 pr-4 text-slate-500 text-xs">{i.username || '—'}</td>
+                  <td className="py-3 pr-4"><ScoreBar score={i.risk_score} /></td>
+                  <td className="py-3 pr-4"><Badge value={i.status} /></td>
+                  <td className="py-3 text-slate-600 text-xs whitespace-nowrap tabular-nums">{fmtTs(i.created_at)}</td>
                 </tr>
               )) : (
-                <tr><td colSpan={7} className="py-10 text-center text-slate-500 text-sm">
-                  No incidents yet — run the pipeline first.
+                <tr><td colSpan={7} className="py-12 text-center text-slate-600 text-sm">
+                  No incidents yet
                 </td></tr>
               )}
             </tbody>

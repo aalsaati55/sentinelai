@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { RefreshCw, Download, ClipboardList } from 'lucide-react'
+import { RefreshCw, Download, ClipboardList, ChevronDown } from 'lucide-react'
 import { api, token } from '../api'
 import { Panel } from '../components/Panel'
 
@@ -91,32 +91,54 @@ export function AuditLog() {
     .filter(e => !filter     || e.action   === filter)
     .filter(e => !userFilter || e.username === userFilter)
 
+  function exportFilteredCsv() {
+    if (filtered.length === 0) return
+    const headers = ['ID', 'Time', 'User', 'Action', 'Target Type', 'Target ID', 'Detail']
+    const escape = v => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const lines = [
+      headers.join(','),
+      ...filtered.map(e => [
+        e.id,
+        escape(fmtTs(e.created_at)),
+        escape(e.username || ''),
+        escape(ACTION_LABELS[e.action] || e.action),
+        escape(e.target_type || ''),
+        e.target_id ?? '',
+        escape(e.detail || ''),
+      ].join(','))
+    ].join('\n')
+    const blob = new Blob([lines], { type: 'text/csv;charset=utf-8;' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    const suffix = [userFilter, filter ? (ACTION_LABELS[filter] || filter) : ''].filter(Boolean).join('_') || 'all'
+    a.download = `auditlog_${suffix}_${new Date().toISOString().slice(0,10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-bold text-white mb-1">Audit Log</h2>
-        <p className="text-sm text-slate-500">Track all changes — status updates, assignments, role changes, notes</p>
+        <h2 className="page-title">Audit Log</h2>
+        <p className="page-sub">Track all changes — status updates, assignments, role changes, notes</p>
       </div>
 
       <Panel>
         {/* Toolbar */}
-        <div className="flex items-center gap-3 mb-5 flex-wrap">
-          <select
-            value={userFilter}
-            onChange={e => setUserFilter(e.target.value)}
-            className="appearance-none bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 outline-none focus:border-purple-500 cursor-pointer"
-          >
-            <option value="">All users</option>
-            {users.map(u => (
-              <option key={u} value={u}>{u}</option>
-            ))}
-          </select>
+        <div className="toolbar">
+          <div className="relative">
+            <select value={userFilter} onChange={e => setUserFilter(e.target.value)} className="ctrl-select">
+              <option value="">All users</option>
+              {users.map(u => (
+                <option key={u} value={u}>{u}</option>
+              ))}
+            </select>
+            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
+          </div>
 
-          <select
-            value={filter}
-            onChange={e => setFilter(e.target.value)}
-            className="appearance-none bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 outline-none focus:border-blue-500 cursor-pointer"
-          >
+          <div className="relative">
+            <select value={filter} onChange={e => setFilter(e.target.value)} className="ctrl-select">
             <option value="">All actions</option>
             <optgroup label="── Incidents / Alerts">
               <option value="status_change">Status Change</option>
@@ -147,24 +169,20 @@ export function AuditLog() {
                 <option value="mfa_disabled">MFA Disabled</option>
               </optgroup>
             )}
-          </select>
+            </select>
+            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
+          </div>
 
-          <button
-            onClick={load}
-            className="flex items-center gap-2 bg-[#1c2128] border border-[#30363d] hover:border-blue-500 text-slate-300 text-sm px-3 py-2 rounded-lg transition-colors"
-          >
-            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+          <button onClick={load} className="btn-ghost flex items-center gap-2 text-xs px-3 py-[0.4rem] rounded-[10px]">
+            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
             Refresh
           </button>
 
-          <button
-            onClick={() => api.exportAuditCsv()}
-            className="flex items-center gap-2 bg-[#1c2128] border border-[#30363d] hover:border-green-500 text-slate-300 text-sm px-3 py-2 rounded-lg transition-colors ml-auto"
-          >
-            <Download size={13} />
+          <button onClick={exportFilteredCsv} className="btn-success flex items-center gap-2 text-xs px-3 py-[0.4rem] rounded-[10px] ml-auto">
+            <Download size={12} />
             Export CSV
           </button>
-          <span className="text-xs text-slate-500">{filtered.length} entries</span>
+          <span className="text-xs text-slate-600 tabular-nums">{filtered.length} entries</span>
         </div>
 
         {/* Table */}

@@ -203,6 +203,36 @@ export function Alerts() {
 
   const ruleNames = useMemo(() => [...new Set(alerts.map(a => a.rule_name).filter(Boolean))].sort(), [alerts])
 
+  function exportFilteredCsv() {
+    if (filtered.length === 0) return
+    const headers = ['ID','Rule','Severity','Risk Score','Anomaly Level','Source IP','User','Description','False Positive','FP Reason','Created']
+    const escape = v => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const lines = [
+      headers.join(','),
+      ...filtered.map(a => [
+        a.id,
+        escape(a.rule_name || ''),
+        escape(a.severity || ''),
+        a.risk_score ?? '',
+        escape(a.anomaly_level || ''),
+        escape(a.source_ip || ''),
+        escape(a.username || ''),
+        escape(a.description || ''),
+        a.false_positive ? 'Yes' : 'No',
+        escape(a.fp_reason || ''),
+        escape(fmtTs(a.created_at)),
+      ].join(','))
+    ].join('\n')
+    const blob = new Blob([lines], { type: 'text/csv;charset=utf-8;' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    const suffix = [filter, ruleFilter, fpFilter !== 'all' ? fpFilter : ''].filter(Boolean).join('_') || 'all'
+    a.download = `alerts_${suffix}_${new Date().toISOString().slice(0,10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   const filtered = useMemo(() => {
     let result = alerts
     if (ruleFilter) result = result.filter(a => a.rule_name === ruleFilter)
@@ -226,78 +256,59 @@ export function Alerts() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-bold text-white mb-1">Alerts</h2>
-        <p className="text-sm text-slate-500">Rule-based detection alerts with ML anomaly scoring</p>
+        <h2 className="page-title">Alerts</h2>
+        <p className="page-sub">Rule-based detection alerts with ML anomaly scoring</p>
       </div>
 
       <Panel>
         {/* Toolbar */}
-        <div className="flex items-center gap-3 mb-5 flex-wrap">
+        <div className="toolbar">
           <div className="relative">
-            <select
-              value={filter}
-              onChange={e => setFilter(e.target.value)}
-              className="appearance-none bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 pr-8 outline-none focus:border-blue-500 cursor-pointer"
-            >
+            <select value={filter} onChange={e => setFilter(e.target.value)} className="ctrl-select">
               <option value="">All severities</option>
               <option value="critical">Critical</option>
               <option value="high">High</option>
               <option value="medium">Medium</option>
               <option value="low">Low</option>
             </select>
-            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
           </div>
           <div className="relative">
-            <select
-              value={ruleFilter}
-              onChange={e => setRuleFilter(e.target.value)}
-              className="appearance-none bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 pr-8 outline-none focus:border-blue-500 cursor-pointer"
-            >
+            <select value={ruleFilter} onChange={e => setRuleFilter(e.target.value)} className="ctrl-select">
               <option value="">All rules</option>
               {ruleNames.map(r => (
                 <option key={r} value={r}>{r.replace(/_/g, ' ')}</option>
               ))}
             </select>
-            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
           </div>
           <div className="relative">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
             <input
               type="text"
               placeholder="Search #ID, IP, rule, description…"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg pl-8 pr-3 py-2 w-52 outline-none focus:border-blue-500 placeholder-slate-600"
+              className="ctrl-input pl-8 w-52"
             />
           </div>
-          <button
-            onClick={load}
-            className="flex items-center gap-2 bg-[#1c2128] border border-[#30363d] hover:border-blue-500 text-slate-300 text-sm px-3 py-2 rounded-lg transition-colors"
-          >
-            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+          <button onClick={load} className="btn-ghost flex items-center gap-2 text-xs px-3 py-[0.4rem] rounded-[10px]">
+            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
             Refresh
           </button>
-          <button
-            onClick={() => api.exportAlertsCsv(filter)}
-            className="flex items-center gap-2 bg-[#1c2128] border border-[#30363d] hover:border-green-500 text-slate-300 text-sm px-3 py-2 rounded-lg transition-colors ml-auto"
-          >
-            <Download size={13} />
+          <button onClick={exportFilteredCsv} className="btn-success flex items-center gap-2 text-xs px-3 py-[0.4rem] rounded-[10px] ml-auto">
+            <Download size={12} />
             Export CSV
           </button>
-          {/* FP filter */}
           <div className="relative">
-            <select
-              value={fpFilter}
-              onChange={e => setFpFilter(e.target.value)}
-              className="appearance-none bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 pr-8 outline-none focus:border-blue-500 cursor-pointer"
-            >
+            <select value={fpFilter} onChange={e => setFpFilter(e.target.value)} className="ctrl-select">
               <option value="all">All alerts</option>
               <option value="real">Real attacks only</option>
               <option value="fp">False positives</option>
             </select>
-            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
           </div>
-          <span className="text-xs text-slate-500">{filtered.length} alert{filtered.length !== 1 ? 's' : ''}</span>
+          <span className="text-xs text-slate-600 tabular-nums">{filtered.length} alert{filtered.length !== 1 ? 's' : ''}</span>
         </div>
 
         {/* Bulk action bar */}

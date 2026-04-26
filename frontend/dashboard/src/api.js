@@ -107,6 +107,18 @@ export const api = {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a'); a.href = url; a.download = 'audit_log.csv'; a.click(); URL.revokeObjectURL(url)
   },
+  exportEventsCsv: async ({ source = '', evtType = '', ipFilter = '', statusFilter = '' } = {}) => {
+    const params = new URLSearchParams()
+    if (source)       params.set('log_source',  source)
+    if (evtType)      params.set('event_type',  evtType)
+    if (ipFilter)     params.set('source_ip',   ipFilter)
+    if (statusFilter) params.set('status',      statusFilter)
+    const q = params.toString() ? `?${params.toString()}` : ''
+    const r = await fetch(`${BASE}/events/export/csv${q}`, { headers: authHeaders() })
+    const blob = await r.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a'); a.href = url; a.download = 'events.csv'; a.click(); URL.revokeObjectURL(url)
+  },
 
   // Alert Tuning
   tuningRules:      () => get('/tuning/rules'),

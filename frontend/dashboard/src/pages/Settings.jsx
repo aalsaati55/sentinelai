@@ -210,32 +210,40 @@ export function Settings() {
     } finally { setSshTesting(false) }
   }
 
+  const inputCls = "w-full bg-white/[0.04] border border-white/[0.08] focus:border-blue-500/60 focus:shadow-[0_0_0_3px_rgba(56,139,253,0.1)] text-slate-200 placeholder:text-slate-600 text-sm rounded-xl px-3 py-2.5 outline-none transition-all"
+  const labelCls = "block text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1.5"
+  const flashCls = (type) => `flex items-center gap-2 rounded-xl px-4 py-3 text-xs font-medium ${
+    type === 'success' ? 'bg-green-500/8 border border-green-500/20 text-green-400' : 'bg-red-500/8 border border-red-500/20 text-red-400'
+  }`
+  const actionBtnCls = "flex items-center gap-2 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all disabled:opacity-40"
+  const ghostBtnCls = "btn-ghost flex items-center gap-2 text-xs font-semibold px-5 py-2.5 rounded-xl"
+
   function field(label, key, type = 'text', placeholder = '') {
     return (
       <div key={key}>
-        <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1.5">{label}</label>
+        <label className={labelCls}>{label}</label>
         <input
           type={type}
           value={config[key]}
           onChange={e => setConfig(c => ({ ...c, [key]: type === 'number' ? Number(e.target.value) : e.target.value }))}
           placeholder={placeholder}
-          className="w-full bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-blue-500 placeholder-slate-600"
+          className={inputCls}
         />
       </div>
     )
   }
 
   if (loading) return (
-    <div className="flex items-center justify-center h-64 text-slate-500">
-      <SettingsIcon size={24} className="animate-spin mr-2" /> Loading…
+    <div className="flex items-center justify-center h-64 text-slate-600">
+      <SettingsIcon size={18} className="animate-spin mr-2" /> Loading…
     </div>
   )
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold text-white mb-1">Settings</h2>
-        <p className="text-sm text-slate-500">{isAdmin ? 'Configure email alerts and system preferences' : 'Manage your account security'}</p>
+        <h2 className="page-title">Settings</h2>
+        <p className="page-sub">{isAdmin ? 'Configure email alerts and system preferences' : 'Manage your account security'}</p>
       </div>
 
       {isAdmin && (
@@ -249,50 +257,41 @@ export function Settings() {
           <form onSubmit={handleSshSave} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1.5">Target Host (Ubuntu IP)</label>
-                <input type="text" value={ssh.host} onChange={e => setSsh(s => ({ ...s, host: e.target.value }))} placeholder="192.168.56.130"
-                  className="w-full bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-blue-500 placeholder-slate-600" />
+                <label className={labelCls}>Target Host (Ubuntu IP)</label>
+                <input type="text" value={ssh.host} onChange={e => setSsh(s => ({ ...s, host: e.target.value }))} placeholder="192.168.56.130" className={inputCls} />
               </div>
               <div>
-                <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1.5">SSH Port</label>
-                <input type="number" value={ssh.port} onChange={e => setSsh(s => ({ ...s, port: Number(e.target.value) }))} placeholder="22"
-                  className="w-full bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-blue-500 placeholder-slate-600" />
+                <label className={labelCls}>SSH Port</label>
+                <input type="number" value={ssh.port} onChange={e => setSsh(s => ({ ...s, port: Number(e.target.value) }))} placeholder="22" className={inputCls} />
               </div>
               <div>
-                <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1.5">Username</label>
-                <input type="text" value={ssh.username} onChange={e => setSsh(s => ({ ...s, username: e.target.value }))} placeholder="majeed"
-                  className="w-full bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-blue-500 placeholder-slate-600" />
+                <label className={labelCls}>Username</label>
+                <input type="text" value={ssh.username} onChange={e => setSsh(s => ({ ...s, username: e.target.value }))} placeholder="majeed" className={inputCls} />
               </div>
               <div>
-                <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1.5">SSH Private Key Path (on SIEM server)</label>
-                <input type="text" value={ssh.key_path} onChange={e => setSsh(s => ({ ...s, key_path: e.target.value }))} placeholder="~/.ssh/id_rsa (leave blank to use SSH agent)"
-                  className="w-full bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-blue-500 placeholder-slate-600" />
+                <label className={labelCls}>SSH Private Key Path (on SIEM server)</label>
+                <input type="text" value={ssh.key_path} onChange={e => setSsh(s => ({ ...s, key_path: e.target.value }))} placeholder="~/.ssh/id_rsa" className={inputCls} />
               </div>
             </div>
 
             {sshMsg && (
-              <div className={`flex items-start gap-2 rounded-lg px-4 py-3 text-sm ${
-                sshMsg.type === 'success'
-                  ? 'bg-green-500/10 border border-green-500/20 text-green-400'
-                  : 'bg-red-500/10 border border-red-500/20 text-red-400'
-              }`}>
-                {sshMsg.type === 'success' ? <CheckCircle size={14} className="mt-0.5 shrink-0" /> : <XCircle size={14} className="mt-0.5 shrink-0" />}
+              <div className={flashCls(sshMsg.type)}>
+                {sshMsg.type === 'success' ? <CheckCircle size={13} className="shrink-0" /> : <XCircle size={13} className="shrink-0" />}
                 <span className="break-all">{sshMsg.text}</span>
               </div>
             )}
 
             <div className="flex gap-3 pt-2">
-              <button type="submit" disabled={sshSaving}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
-                <Save size={14} />{sshSaving ? 'Saving…' : 'Save SSH Config'}
+              <button type="submit" disabled={sshSaving} className={actionBtnCls}
+                style={{ background: 'linear-gradient(135deg,#1a6bcc,#388bfd)', boxShadow: '0 4px 14px rgba(56,139,253,0.25)' }}>
+                <Save size={13} />{sshSaving ? 'Saving…' : 'Save SSH Config'}
               </button>
-              <button type="button" onClick={handleSshTest} disabled={sshTesting || !sshConfigured}
-                className="flex items-center gap-2 bg-[#1c2128] border border-[#30363d] hover:border-green-500 disabled:opacity-40 text-slate-300 text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
-                <Terminal size={14} />{sshTesting ? 'Testing…' : 'Test Connection'}
+              <button type="button" onClick={handleSshTest} disabled={sshTesting || !sshConfigured} className={ghostBtnCls}>
+                <Terminal size={13} />{sshTesting ? 'Testing…' : 'Test Connection'}
               </button>
             </div>
           </form>
-          <div className="mt-5 border-t border-[#30363d] pt-4">
+          <div className="mt-5 border-t border-white/[0.06] pt-4">
             <p className="text-xs text-slate-600 mb-2">Setup passwordless SSH from the SIEM server to Ubuntu:</p>
             <ol className="text-xs text-slate-600 space-y-1 list-decimal list-inside">
               <li>On Windows SIEM: <code className="text-slate-400">ssh-keygen -t rsa -b 4096</code></li>
@@ -307,23 +306,22 @@ export function Settings() {
       {/* Password Change Panel — available to all users */}
       <Panel title="Change Password">
         <form onSubmit={handleChangePassword} className="space-y-4 max-w-md">
-          {(['current', 'next', 'confirm']).map(field => {
+          {(['current', 'next', 'confirm']).map(f => {
             const labels = { current: 'Current Password', next: 'New Password', confirm: 'Confirm New Password' }
             return (
-              <div key={field}>
-                <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1.5">{labels[field]}</label>
+              <div key={f}>
+                <label className={labelCls}>{labels[f]}</label>
                 <div className="relative">
                   <input
-                    type={showPw[field] ? 'text' : 'password'}
-                    value={pwForm[field]}
-                    onChange={e => setPwForm(f => ({ ...f, [field]: e.target.value }))}
-                    required
-                    placeholder="••••••••"
-                    className="w-full bg-[#1c2128] border border-[#30363d] focus:border-blue-500 text-slate-200 placeholder:text-slate-600 text-sm rounded-lg px-3 py-2.5 pr-10 outline-none transition-colors"
+                    type={showPw[f] ? 'text' : 'password'}
+                    value={pwForm[f]}
+                    onChange={e => setPwForm(p => ({ ...p, [f]: e.target.value }))}
+                    required placeholder="••••••••"
+                    className={`${inputCls} pr-10`}
                   />
-                  <button type="button" onClick={() => setShowPw(s => ({ ...s, [field]: !s[field] }))}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors">
-                    {showPw[field] ? <EyeOff size={14} /> : <Eye size={14} />}
+                  <button type="button" onClick={() => setShowPw(s => ({ ...s, [f]: !s[f] }))}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400 transition-colors">
+                    {showPw[f] ? <EyeOff size={14} /> : <Eye size={14} />}
                   </button>
                 </div>
               </div>
@@ -331,19 +329,15 @@ export function Settings() {
           })}
 
           {pwMsg && (
-            <div className={`flex items-center gap-2 rounded-lg px-4 py-3 text-sm ${
-              pwMsg.type === 'success'
-                ? 'bg-green-500/10 border border-green-500/20 text-green-400'
-                : 'bg-red-500/10 border border-red-500/20 text-red-400'
-            }`}>
-              {pwMsg.type === 'success' ? <CheckCircle size={14} /> : <XCircle size={14} />}
+            <div className={flashCls(pwMsg.type)}>
+              {pwMsg.type === 'success' ? <CheckCircle size={13} /> : <XCircle size={13} />}
               {pwMsg.text}
             </div>
           )}
 
           <button type="submit" disabled={pwLoading || !pwForm.current || !pwForm.next || !pwForm.confirm}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
-            <Lock size={14} />{pwLoading ? 'Saving…' : 'Change Password'}
+            className={actionBtnCls} style={{ background: 'linear-gradient(135deg,#1a6bcc,#388bfd)', boxShadow: '0 4px 14px rgba(56,139,253,0.25)' }}>
+            <Lock size={13} />{pwLoading ? 'Saving…' : 'Change Password'}
           </button>
         </form>
       </Panel>
@@ -358,12 +352,8 @@ export function Settings() {
         </div>
 
         {mfaMsg && (
-          <div className={`flex items-center gap-2 rounded-lg px-4 py-3 text-sm mb-4 ${
-            mfaMsg.type === 'success'
-              ? 'bg-green-500/10 border border-green-500/20 text-green-400'
-              : 'bg-red-500/10 border border-red-500/20 text-red-400'
-          }`}>
-            {mfaMsg.type === 'success' ? <CheckCircle size={14} /> : <XCircle size={14} />}
+          <div className={`${flashCls(mfaMsg.type)} mb-4`}>
+            {mfaMsg.type === 'success' ? <CheckCircle size={13} /> : <XCircle size={13} />}
             {mfaMsg.text}
           </div>
         )}
@@ -372,15 +362,15 @@ export function Settings() {
         {mfaStep === 'idle' && (
           <div className="flex gap-3">
             {!mfaEnabled && (
-              <button onClick={handleMfaSetup} disabled={mfaLoading}
-                className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
-                <QrCode size={14} />{mfaLoading ? 'Generating…' : 'Set Up MFA'}
+              <button onClick={handleMfaSetup} disabled={mfaLoading} className={actionBtnCls}
+                style={{ background: 'linear-gradient(135deg,#7c3aed,#a371f7)', boxShadow: '0 4px 14px rgba(163,113,247,0.25)' }}>
+                <QrCode size={13} />{mfaLoading ? 'Generating…' : 'Set Up MFA'}
               </button>
             )}
             {mfaEnabled && (
               <button onClick={() => { setMfaStep('disable'); setMfaMsg(null) }}
-                className="flex items-center gap-2 bg-red-600/20 hover:bg-red-600/30 border border-red-500/30 text-red-400 text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
-                <ShieldOff size={14} />Disable MFA
+                className="btn-danger flex items-center gap-2 text-xs font-semibold px-5 py-2.5 rounded-xl">
+                <ShieldOff size={13} />Disable MFA
               </button>
             )}
           </div>
@@ -389,7 +379,7 @@ export function Settings() {
         {/* Setup step — show QR code */}
         {mfaStep === 'setup' && mfaSetupUri && (
           <div className="space-y-4">
-            <div className="bg-[#1c2128] border border-[#30363d] rounded-xl p-5">
+            <div className="rounded-xl p-5" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
               <p className="text-sm text-slate-300 font-semibold mb-1">1. Scan this QR code with your authenticator app</p>
               <p className="text-xs text-slate-500 mb-4">Use <span className="text-slate-400">Google Authenticator</span>, <span className="text-slate-400">Authy</span>, or any TOTP app</p>
               <div className="flex justify-center mb-4">
@@ -410,14 +400,14 @@ export function Settings() {
                   type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6}
                   value={mfaCode} onChange={e => setMfaCode(e.target.value.replace(/\D/g, ''))}
                   placeholder="000000" autoComplete="one-time-code"
-                  className="w-40 bg-[#1c2128] border border-[#30363d] focus:border-purple-500 text-slate-200 placeholder:text-slate-600 text-xl text-center font-mono tracking-[0.4em] rounded-lg px-3 py-3 outline-none transition-colors"
+                  className="w-40 bg-white/[0.04] border border-white/[0.08] focus:border-purple-500/60 text-slate-200 placeholder:text-slate-600 text-xl text-center font-mono tracking-[0.4em] rounded-xl px-3 py-3 outline-none transition-all"
                 />
-                <button type="submit" disabled={mfaLoading || mfaCode.length !== 6}
-                  className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white text-sm font-semibold px-5 py-3 rounded-lg transition-colors">
-                  <KeyRound size={14} />{mfaLoading ? 'Verifying…' : 'Activate MFA'}
+                <button type="submit" disabled={mfaLoading || mfaCode.length !== 6} className={actionBtnCls}
+                  style={{ background: 'linear-gradient(135deg,#7c3aed,#a371f7)', boxShadow: '0 4px 14px rgba(163,113,247,0.25)' }}>
+                  <KeyRound size={13} />{mfaLoading ? 'Verifying…' : 'Activate MFA'}
                 </button>
                 <button type="button" onClick={() => { setMfaStep('idle'); setMfaCode(''); setMfaSetupUri(null) }}
-                  className="text-sm text-slate-500 hover:text-slate-300 transition-colors">Cancel</button>
+                  className="text-xs text-slate-600 hover:text-slate-400 transition-colors">Cancel</button>
               </div>
             </form>
           </div>
@@ -432,14 +422,14 @@ export function Settings() {
                 type="text" inputMode="numeric" pattern="[0-9]*" maxLength={6}
                 value={mfaCode} onChange={e => setMfaCode(e.target.value.replace(/\D/g, ''))}
                 placeholder="000000" autoFocus
-                className="w-40 bg-[#1c2128] border border-[#30363d] focus:border-red-500 text-slate-200 placeholder:text-slate-600 text-xl text-center font-mono tracking-[0.4em] rounded-lg px-3 py-3 outline-none transition-colors"
+                className="w-40 bg-white/[0.04] border border-white/[0.08] focus:border-red-500/60 text-slate-200 placeholder:text-slate-600 text-xl text-center font-mono tracking-[0.4em] rounded-xl px-3 py-3 outline-none transition-all"
               />
               <button type="submit" disabled={mfaLoading || mfaCode.length !== 6}
-                className="flex items-center gap-2 bg-red-600 hover:bg-red-500 disabled:opacity-50 text-white text-sm font-semibold px-5 py-3 rounded-lg transition-colors">
-                <ShieldOff size={14} />{mfaLoading ? 'Disabling…' : 'Confirm Disable'}
+                className="btn-danger flex items-center gap-2 text-xs font-bold px-5 py-3 rounded-xl disabled:opacity-40">
+                <ShieldOff size={13} />{mfaLoading ? 'Disabling…' : 'Confirm Disable'}
               </button>
               <button type="button" onClick={() => { setMfaStep('idle'); setMfaCode('') }}
-                className="text-sm text-slate-500 hover:text-slate-300 transition-colors">Cancel</button>
+                className="text-xs text-slate-600 hover:text-slate-400 transition-colors">Cancel</button>
             </div>
           </form>
         )}
@@ -462,23 +452,20 @@ export function Settings() {
           <form onSubmit={handleReportSave} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1.5">Frequency</label>
-                <select value={report.period} onChange={e => setReport(r => ({ ...r, period: e.target.value }))}
-                  className="w-full appearance-none bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-blue-500 cursor-pointer">
+                <label className={labelCls}>Frequency</label>
+                <select value={report.period} onChange={e => setReport(r => ({ ...r, period: e.target.value }))} className="ctrl-select w-full">
                   <option value="daily">Daily</option>
                   <option value="weekly">Weekly</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1.5">Send Time (UTC)</label>
-                <input type="time" value={report.time} onChange={e => setReport(r => ({ ...r, time: e.target.value }))}
-                  className="w-full bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-blue-500" />
+                <label className={labelCls}>Send Time (UTC)</label>
+                <input type="time" value={report.time} onChange={e => setReport(r => ({ ...r, time: e.target.value }))} className={inputCls} />
               </div>
               {report.period === 'weekly' && (
                 <div>
-                  <label className="block text-xs text-slate-500 uppercase tracking-wider mb-1.5">Day of Week</label>
-                  <select value={report.day} onChange={e => setReport(r => ({ ...r, day: Number(e.target.value) }))}
-                    className="w-full appearance-none bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2.5 outline-none focus:border-blue-500 cursor-pointer">
+                  <label className={labelCls}>Day of Week</label>
+                  <select value={report.day} onChange={e => setReport(r => ({ ...r, day: Number(e.target.value) }))} className="ctrl-select w-full">
                     {['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'].map((d, i) => (
                       <option key={i} value={i}>{d}</option>
                     ))}
@@ -495,30 +482,20 @@ export function Settings() {
               <span className="text-sm text-slate-400">{report.enabled ? 'Scheduled reports enabled' : 'Scheduled reports disabled'}</span>
             </div>
 
-            {reportMsg && (
-              <div className={`flex items-center gap-2 rounded-lg px-4 py-3 text-sm ${
-                reportMsg.type === 'success'
-                  ? 'bg-green-500/10 border border-green-500/20 text-green-400'
-                  : 'bg-red-500/10 border border-red-500/20 text-red-400'
-              }`}>
-                {reportMsg.type === 'success' ? <CheckCircle size={14} /> : <XCircle size={14} />}
-                {reportMsg.text}
-              </div>
-            )}
+            {reportMsg && <div className={flashCls(reportMsg.type)}>{reportMsg.type === 'success' ? <CheckCircle size={13} /> : <XCircle size={13} />}{reportMsg.text}</div>}
 
             <div className="flex gap-3 pt-2">
-              <button type="submit" disabled={reportSaving}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
-                <Save size={14} />{reportSaving ? 'Saving…' : 'Save Schedule'}
+              <button type="submit" disabled={reportSaving} className={actionBtnCls}
+                style={{ background: 'linear-gradient(135deg,#1a6bcc,#388bfd)', boxShadow: '0 4px 14px rgba(56,139,253,0.25)' }}>
+                <Save size={13} />{reportSaving ? 'Saving…' : 'Save Schedule'}
               </button>
-              <button type="button" onClick={handleReportSendNow} disabled={reportSending}
-                className="flex items-center gap-2 bg-[#1c2128] border border-[#30363d] hover:border-green-500 disabled:opacity-40 text-slate-300 text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors">
-                <PlayCircle size={14} />{reportSending ? 'Sending…' : 'Send Now'}
+              <button type="button" onClick={handleReportSendNow} disabled={reportSending} className={ghostBtnCls}>
+                <PlayCircle size={13} />{reportSending ? 'Sending…' : 'Send Now'}
               </button>
             </div>
           </form>
 
-          <div className="mt-5 border-t border-[#30363d] pt-4">
+          <div className="mt-5 border-t border-white/[0.06] pt-4">
             <p className="text-xs text-slate-600">The report includes: total alerts by severity, new incidents, top attacking IPs, and team activity for the report period. Requires SMTP to be configured above.</p>
           </div>
         </Panel>
@@ -559,39 +536,20 @@ export function Settings() {
               </span>
             </div>
 
-            {msg && (
-              <div className={`flex items-center gap-2 rounded-lg px-4 py-3 text-sm ${
-                msg.type === 'success'
-                  ? 'bg-green-500/10 border border-green-500/20 text-green-400'
-                  : 'bg-red-500/10 border border-red-500/20 text-red-400'
-              }`}>
-                {msg.type === 'success' ? <CheckCircle size={14} /> : <XCircle size={14} />}
-                {msg.text}
-              </div>
-            )}
+            {msg && <div className={flashCls(msg.type)}>{msg.type === 'success' ? <CheckCircle size={13} /> : <XCircle size={13} />}{msg.text}</div>}
 
             <div className="flex gap-3 pt-2">
-              <button
-                type="submit"
-                disabled={saving}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors"
-              >
-                <Save size={14} />
-                {saving ? 'Saving…' : 'Save Settings'}
+              <button type="submit" disabled={saving} className={actionBtnCls}
+                style={{ background: 'linear-gradient(135deg,#1a6bcc,#388bfd)', boxShadow: '0 4px 14px rgba(56,139,253,0.25)' }}>
+                <Save size={13} />{saving ? 'Saving…' : 'Save Settings'}
               </button>
-              <button
-                type="button"
-                onClick={handleTest}
-                disabled={testing || !configured}
-                className="flex items-center gap-2 bg-[#1c2128] border border-[#30363d] hover:border-blue-500 disabled:opacity-40 text-slate-300 text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors"
-              >
-                <Send size={14} />
-                {testing ? 'Sending…' : 'Send Test Email'}
+              <button type="button" onClick={handleTest} disabled={testing || !configured} className={ghostBtnCls}>
+                <Send size={13} />{testing ? 'Sending…' : 'Send Test Email'}
               </button>
             </div>
           </form>
 
-          <div className="mt-6 border-t border-[#30363d] pt-4">
+          <div className="mt-6 border-t border-white/[0.06] pt-4">
             <p className="text-xs text-slate-600 mb-2">Using Gmail? You need an <span className="text-slate-500">App Password</span> (not your regular password):</p>
             <ol className="text-xs text-slate-600 space-y-1 list-decimal list-inside">
               <li>Go to Google Account → Security → 2-Step Verification → App passwords</li>

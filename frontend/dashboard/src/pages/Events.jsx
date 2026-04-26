@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { RefreshCw, ChevronDown } from 'lucide-react'
+import { RefreshCw, ChevronDown, Download } from 'lucide-react'
 import { api } from '../api'
 import { Panel } from '../components/Panel'
 import { Badge } from '../components/Badge'
@@ -14,6 +14,7 @@ export function Events() {
   const [loading, setLoading]     = useState(true)
   const [source, setSource]       = useState('')
   const [evtType, setEvtType]     = useState('')
+  const [statusFilter, setStatusFilter] = useState('')
   const [ipFilter, setIpFilter]   = useState('')
   const [ipInput, setIpInput]     = useState('')
   const [eventTypes, setEventTypes] = useState([])
@@ -21,9 +22,10 @@ export function Events() {
   async function load() {
     setLoading(true)
     const params = { limit: 300 }
-    if (source)  params.log_source = source
-    if (evtType) params.event_type = evtType
-    if (ipFilter) params.source_ip = ipFilter
+    if (source)       params.log_source = source
+    if (evtType)      params.event_type = evtType
+    if (ipFilter)     params.source_ip  = ipFilter
+    if (statusFilter) params.status     = statusFilter
     try {
       setEvents(await api.events(params))
     } finally { setLoading(false) }
@@ -33,9 +35,37 @@ export function Events() {
     api.eventsDistinctTypes().then(types => setEventTypes(types)).catch(() => {})
   }, [])
 
-  useEffect(() => { load() }, [source, evtType, ipFilter])
+  useEffect(() => { load() }, [source, evtType, ipFilter, statusFilter])
 
   function applyIp() { setIpFilter(ipInput.trim()) }
+
+  function exportFilteredCsv() {
+    if (events.length === 0) return
+    const headers = ['ID','Timestamp','Source','Type','Source IP','User','Host','Status','Message']
+    const escape = v => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const lines = [
+      headers.join(','),
+      ...events.map(e => [
+        e.id,
+        escape(fmtTs(e.timestamp)),
+        escape(e.log_source || ''),
+        escape(e.event_type || ''),
+        escape(e.source_ip || ''),
+        escape(e.username || ''),
+        escape(e.hostname || ''),
+        escape(e.status || ''),
+        escape(e.message || ''),
+      ].join(','))
+    ].join('\n')
+    const blob = new Blob([lines], { type: 'text/csv;charset=utf-8;' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    const suffix = [source, evtType, ipFilter, statusFilter].filter(Boolean).join('_') || 'all'
+    a.download = `events_${suffix}_${new Date().toISOString().slice(0,10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
 
   function statusOverride(status) {
     if (status === 'success') return 'success'
@@ -46,74 +76,62 @@ export function Events() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-xl font-bold text-white mb-1">Events</h2>
-        <p className="text-sm text-slate-500">Raw parsed and normalized log events</p>
+        <h2 className="page-title">Events</h2>
+        <p className="page-sub">Raw parsed and normalized log events</p>
       </div>
 
       <Panel>
         {/* Toolbar */}
-        <div className="flex items-center gap-3 mb-5 flex-wrap">
-          {/* Source filter */}
+        <div className="toolbar">
           <div className="relative">
-            <select
-              value={source}
-              onChange={e => setSource(e.target.value)}
-              className="appearance-none bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 pr-8 outline-none focus:border-blue-500 cursor-pointer"
-            >
+            <select value={source} onChange={e => setSource(e.target.value)} className="ctrl-select">
               <option value="">All sources</option>
               <option value="auth">auth</option>
               <option value="syslog">syslog</option>
               <option value="custom">custom</option>
             </select>
-            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
           </div>
-
-          {/* Type filter */}
           <div className="relative">
-            <select
-              value={evtType}
-              onChange={e => setEvtType(e.target.value)}
-              className="appearance-none bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 pr-8 outline-none focus:border-blue-500 cursor-pointer"
-            >
+            <select value={evtType} onChange={e => setEvtType(e.target.value)} className="ctrl-select">
               <option value="">All types</option>
               {eventTypes.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
-            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
           </div>
-
-          {/* IP filter */}
+          <div className="relative">
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="ctrl-select">
+              <option value="">All statuses</option>
+              <option value="success">Success</option>
+              <option value="failure">Failure</option>
+              <option value="unknown">Unknown</option>
+            </select>
+            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
+          </div>
           <div className="flex gap-2">
             <input
               value={ipInput}
               onChange={e => setIpInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && applyIp()}
               placeholder="Filter by IP…"
-              className="bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 outline-none focus:border-blue-500 w-40 placeholder:text-slate-600"
+              className="ctrl-input w-36"
             />
-            <button
-              onClick={applyIp}
-              className="bg-[#1c2128] border border-[#30363d] hover:border-blue-500 text-slate-300 text-sm px-3 py-2 rounded-lg transition-colors"
-            >
-              Search
-            </button>
+            <button onClick={applyIp} className="btn-ghost text-xs px-3 py-[0.4rem] rounded-[10px]">Search</button>
             {ipFilter && (
-              <button
-                onClick={() => { setIpInput(''); setIpFilter('') }}
-                className="text-xs text-slate-500 hover:text-slate-300 px-2"
-              >
-                ✕ clear
+              <button onClick={() => { setIpInput(''); setIpFilter('') }} className="text-xs text-slate-600 hover:text-slate-300 px-1 transition-colors">
+                ✕
               </button>
             )}
           </div>
-
-          <button
-            onClick={load}
-            className="flex items-center gap-2 bg-[#1c2128] border border-[#30363d] hover:border-blue-500 text-slate-300 text-sm px-3 py-2 rounded-lg transition-colors"
-          >
-            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+          <button onClick={load} className="btn-ghost flex items-center gap-2 text-xs px-3 py-[0.4rem] rounded-[10px]">
+            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
             Refresh
           </button>
-          <span className="text-xs text-slate-500 ml-1">{events.length} events</span>
+          <button onClick={exportFilteredCsv} className="btn-success flex items-center gap-2 text-xs px-3 py-[0.4rem] rounded-[10px] ml-auto">
+            <Download size={12} />
+            Export CSV
+          </button>
+          <span className="text-xs text-slate-600 tabular-nums">{events.length} events</span>
         </div>
 
         {/* Table */}

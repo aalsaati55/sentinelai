@@ -747,6 +747,7 @@ export function Incidents() {
   const [bulkFpPending, setBulkFpPending]   = useState(false)
   const [bulkFpReason, setBulkFpReason]     = useState('')
   const lastCheckedIndex = useRef(null)
+  const [severityFilter, setSeverityFilter] = useState('')
 
   async function loadWatchlist() {
     try {
@@ -814,8 +815,38 @@ export function Incidents() {
     }
   }, [])
 
+  function exportFilteredCsv() {
+    const rows = filtered
+    if (rows.length === 0) return
+    const headers = ['ID','Title','Source IP','User','Risk Score','Severity','Status','False Positive','Assigned','Created']
+    const escape = v => `"${String(v ?? '').replace(/"/g, '""')}"`
+    const lines = [
+      headers.join(','),
+      ...rows.map(i => [
+        i.id,
+        escape(i.title),
+        escape(i.source_ip || ''),
+        escape(i.username || ''),
+        i.risk_score ?? '',
+        escape(severityFromScore(i.risk_score)),
+        escape(i.status),
+        i.false_positive ? 'Yes' : 'No',
+        escape(i.assigned_to || ''),
+        escape(fmtTs(i.created_at)),
+      ].join(','))
+    ].join('\n')
+    const blob = new Blob([lines], { type: 'text/csv;charset=utf-8;' })
+    const url  = URL.createObjectURL(blob)
+    const a    = document.createElement('a')
+    a.href     = url
+    a.download = `incidents_${severityFilter || filter || 'all'}_${new Date().toISOString().slice(0,10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
   const filtered = useMemo(() => {
     let result = incidents
+    if (severityFilter) result = result.filter(i => severityFromScore(i.risk_score) === severityFilter)
     if (fpFilter === 'real') result = result.filter(i => !i.false_positive)
     if (fpFilter === 'fp')   result = result.filter(i =>  !!i.false_positive)
     const q = search.trim().toLowerCase()
@@ -829,7 +860,7 @@ export function Incidents() {
         String(i.id).includes(q)
       )
     )
-  }, [incidents, search, fpFilter])
+  }, [incidents, search, fpFilter, severityFilter])
 
   function toggleBulkSelect(id, e) {
     const idx = filtered.findIndex(i => i.id === id)
@@ -893,63 +924,59 @@ export function Incidents() {
       {selected && <IncidentModal id={selected} onClose={handleModalClose} watchlistedIps={watchlistedIps} onWatchlistChange={loadWatchlist} onNoteAdded={incId => setIncidents(prev => prev.map(i => i.id === incId ? { ...i, note_count: (i.note_count || 0) + 1 } : i))} onFpChange={handleFpChange} />}
 
       <div>
-        <h2 className="text-xl font-bold text-white mb-1">Incidents</h2>
-        <p className="text-sm text-slate-500">Correlated security incidents grouped from alerts</p>
+        <h2 className="page-title">Incidents</h2>
+        <p className="page-sub">Correlated security incidents grouped from alerts</p>
       </div>
 
       <Panel>
         {/* Toolbar */}
-        <div className="flex items-center gap-3 mb-5 flex-wrap">
+        <div className="toolbar">
           <div className="relative">
-            <select
-              value={filter}
-              onChange={e => setFilter(e.target.value)}
-              className="appearance-none bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 pr-8 outline-none focus:border-blue-500 cursor-pointer"
-            >
+            <select value={filter} onChange={e => setFilter(e.target.value)} className="ctrl-select">
               <option value="">All statuses</option>
               <option value="open">Open</option>
               <option value="investigating">Investigating</option>
               <option value="closed">Closed</option>
             </select>
-            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
           </div>
           <div className="relative">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+            <select value={severityFilter} onChange={e => setSeverityFilter(e.target.value)} className="ctrl-select">
+              <option value="">All severities</option>
+              <option value="critical">Critical</option>
+              <option value="high">High</option>
+              <option value="medium">Medium</option>
+              <option value="low">Low</option>
+            </select>
+            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
+          </div>
+          <div className="relative">
+            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
             <input
               type="text"
               placeholder="Search #ID, title, IP, user…"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              className="bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg pl-8 pr-3 py-2 w-52 outline-none focus:border-blue-500 placeholder-slate-600"
+              className="ctrl-input pl-8 w-52"
             />
           </div>
-          <button
-            onClick={load}
-            className="flex items-center gap-2 bg-[#1c2128] border border-[#30363d] hover:border-blue-500 text-slate-300 text-sm px-3 py-2 rounded-lg transition-colors"
-          >
-            <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
+          <button onClick={load} className="btn-ghost flex items-center gap-2 text-xs px-3 py-[0.4rem] rounded-[10px]">
+            <RefreshCw size={12} className={loading ? 'animate-spin' : ''} />
             Refresh
           </button>
-          <button
-            onClick={() => api.exportIncidentsCsv(filter)}
-            className="flex items-center gap-2 bg-[#1c2128] border border-[#30363d] hover:border-green-500 text-slate-300 text-sm px-3 py-2 rounded-lg transition-colors ml-auto"
-          >
-            <Download size={13} />
+          <button onClick={exportFilteredCsv} className="btn-success flex items-center gap-2 text-xs px-3 py-[0.4rem] rounded-[10px] ml-auto">
+            <Download size={12} />
             Export CSV
           </button>
           <div className="relative">
-            <select
-              value={fpFilter}
-              onChange={e => setFpFilter(e.target.value)}
-              className="appearance-none bg-[#1c2128] border border-[#30363d] text-slate-200 text-sm rounded-lg px-3 py-2 pr-8 outline-none focus:border-blue-500 cursor-pointer"
-            >
+            <select value={fpFilter} onChange={e => setFpFilter(e.target.value)} className="ctrl-select">
               <option value="all">All incidents</option>
               <option value="real">Real attacks only</option>
               <option value="fp">False positives</option>
             </select>
-            <ChevronDown size={14} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
+            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-600 pointer-events-none" />
           </div>
-          <span className="text-xs text-slate-500">{filtered.length} incident{filtered.length !== 1 ? 's' : ''}</span>
+          <span className="text-xs text-slate-600 tabular-nums">{filtered.length} incident{filtered.length !== 1 ? 's' : ''}</span>
         </div>
 
         {/* Bulk action bar */}
